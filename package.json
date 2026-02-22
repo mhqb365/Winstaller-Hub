@@ -1,7 +1,7 @@
 {
   "name": "winstaller-hub",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "Windows toolkit for auto install apps",
   "author": {
@@ -60,6 +60,12 @@
     },
     "asar": true,
     "asarUnpack": [],
+    "extraFiles": [
+      {
+        "from": "src/apps/installers.json",
+        "to": "apps/installers.json"
+      }
+    ],
     "files": [
       "out/**/*",
       "package.json",

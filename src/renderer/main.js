@@ -20,6 +20,7 @@ let notificationHistory = [];
 let unreadCount = 0;
 let activeTasks = /* @__PURE__ */ new Map();
 let installers = [];
+let selectedInstallerKeys = /* @__PURE__ */ new Set();
 let installedIds = /* @__PURE__ */ new Set();
 let installedApps = [];
 let installedStatusRefreshBusy = false;
@@ -73,6 +74,11 @@ const appLanguageSelect = document.getElementById("app-language-select");
 const aboutVersionValue = document.getElementById("about-version-value");
 const appTotalCountEl = document.getElementById("app-total-count");
 const officeTotalCountEl = document.getElementById("office-total-count");
+const selectionHeaderEl = document.getElementById("selection-header");
+const selectedCountEl = document.getElementById("selected-count");
+const clearSelectionBtn = document.getElementById("clear-selection-btn");
+const installSelectedBtn = document.getElementById("install-selected-btn");
+const deleteSelectedBtn = document.getElementById("delete-selected-btn");
 let currentLanguage = resolveLanguage(
   localStorage.getItem(LANGUAGE_STORAGE_KEY),
 );
@@ -118,7 +124,7 @@ const UI_TEXT = {
     "i18n-benchmark-health-status-label": "Status",
     "i18n-benchmark-health-percent-label": "Health",
     "i18n-benchmark-health-model-label": "Model",
-    "i18n-benchmark-health-media-label": "Media",
+    "i18n-benchmark-health-media-label": "Type",
     "i18n-benchmark-health-size-label": "Size",
     "i18n-benchmark-health-temp-label": "Temperature",
     "i18n-benchmark-output-title": "Benchmark Output",
@@ -152,6 +158,7 @@ const UI_TEXT = {
     "i18n-btn-revo": "Revo Uninstaller",
     "i18n-btn-add-online": "Add Online",
     "i18n-btn-add-local": "Add Local",
+    "i18n-btn-clear-selection": "Clear Selection",
     "i18n-btn-install-selected": "Install Selected",
     "i18n-btn-delete": "Delete",
     "i18n-office-local-title": "Office Images Setup",
@@ -301,6 +308,7 @@ const UI_TEXT = {
     "i18n-btn-revo": "Revo Uninstaller",
     "i18n-btn-add-online": "Thêm online",
     "i18n-btn-add-local": "Thêm local",
+    "i18n-btn-clear-selection": "Bỏ chọn",
     "i18n-btn-install-selected": "Cài đã chọn",
     "i18n-btn-delete": "Xóa",
     "i18n-office-local-title": "Office Images Setup",
@@ -479,6 +487,11 @@ const MSG = {
     installingSmartMon: "Checking SmartMonTools",
     wingetCheck: "Checking Winget status",
     appsCountLabel: "{count} apps",
+    selectedAppsLabel: "{count} selected",
+    installSelectedStarted: "Started installing {count} applications",
+    installSelectedNoEligible: "Selected applications are already installed",
+    deleteSelectedConfirm: "Remove {count} selected applications from library?",
+    deleteSelectedDone: "Removed {count} applications from library",
     officeImagesCountLabel: "{count} images",
     windowsUpdateEnabled: "Enabled",
     windowsUpdateDisabled: "Disabled",
@@ -568,6 +581,11 @@ const MSG = {
     installingSmartMon: "Đang kiểm tra SmartMonTools",
     wingetCheck: "Đang kiểm tra Winget",
     appsCountLabel: "{count} ứng dụng",
+    selectedAppsLabel: "Đã chọn {count}",
+    installSelectedStarted: "Đã bắt đầu cài {count} ứng dụng",
+    installSelectedNoEligible: "Các ứng dụng đã chọn đã được cài sẵn",
+    deleteSelectedConfirm: "Xóa {count} ứng dụng đã chọn khỏi thư viện?",
+    deleteSelectedDone: "Đã xóa {count} ứng dụng khỏi thư viện",
     officeImagesCountLabel: "{count} bộ cài",
     windowsUpdateEnabled: "Đang bật",
     windowsUpdateDisabled: "Đã tắt",
@@ -1834,6 +1852,94 @@ function setViewToggleButtonIcon(buttonId, iconId, iconName) {
   button.innerHTML = `<i id="${iconId}" data-lucide="${iconName}"></i>`;
   replaceLucidePlaceholders(button);
 }
+function getInstallerSelectionKey(app) {
+  return String(app?.path || "")
+    .trim()
+    .toLowerCase();
+}
+function pruneSelectedInstallerKeys() {
+  if (selectedInstallerKeys.size === 0) return;
+  const validKeys = new Set(
+    installers.map((app) => getInstallerSelectionKey(app)),
+  );
+  Array.from(selectedInstallerKeys).forEach((key) => {
+    if (!validKeys.has(key)) {
+      selectedInstallerKeys.delete(key);
+    }
+  });
+}
+function getSelectedInstallers() {
+  pruneSelectedInstallerKeys();
+  if (selectedInstallerKeys.size === 0) return [];
+  const appByKey = new Map(
+    installers.map((app) => [getInstallerSelectionKey(app), app]),
+  );
+  return Array.from(selectedInstallerKeys)
+    .map((key) => appByKey.get(key))
+    .filter(Boolean);
+}
+function setInstallerSelectedState(selectionKey, selected) {
+  if (!selectionKey) return;
+  if (selected) {
+    selectedInstallerKeys.add(selectionKey);
+  } else {
+    selectedInstallerKeys.delete(selectionKey);
+  }
+}
+function isInteractiveSelectionTarget(target) {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      "button, a, input, label, select, textarea, [contenteditable='true'], [role='button']",
+    ),
+  );
+}
+function updateInstallerSelectionHeader() {
+  if (!selectionHeaderEl || !selectedCountEl) return;
+  pruneSelectedInstallerKeys();
+  const selectedCount = selectedInstallerKeys.size;
+  selectedCountEl.innerText = tr("selectedAppsLabel", { count: selectedCount });
+  selectionHeaderEl.style.opacity = selectedCount > 0 ? "1" : "0";
+  selectionHeaderEl.style.pointerEvents = selectedCount > 0 ? "auto" : "none";
+  if (installSelectedBtn) {
+    installSelectedBtn.disabled = selectedCount === 0;
+  }
+  if (deleteSelectedBtn) {
+    deleteSelectedBtn.disabled = selectedCount === 0;
+  }
+  if (clearSelectionBtn) {
+    clearSelectionBtn.disabled = selectedCount === 0;
+  }
+}
+function getInstalledLocalEntries() {
+  return installedApps
+    .map((sys) => ({
+      id: String(sys.id || "").trim(),
+      nameLower: String(sys.name || "")
+        .toLowerCase()
+        .trim(),
+    }))
+    .filter((sys) => sys.id && sys.nameLower);
+}
+function findMatchingInstalledId(app, installedLocalEntries) {
+  if (!app) return null;
+  if (app.isWinget) {
+    return installedIds.has(String(app.path || "").toLowerCase())
+      ? app.path
+      : null;
+  }
+  const appNameLower = String(app.name || "")
+    .toLowerCase()
+    .trim();
+  const firstToken = appNameLower.split(/\s+/).find(Boolean) || appNameLower;
+  if (!appNameLower) return null;
+  const matched = installedLocalEntries.find(
+    (sys) =>
+      appNameLower.includes(sys.nameLower) ||
+      sys.nameLower.includes(firstToken),
+  );
+  return matched ? matched.id : null;
+}
 function renderInstallers() {
   if (!installerGrid) return;
   const filtered = installers.filter((app) => {
@@ -1858,7 +1964,9 @@ function renderInstallers() {
     }),
   );
   if (appTotalCountEl) {
-    appTotalCountEl.innerText = tr("appsCountLabel", { count: filtered.length });
+    appTotalCountEl.innerText = tr("appsCountLabel", {
+      count: filtered.length,
+    });
   }
   installerGrid.innerHTML = "";
   installerGrid.className =
@@ -1868,33 +1976,7 @@ function renderInstallers() {
     "view-toggle-icon",
     viewMode === "grid" ? "list" : "layout-grid",
   );
-  const installedLocalEntries = installedApps
-    .map((sys) => ({
-      id: String(sys.id || "").trim(),
-      nameLower: String(sys.name || "")
-        .toLowerCase()
-        .trim(),
-    }))
-    .filter((sys) => sys.id && sys.nameLower);
-  const findMatchingInstalledId = (app) => {
-    if (!app) return null;
-    if (app.isWinget) {
-      return installedIds.has(String(app.path || "").toLowerCase())
-        ? app.path
-        : null;
-    }
-    const appNameLower = String(app.name || "")
-      .toLowerCase()
-      .trim();
-    const firstToken = appNameLower.split(/\s+/).find(Boolean) || appNameLower;
-    if (!appNameLower) return null;
-    const matched = installedLocalEntries.find(
-      (sys) =>
-        appNameLower.includes(sys.nameLower) ||
-        sys.nameLower.includes(firstToken),
-    );
-    return matched ? matched.id : null;
-  };
+  const installedLocalEntries = getInstalledLocalEntries();
   if (filtered.length === 0) {
     installerGrid.innerHTML = `
       <div class="col-span-full py-12 text-center text-muted">
@@ -1903,6 +1985,7 @@ function renderInstallers() {
       </div>
     `;
     replaceLucidePlaceholders(installerGrid);
+    updateInstallerSelectionHeader();
     return;
   }
   const fragment = document.createDocumentFragment();
@@ -1911,17 +1994,25 @@ function renderInstallers() {
     card.className = "card installer-card";
     const appArch = normalizeArchitecture(app.arch);
     const appArchBadgeClass = getArchitectureBadgeClass(appArch);
-    const matchingId = findMatchingInstalledId(app);
+    const matchingId = findMatchingInstalledId(app, installedLocalEntries);
+    const selectionKey = getInstallerSelectionKey(app);
+    const isSelected = selectedInstallerKeys.has(selectionKey);
+    if (isSelected) card.classList.add("installer-card-selected");
     if (viewMode === "grid") {
       card.innerHTML = `
-        <div class="flex items-center gap-3 mb-4">
-          <div class="stat-icon" style="width: 40px; height: 40px; display:flex; align-items:center; justify-content:center; background:hsl(var(--accent)); border-radius:var(--radius);">
-            <i data-lucide="package"></i>
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="stat-icon" style="width: 40px; height: 40px; display:flex; align-items:center; justify-content:center; background:hsl(var(--accent)); border-radius:var(--radius); flex-shrink:0;">
+              <i data-lucide="package"></i>
+            </div>
+            <div class="truncate">
+              <h3 class="text-sm font-bold truncate">${app.name}</h3>
+              <p class="text-2xs text-muted truncate">${app.isWinget ? tr("winget") : tr("local")}</p>
+            </div>
           </div>
-          <div class="truncate">
-            <h3 class="text-sm font-bold truncate">${app.name}</h3>
-            <p class="text-2xs text-muted truncate">${app.isWinget ? tr("winget") : tr("local")}</p>
-          </div>
+          <label class="installer-select-toggle" title="${currentLanguage === "vi" ? "Chọn ứng dụng" : "Select application"}">
+            <input type="checkbox" class="installer-select-checkbox" data-selection-key="${escapeHtml(selectionKey)}" ${isSelected ? "checked" : ""} />
+          </label>
         </div>
         <div class="flex items-center justify-between mt-auto pt-4 border-t border-border">
           <span class="${appArchBadgeClass}">${appArch}</span>
@@ -1942,12 +2033,17 @@ function renderInstallers() {
       `;
     } else {
       card.style.display = "grid";
-      card.style.gridTemplateColumns = "48px 1fr 1fr 100px 100px 40px";
+      card.style.gridTemplateColumns = "36px 48px 1fr 1fr 100px 100px 40px";
       card.style.alignItems = "center";
       card.style.padding = "0.6rem 1rem";
       card.style.gap = "1rem";
       const isInstalled = !!matchingId;
       card.innerHTML = `
+          <div class="flex justify-center">
+            <label class="installer-select-toggle" title="${currentLanguage === "vi" ? "Chọn ứng dụng" : "Select application"}">
+              <input type="checkbox" class="installer-select-checkbox" data-selection-key="${escapeHtml(selectionKey)}" ${isSelected ? "checked" : ""} />
+            </label>
+          </div>
           <div class="flex justify-center"><i data-lucide="package" style="width:20px; color:hsl(var(--muted-foreground))"></i></div>
           <div class="font-bold text-sm truncate">${app.name}</div>
           <div class="text-xs text-muted truncate">${app.isWinget ? tr("winget") : tr("local")}</div>
@@ -1970,6 +2066,33 @@ function renderInstallers() {
     }
     const installBtn = card.querySelector(".btn-primary");
     if (installBtn) installBtn.onclick = () => runInstaller(app.path, app.name);
+    const selectCheckbox = card.querySelector(".installer-select-checkbox");
+    const applyCardSelectionState = (selected) => {
+      card.classList.toggle("installer-card-selected", selected);
+      if (selectCheckbox && selectCheckbox.checked !== selected) {
+        selectCheckbox.checked = selected;
+      }
+    };
+    applyCardSelectionState(isSelected);
+    const toggleCardSelection = () => {
+      const nextSelected = !selectedInstallerKeys.has(selectionKey);
+      setInstallerSelectedState(selectionKey, nextSelected);
+      applyCardSelectionState(nextSelected);
+      updateInstallerSelectionHeader();
+    };
+    if (selectCheckbox) {
+      selectCheckbox.onclick = (event) => event.stopPropagation();
+      selectCheckbox.onchange = (event) => {
+        const nextSelected = Boolean(event.target?.checked);
+        setInstallerSelectedState(selectionKey, nextSelected);
+        applyCardSelectionState(nextSelected);
+        updateInstallerSelectionHeader();
+      };
+    }
+    card.onclick = (event) => {
+      if (isInteractiveSelectionTarget(event.target)) return;
+      toggleCardSelection();
+    };
     const deleteBtn = card.querySelector(".delete-btn");
     if (deleteBtn) {
       deleteBtn.onclick = async (event) => {
@@ -1977,6 +2100,7 @@ function renderInstallers() {
         event.stopPropagation();
         if (confirm(tr("removeWithName", { name: app.name }))) {
           const removedApp = app;
+          selectedInstallerKeys.delete(getInstallerSelectionKey(removedApp));
           installers = installers.filter((i) => i.path !== removedApp.path);
           renderInstallers();
           showNotification(
@@ -2029,6 +2153,96 @@ function renderInstallers() {
     fragment.appendChild(card);
   });
   installerGrid.appendChild(fragment);
+  updateInstallerSelectionHeader();
+}
+function clearSelectedApplications() {
+  if (selectedInstallerKeys.size === 0) {
+    updateInstallerSelectionHeader();
+    return;
+  }
+  selectedInstallerKeys.clear();
+  renderInstallers();
+}
+function installSelectedApplications() {
+  const selectedApps = getSelectedInstallers();
+  if (selectedApps.length === 0) {
+    updateInstallerSelectionHeader();
+    return;
+  }
+  const installedLocalEntries = getInstalledLocalEntries();
+  const installableApps = selectedApps.filter((app) => {
+    const matchingId = findMatchingInstalledId(app, installedLocalEntries);
+    const isInstalling = activeTasks.has(app.path);
+    const isUninstalling =
+      matchingId && activeTasks.has(`uninstall-${matchingId}`);
+    return !matchingId && !isInstalling && !isUninstalling;
+  });
+  if (installableApps.length === 0) {
+    showNotification(tr("installSelectedNoEligible"), "info");
+    return;
+  }
+  installableApps.forEach((app) => {
+    runInstaller(app.path, app.name);
+  });
+  selectedInstallerKeys.clear();
+  renderInstallers();
+  showNotification(
+    tr("installSelectedStarted", { count: installableApps.length }),
+    "info",
+  );
+}
+async function deleteSelectedApplications() {
+  const selectedApps = getSelectedInstallers();
+  if (selectedApps.length === 0) {
+    updateInstallerSelectionHeader();
+    return;
+  }
+  const shouldDelete = confirm(
+    tr("deleteSelectedConfirm", { count: selectedApps.length }),
+  );
+  if (!shouldDelete) return;
+  const selectedKeySet = new Set(
+    selectedApps.map((app) => getInstallerSelectionKey(app)),
+  );
+  installers = installers.filter(
+    (app) => !selectedKeySet.has(getInstallerSelectionKey(app)),
+  );
+  selectedInstallerKeys.clear();
+  renderInstallers();
+  showNotification(
+    tr("deleteSelectedDone", { count: selectedApps.length }),
+    "info",
+  );
+  if (window.api && window.api.saveLibrary) {
+    try {
+      await window.api.saveLibrary(installers);
+    } catch (err) {
+      console.error("Error saving library after bulk remove:", err);
+    }
+  }
+  if (window.api && window.api.deleteFile) {
+    selectedApps
+      .filter((app) => !app.isWinget)
+      .forEach((app) => {
+        window.api
+          .deleteFile(app.path)
+          .then((result) => {
+            if (result && result.success) {
+              console.log(`Deleted file from disk: ${app.path}`);
+              return;
+            }
+            if (result && result.error) {
+              showNotification(
+                currentLanguage === "vi"
+                  ? `Đã xóa khỏi thư viện nhưng xóa file thất bại: ${result.error}`
+                  : `Removed from library, but file delete failed: ${result.error}`,
+                "error",
+              );
+            }
+          })
+          .catch((err) => console.error("Error deleting file from disk:", err));
+      });
+  }
 }
 async function runInstaller(path, name) {
   const startTime = /* @__PURE__ */ new Date().toLocaleTimeString(
@@ -4070,6 +4284,7 @@ document.getElementById("clear-all-data-btn").onclick = () => {
     )
   ) {
     installers = [];
+    selectedInstallerKeys.clear();
     if (window.api && window.api.saveLibrary) {
       window.api.saveLibrary(installers);
     }
@@ -4213,6 +4428,15 @@ if (viewToggleBtn) {
     localStorage.setItem("viewMode", viewMode);
     renderInstallers();
   };
+}
+if (installSelectedBtn) {
+  installSelectedBtn.onclick = () => installSelectedApplications();
+}
+if (deleteSelectedBtn) {
+  deleteSelectedBtn.onclick = () => deleteSelectedApplications();
+}
+if (clearSelectionBtn) {
+  clearSelectionBtn.onclick = () => clearSelectedApplications();
 }
 const onlineCheck = document.getElementById("filter-online");
 const x64Check = document.getElementById("filter-x64");

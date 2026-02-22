@@ -1,0 +1,80 @@
+{
+  "name": "winstaller-hub",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Windows toolkit for auto install apps",
+  "author": {
+    "name": "mhqb365.com",
+    "email": "mhqb365@gmail.com"
+  },
+  "main": "./out/main/index.js",
+  "scripts": {
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "build:win": "npm run build && set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.mhqb365.winstallerhub",
+    "productName": "Winstaller Hub",
+    "copyright": "Copyright © 2026 mhqb365.com",
+    "extraMetadata": {
+      "author": {
+        "name": "mhqb365.com",
+        "email": "mhqb365@gmail.com"
+      }
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "compression": "maximum",
+    "electronLanguages": [
+      "vi",
+      "en-US"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "requireAdministrator",
+      "icon": "build/icon.ico",
+      "legalTrademarks": "Copyright © 2026 mhqb365.com",
+      "signExts": [
+        "!.exe"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "differentialPackage": false
+    },
+    "asar": true,
+    "asarUnpack": [],
+    "files": [
+      "out/**/*",
+      "package.json",
+      "build/icon.ico.manifest",
+      "!src/apps/**/*"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^40.4.1",
+    "electron-builder": "^26.7.0",
+    "electron-vite": "^5.0.0",
+    "lucide": "^0.564.0",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0"
+  }
+}

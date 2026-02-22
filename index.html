@@ -1,0 +1,1152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/src/renderer/javascript.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Winstaller Hub</title>
+    <script>
+      (function () {
+        try {
+          var savedTheme = localStorage.getItem("themeMode");
+          var theme = savedTheme === "dark" ? "dark" : "light";
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (error) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="/src/renderer/style.css" />
+  </head>
+  <body>
+    <div id="notification-container"></div>
+    <div id="system-loader" class="system-loader">
+      <div class="loader-spinner animate-spin"></div>
+      <div id="system-loader-text" class="loader-text">System checking...</div>
+    </div>
+
+    <!-- Alerts/Modals Managed via Sidebar -->
+
+    <!-- Right Panels -->
+    <div id="task-panel" class="panel">
+      <div class="panel-header">
+        <h3 class="flex items-center gap-2 text-sm font-bold">
+          <i data-lucide="cog" style="width: 16px"></i>
+          <span id="i18n-task-panel-title">Tasks Progress</span>
+        </h3>
+        <button
+          id="close-task-panel"
+          class="btn btn-ghost"
+          style="width: 32px; height: 32px; padding: 0"
+        >
+          <i data-lucide="x" style="width: 16px"></i>
+        </button>
+      </div>
+      <div id="task-list" class="panel-content flex flex-col gap-3">
+        <p id="i18n-task-empty" class="text-center text-muted text-sm py-8">
+          No active tasks
+        </p>
+      </div>
+    </div>
+
+    <div id="notification-panel" class="panel">
+      <div class="panel-header">
+        <h3 class="flex items-center gap-2 text-sm font-bold">
+          <i data-lucide="history" style="width: 16px"></i>
+          <span id="i18n-noti-panel-title">Notifications History</span>
+        </h3>
+        <button
+          id="close-noti-panel"
+          class="btn btn-ghost"
+          style="width: 32px; height: 32px; padding: 0"
+        >
+          <i data-lucide="x" style="width: 16px"></i>
+        </button>
+      </div>
+      <div id="noti-history-list" class="panel-content flex flex-col gap-3">
+        <p id="i18n-noti-empty" class="text-center text-muted text-sm py-8">
+          No notifications yet
+        </p>
+      </div>
+      <div style="padding: 1.25rem; border-top: 1px solid hsl(var(--border))">
+        <button id="clear-noti-history" class="btn btn-outline w-full text-xs">
+          <span id="i18n-clear-noti-history">Clear History</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="app">
+      <aside>
+        <div class="sidebar-header">
+          <div class="flex items-center gap-2">
+            <i data-lucide="command"></i>
+            <span>Winstaller Hub</span>
+          </div>
+        </div>
+        <nav>
+          <div class="nav-item active" id="nav-dashboard">
+            <i data-lucide="layout-grid"></i>
+            <span id="i18n-nav-dashboard">Dashboard</span>
+          </div>
+          <div class="nav-item" id="nav-library">
+            <i data-lucide="box"></i>
+            <span id="i18n-nav-library">Applications</span>
+          </div>
+          <div class="nav-item-group" id="nav-group-office">
+            <div class="nav-item" id="nav-office-parent">
+              <i data-lucide="file-text"></i>
+              <span id="i18n-nav-office-parent">Office</span>
+              <i data-lucide="chevron-down" class="chevron"></i>
+            </div>
+            <div class="sub-menu">
+              <div class="sub-item" id="nav-office-online">
+                <span id="i18n-nav-office-online">Online Setup</span>
+              </div>
+              <div class="sub-item" id="nav-office">
+                <span id="i18n-nav-office-images">Images Setup</span>
+              </div>
+            </div>
+          </div>
+          <div class="nav-item" id="nav-activation">
+            <i data-lucide="shield-check"></i>
+            <span id="i18n-nav-activation">Activation</span>
+          </div>
+          <div class="nav-item" id="nav-cleanup">
+            <i data-lucide="sparkles"></i>
+            <span id="i18n-nav-cleanup">Cleanup</span>
+          </div>
+          <div class="nav-item" id="nav-driver">
+            <i data-lucide="hard-drive"></i>
+            <span id="i18n-nav-driver">Drivers</span>
+          </div>
+          <div class="nav-item" id="nav-settings">
+            <i data-lucide="settings"></i>
+            <span id="i18n-nav-settings">Settings</span>
+          </div>
+          <div class="nav-item" id="nav-about">
+            <i data-lucide="info"></i>
+            <span id="i18n-nav-about">About</span>
+          </div>
+        </nav>
+      </aside>
+
+      <main>
+        <!-- Dashboard Section -->
+        <div id="tab-dashboard" class="tab-content active">
+          <div class="section-header">
+            <h1 id="i18n-dashboard-title">Dashboard</h1>
+            <p id="i18n-dashboard-subtitle">Overview of your system</p>
+          </div>
+
+          <div class="card performance-board mb-6">
+            <div class="performance-grid">
+              <div class="performance-item performance-item-os">
+                <div class="performance-os-hero">
+                  <i data-lucide="laptop" class="performance-os-icon"></i>
+                </div>
+                <div
+                  id="detail-os-name"
+                  class="performance-label performance-os-name"
+                >
+                  --
+                </div>
+                <div class="performance-detail performance-os-meta">
+                  <span id="i18n-detail-os-build-label">Build</span>
+                  <strong id="detail-os-build">--</strong>
+                  <span class="performance-os-sep">-</span>
+                  <span id="i18n-detail-os-kernel-label">Kernel</span>
+                  <strong id="detail-os-version">--</strong>
+                </div>
+              </div>
+
+              <div class="performance-item" style="--perf-color: #22c55e">
+                <div class="performance-gauge">
+                  <svg class="performance-gauge-svg" viewBox="0 0 120 70">
+                    <path
+                      class="performance-arc performance-arc-track"
+                      d="M 10 60 A 50 50 0 0 1 110 60"
+                      pathLength="100"
+                    ></path>
+                    <path
+                      id="perf-cpu-arc"
+                      class="performance-arc performance-arc-fill"
+                      d="M 10 60 A 50 50 0 0 1 110 60"
+                      pathLength="100"
+                    ></path>
+                  </svg>
+                  <div id="perf-cpu-percent" class="performance-percent">
+                    0%
+                  </div>
+                  <div id="perf-cpu-value" class="performance-subvalue">--</div>
+                </div>
+                <div class="performance-label">CPU</div>
+                <div id="perf-cpu-detail" class="performance-detail">--</div>
+              </div>
+
+              <div class="performance-item" style="--perf-color: #3b82f6">
+                <div class="performance-gauge">
+                  <svg class="performance-gauge-svg" viewBox="0 0 120 70">
+                    <path
+                      class="performance-arc performance-arc-track"
+                      d="M 10 60 A 50 50 0 0 1 110 60"
+                      pathLength="100"
+                    ></path>
+                    <path
+                      id="perf-ram-arc"
+                      class="performance-arc performance-arc-fill"
+                      d="M 10 60 A 50 50 0 0 1 110 60"
+                      pathLength="100"
+                    ></path>
+                  </svg>
+                  <div id="perf-ram-percent" class="performance-percent">
+                    0%
+                  </div>
+                  <div id="perf-ram-value" class="performance-subvalue">--</div>
+                </div>
+                <div class="performance-label">RAM</div>
+                <div id="perf-ram-detail" class="performance-detail">--</div>
+              </div>
+
+              <div id="perf-gpu-items" class="performance-gpu-items">
+                <div class="performance-item" style="--perf-color: #a855f7">
+                  <div class="performance-gauge">
+                    <svg class="performance-gauge-svg" viewBox="0 0 120 70">
+                      <path
+                        class="performance-arc performance-arc-track"
+                        d="M 10 60 A 50 50 0 0 1 110 60"
+                        pathLength="100"
+                      ></path>
+                      <path
+                        class="performance-arc performance-arc-fill"
+                        d="M 10 60 A 50 50 0 0 1 110 60"
+                        pathLength="100"
+                        style="stroke-dashoffset: 100"
+                      ></path>
+                    </svg>
+                    <div class="performance-percent">0%</div>
+                    <div class="performance-subvalue">--</div>
+                  </div>
+                  <div class="performance-label">GPU</div>
+                  <div class="performance-detail">--</div>
+                </div>
+              </div>
+
+              <div id="perf-network-items" class="performance-dynamic-items">
+                <div class="performance-item" style="--perf-color: #06b6d4">
+                  <div class="performance-gauge">
+                    <svg class="performance-gauge-svg" viewBox="0 0 120 70">
+                      <path
+                        class="performance-arc performance-arc-track"
+                        d="M 10 60 A 50 50 0 0 1 110 60"
+                        pathLength="100"
+                      ></path>
+                      <path
+                        class="performance-arc performance-arc-fill"
+                        d="M 10 60 A 50 50 0 0 1 110 60"
+                        pathLength="100"
+                        style="stroke-dashoffset: 100"
+                      ></path>
+                    </svg>
+                    <div class="performance-percent">0%</div>
+                    <div class="performance-subvalue">--</div>
+                  </div>
+                  <div class="performance-label">Network</div>
+                  <div class="performance-detail">--</div>
+                </div>
+              </div>
+
+              <div id="perf-disk-items" class="performance-dynamic-items">
+                <div class="performance-item" style="--perf-color: #0ea5e9">
+                  <div class="performance-gauge">
+                    <svg class="performance-gauge-svg" viewBox="0 0 120 70">
+                      <path
+                        class="performance-arc performance-arc-track"
+                        d="M 10 60 A 50 50 0 0 1 110 60"
+                        pathLength="100"
+                      ></path>
+                      <path
+                        class="performance-arc performance-arc-fill"
+                        d="M 10 60 A 50 50 0 0 1 110 60"
+                        pathLength="100"
+                        style="stroke-dashoffset: 100"
+                      ></path>
+                    </svg>
+                    <div class="performance-percent">0%</div>
+                    <div class="performance-subvalue">--</div>
+                  </div>
+                  <div class="performance-label">Disk</div>
+                  <div class="performance-detail">--</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-details-grid">
+            <div class="card detail-card">
+              <div class="detail-card-title">
+                <i data-lucide="laptop" style="width: 15px; height: 15px"></i>
+                <span id="i18n-detail-machine-title">Machine</span>
+              </div>
+              <div class="detail-list">
+                <!-- <div class="detail-row">
+                  <span>Type</span><strong id="detail-machine-type">--</strong>
+                </div> -->
+                <div class="detail-row">
+                  <span id="i18n-detail-machine-manufacturer-label"
+                    >Manufacturer</span
+                  ><strong id="detail-machine-manufacturer">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-machine-hostname-label">Hostname</span
+                  ><strong id="detail-machine-hostname">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-machine-model-label">Model</span
+                  ><strong id="detail-machine-model">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-machine-family-label"
+                    >System Family</span
+                  ><strong id="detail-machine-family">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-machine-arch-label">Architecture</span
+                  ><strong id="detail-machine-arch">--</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="card detail-card">
+              <div class="detail-card-title">
+                <i
+                  data-lucide="key-round"
+                  style="width: 15px; height: 15px"
+                ></i>
+                <span id="i18n-detail-serial-title">Service Tag / Serial</span>
+              </div>
+              <div class="detail-list">
+                <div class="detail-row">
+                  <span id="i18n-detail-serial-bios-label">BIOS Serial</span
+                  ><strong id="detail-serial-service">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-serial-product-label">Product ID</span
+                  ><strong id="detail-serial-product">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-serial-uuid-label">UUID</span
+                  ><strong id="detail-serial-uuid">--</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="card detail-card">
+              <div class="detail-card-title">
+                <i data-lucide="wrench" style="width: 15px; height: 15px"></i>
+                <span id="i18n-detail-mainboard-title">Mainboard</span>
+              </div>
+              <div class="detail-list">
+                <div class="detail-row">
+                  <span id="i18n-detail-mainboard-manufacturer-label"
+                    >Manufacturer</span
+                  ><strong id="detail-board-manufacturer">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-mainboard-model-label">Model</span
+                  ><strong id="detail-board-model">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-mainboard-serial-label">Serial</span
+                  ><strong id="detail-board-serial">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-mainboard-version-label">Version</span
+                  ><strong id="detail-board-version">--</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="card detail-card">
+              <div class="detail-card-title">
+                <i
+                  data-lucide="microchip"
+                  style="width: 15px; height: 15px"
+                ></i>
+                <span id="i18n-detail-bios-title">BIOS / UEFI</span>
+              </div>
+              <div class="detail-list">
+                <div class="detail-row">
+                  <span id="i18n-detail-bios-manufacturer-label"
+                    >Manufacturer</span
+                  ><strong id="detail-bios-manufacturer">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-bios-version-label">Version</span
+                  ><strong id="detail-bios-version">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-bios-release-label">Release Date</span
+                  ><strong id="detail-bios-release">--</strong>
+                </div>
+                <div class="detail-row">
+                  <span id="i18n-detail-bios-smbios-label">SMBIOS</span
+                  ><strong id="detail-bios-smbios">--</strong>
+                </div>
+              </div>
+            </div>
+
+            <div id="detail-battery-cards" class="detail-battery-cards"></div>
+
+            <div id="benchmark-health-cards" class="disk-health-cards"></div>
+          </div>
+        </div>
+
+        <!-- Library Section -->
+        <div id="tab-library" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-library-title">Applications</h1>
+            <p id="i18n-library-subtitle">Install your favorite applications</p>
+          </div>
+
+          <div class="action-bar app-action-bar">
+            <div style="position: relative; flex: 1">
+              <i
+                data-lucide="search"
+                style="
+                  position: absolute;
+                  left: 1rem;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  width: 16px;
+                  color: hsl(var(--muted-foreground));
+                "
+              ></i>
+              <input
+                type="text"
+                id="search-input"
+                class="input"
+                placeholder="Search applications"
+                style="padding-left: 3rem"
+              />
+            </div>
+            <div class="app-action-controls">
+              <button id="launch-revo-btn" class="btn btn-secondary">
+                <i data-lucide="trash-2"></i>
+                <span id="i18n-btn-revo">Revo Uninstaller</span>
+              </button>
+              <button id="add-winget-btn" class="btn btn-primary">
+                <i data-lucide="plus"></i>
+                <span id="i18n-btn-add-online">Add Online</span>
+              </button>
+              <button id="add-installer-btn" class="btn btn-outline">
+                <i data-lucide="file-plus"></i>
+                <span id="i18n-btn-add-local">Add Local</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between mb-6">
+            <div
+              class="flex items-center gap-4 bg-accent-5 p-2 rounded-lg border"
+            >
+              <label
+                class="flex items-center gap-2 text-xs font-medium cursor-pointer"
+                ><input type="checkbox" id="filter-online" checked />
+                Universal</label
+              >
+              <label
+                class="flex items-center gap-2 text-xs font-medium cursor-pointer"
+                ><input type="checkbox" id="filter-x64" checked /> x64</label
+              >
+              <label
+                class="flex items-center gap-2 text-xs font-medium cursor-pointer"
+                ><input type="checkbox" id="filter-x86" checked /> x86</label
+              >
+            </div>
+
+            <div
+              id="selection-header"
+              style="opacity: 0; pointer-events: none; transition: 0.2s"
+              class="flex items-center gap-4"
+            >
+              <span
+                id="selected-count"
+                class="text-xs font-bold text-muted"
+              ></span>
+              <button
+                id="install-selected-btn"
+                class="btn btn-primary h-8 text-xs"
+              >
+                <span id="i18n-btn-install-selected">Install Selected</span>
+              </button>
+              <button
+                id="delete-selected-btn"
+                class="btn btn-outline h-8 text-xs"
+                style="color: #ef4444"
+              >
+                <span id="i18n-btn-delete">Delete</span>
+              </button>
+            </div>
+
+            <button id="view-toggle" class="btn btn-ghost h-9 w-9 p-0">
+              <i id="view-toggle-icon" data-lucide="layout-grid"></i>
+            </button>
+          </div>
+
+          <div id="installer-grid" class="installer-grid"></div>
+        </div>
+
+        <!-- Office Section -->
+        <div id="tab-office" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-office-local-title">Office Images Setup</h1>
+            <p id="i18n-office-local-subtitle">
+              Install Microsoft Office from ISO or IMG images
+            </p>
+          </div>
+          <div class="action-bar office-action-bar">
+            <div class="office-search-wrap">
+              <i
+                data-lucide="search"
+                style="
+                  position: absolute;
+                  left: 1rem;
+                  top: 50%;
+                  transform: translateY(-50%);
+                  width: 16px;
+                  color: hsl(var(--muted-foreground));
+                "
+              ></i>
+              <input
+                type="text"
+                id="office-search-input"
+                class="input"
+                placeholder="Search Office versions"
+                style="padding-left: 3rem"
+              />
+            </div>
+            <div class="office-action-controls">
+              <button id="office-clean-btn" class="btn btn-secondary">
+                <i data-lucide="trash-2"></i>
+                <span id="i18n-btn-office-clean-local">Clean Office</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="mb-6 office-filter-row">
+            <div
+              class="flex items-center gap-4 bg-accent-5 p-2 rounded-lg border"
+              style="width: fit-content"
+            >
+              <label
+                class="flex items-center gap-2 text-xs font-medium cursor-pointer"
+                ><input type="checkbox" id="office-filter-universal" checked />
+                Universal</label
+              >
+              <label
+                class="flex items-center gap-2 text-xs font-medium cursor-pointer"
+                ><input type="checkbox" id="office-filter-x64" checked />
+                x64</label
+              >
+              <label
+                class="flex items-center gap-2 text-xs font-medium cursor-pointer"
+                ><input type="checkbox" id="office-filter-x86" checked />
+                x86</label
+              >
+            </div>
+            <button id="office-view-toggle" class="btn btn-ghost h-9 w-9 p-0">
+              <i id="office-view-toggle-icon" data-lucide="layout-grid"></i>
+            </button>
+          </div>
+
+          <div id="office-list" class="installer-grid"></div>
+        </div>
+
+        <!-- Office Online Section -->
+        <div id="tab-office-online" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-office-online-title">Office Online Setup</h1>
+            <p id="i18n-office-online-subtitle">
+              Install or download Office from Microsoft
+            </p>
+          </div>
+
+          <div class="office-online-layout">
+            <div class="card office-online-sidebar">
+              <div class="office-online-option-group">
+                <h3
+                  id="i18n-office-online-arch-title"
+                  class="text-sm font-bold"
+                >
+                  Architecture
+                </h3>
+                <label
+                  id="office-online-arch-x64-label"
+                  class="office-online-option-item"
+                  ><input
+                    type="radio"
+                    name="office-online-arch"
+                    id="office-online-arch-x64"
+                    value="64"
+                    checked
+                  />
+                  x64</label
+                >
+                <label
+                  id="office-online-arch-x86-label"
+                  class="office-online-option-item"
+                  ><input
+                    type="radio"
+                    name="office-online-arch"
+                    id="office-online-arch-x86"
+                    value="32"
+                  />
+                  x86</label
+                >
+              </div>
+
+              <div class="office-online-option-group">
+                <h3
+                  id="i18n-office-online-mode-title"
+                  class="text-sm font-bold"
+                >
+                  Mode
+                </h3>
+                <label
+                  id="office-online-mode-install-label"
+                  class="office-online-option-item"
+                  ><input
+                    type="radio"
+                    name="office-online-mode"
+                    id="office-online-mode-install"
+                    value="install"
+                    checked
+                  />
+                  Install</label
+                >
+                <label
+                  id="office-online-mode-download-label"
+                  class="office-online-option-item"
+                  ><input
+                    type="radio"
+                    name="office-online-mode"
+                    id="office-online-mode-download"
+                    value="download"
+                  />
+                  Download</label
+                >
+              </div>
+
+              <div class="office-online-option-group">
+                <h3
+                  id="i18n-office-online-audience-title"
+                  class="text-sm font-bold"
+                >
+                  Audience
+                </h3>
+                <label
+                  id="office-online-license-all-label"
+                  class="office-online-option-item"
+                  ><input
+                    type="radio"
+                    name="office-online-license"
+                    id="office-online-license-all"
+                    value="all"
+                    checked
+                  />
+                  All</label
+                >
+                <label
+                  id="office-online-license-retail-label"
+                  class="office-online-option-item"
+                  ><input
+                    type="radio"
+                    name="office-online-license"
+                    id="office-online-license-retail"
+                    value="retail"
+                  />
+                  Personal</label
+                >
+                <label
+                  id="office-online-license-volume-label"
+                  class="office-online-option-item"
+                  ><input
+                    type="radio"
+                    name="office-online-license"
+                    id="office-online-license-volume"
+                    value="volume"
+                  />
+                  Business</label
+                >
+              </div>
+
+              <div class="office-online-option-group">
+                <h3
+                  id="i18n-office-online-language-title"
+                  class="text-sm font-bold"
+                >
+                  Language
+                </h3>
+                <select id="office-online-language" class="input"></select>
+              </div>
+            </div>
+
+            <div class="card office-online-main">
+              <div class="office-online-header">
+                <div class="office-online-header-info">
+                  <h3
+                    id="i18n-office-online-choose-products"
+                    class="text-sm font-bold"
+                  >
+                    Choose Products
+                  </h3>
+
+                  <p
+                    class="text-xs text-muted"
+                    id="office-online-selected-label"
+                  >
+                    No product selected
+                  </p>
+                </div>
+                <div class="office-online-header-actions">
+                  <button id="office-online-clean-btn" class="btn btn-outline">
+                    <i data-lucide="trash-2"></i>
+                    <span id="i18n-btn-office-clean-online">Clean Office</span>
+                  </button>
+                  <button id="office-online-submit-btn" class="btn btn-primary">
+                    <i data-lucide="package-check"></i>
+                    <span id="i18n-btn-office-online-submit">Install</span>
+                  </button>
+                </div>
+              </div>
+              <div
+                id="office-online-catalog"
+                class="office-online-catalog"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Driver Section -->
+        <div id="tab-driver" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-driver-title">Driver Backup & Restore</h1>
+            <p id="i18n-driver-subtitle">
+              Backup installed drivers and restore them when needed
+            </p>
+          </div>
+
+          <div class="driver-tools-layout">
+            <div class="card driver-tool-card">
+              <div class="driver-tool-header">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="archive" style="width: 16px"></i>
+                  <span id="i18n-driver-backup-title">Backup Drivers</span>
+                </h3>
+                <p id="i18n-driver-backup-desc" class="text-sm text-muted">
+                  Backup all driver packages from this system
+                </p>
+              </div>
+              <div class="driver-path-row">
+                <input
+                  type="text"
+                  id="driver-backup-path"
+                  class="input"
+                  placeholder="Select backup destination folder"
+                  readonly
+                />
+                <button id="driver-backup-browse-btn" class="btn btn-outline">
+                  <i data-lucide="folder-open" style="width: 16px"></i>
+                  <span id="i18n-driver-backup-browse">Browse</span>
+                </button>
+              </div>
+              <div class="driver-tool-actions">
+                <button
+                  id="driver-backup-run-btn"
+                  class="btn btn-primary w-full"
+                >
+                  <i data-lucide="download" style="width: 16px"></i>
+                  <span id="i18n-driver-backup-run">Backup</span>
+                </button>
+              </div>
+              <p id="i18n-driver-backup-hint" class="text-xs text-muted">
+                Should save backups on another partition
+              </p>
+            </div>
+
+            <div class="card driver-tool-card">
+              <div class="driver-tool-header">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="history" style="width: 16px"></i>
+                  <span id="i18n-driver-restore-title">Restore Drivers</span>
+                </h3>
+                <p id="i18n-driver-restore-desc" class="text-sm text-muted">
+                  Restore drivers from a backup folder
+                </p>
+              </div>
+              <div class="driver-path-row">
+                <input
+                  type="text"
+                  id="driver-restore-path"
+                  class="input"
+                  placeholder="Select driver backup folder"
+                  readonly
+                />
+                <button id="driver-restore-browse-btn" class="btn btn-outline">
+                  <i data-lucide="folder-open" style="width: 16px"></i>
+                  <span id="i18n-driver-restore-browse">Browse</span>
+                </button>
+              </div>
+              <div class="driver-tool-actions">
+                <button
+                  id="driver-restore-run-btn"
+                  class="btn btn-primary w-full"
+                >
+                  <i data-lucide="upload" style="width: 16px"></i>
+                  <span id="i18n-driver-restore-run">Restore</span>
+                </button>
+              </div>
+              <p id="i18n-driver-restore-hint" class="text-xs text-muted">
+                Run as Administrator for best compatibility
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cleanup Section -->
+        <div id="tab-cleanup" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-cleanup-title">System Cleanup</h1>
+            <p id="i18n-cleanup-subtitle">
+              Free RAM and clean temporary disk data
+            </p>
+          </div>
+
+          <div class="driver-tools-layout">
+            <div class="card driver-tool-card">
+              <div class="driver-tool-header">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="memory-stick" style="width: 16px"></i>
+                  <span id="i18n-cleanup-ram-title">RAM Cleanup</span>
+                </h3>
+                <p id="i18n-cleanup-ram-desc" class="text-sm text-muted">
+                  Trim working sets and purge standby memory
+                </p>
+              </div>
+              <div class="driver-tool-actions">
+                <button id="cleanup-ram-btn" class="btn btn-primary w-full">
+                  <i data-lucide="zap" style="width: 16px"></i>
+                  <span id="i18n-cleanup-ram-btn">Clean RAM</span>
+                </button>
+              </div>
+              <p id="cleanup-ram-result" class="text-xs text-muted"></p>
+              <p id="i18n-cleanup-ram-hint" class="text-xs text-muted">
+                Best results when running as Administrator
+              </p>
+            </div>
+
+            <div class="card driver-tool-card">
+              <div class="driver-tool-header">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="hard-drive" style="width: 16px"></i>
+                  <span id="i18n-cleanup-disk-title">Disk Deep Cleanup</span>
+                </h3>
+                <p id="i18n-cleanup-disk-desc" class="text-sm text-muted">
+                  Remove temp files, recycle bin and more
+                </p>
+              </div>
+              <div class="driver-tool-actions">
+                <button id="cleanup-disk-btn" class="btn btn-primary w-full">
+                  <i data-lucide="trash-2" style="width: 16px"></i>
+                  <span id="i18n-cleanup-disk-btn">Deep Clean Disk</span>
+                </button>
+              </div>
+              <p id="cleanup-disk-result" class="text-xs text-muted"></p>
+              <p id="i18n-cleanup-disk-hint" class="text-xs text-muted">
+                Deep cleanup may take several minutes
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activation Section -->
+        <div id="tab-activation" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-activation-title">Activation</h1>
+            <p id="i18n-activation-subtitle">
+              Activation scripts based on MAS (massgrave.dev)
+            </p>
+          </div>
+
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 1.5rem;
+              margin-bottom: 1.5rem;
+            "
+          >
+            <div class="card flex flex-col gap-4 h-full">
+              <h3 class="font-bold flex items-center gap-2">
+                <i data-lucide="monitor" style="width: 16px"></i>
+                <span id="i18n-activation-windows-title">Windows</span>
+              </h3>
+              <p id="i18n-activation-windows-desc" class="text-sm text-muted">
+                Permanent Digital License (HWID) activation for Windows 10 & 11
+              </p>
+              <button
+                id="active-win-hwid-btn"
+                class="btn btn-primary w-full mt-auto"
+              >
+                <i data-lucide="shield-check" style="width: 16px"></i>
+                <span id="i18n-activation-windows-btn">Activate Windows</span>
+              </button>
+            </div>
+
+            <div class="card flex flex-col gap-4 h-full">
+              <h3 class="font-bold flex items-center gap-2">
+                <i data-lucide="file-text" style="width: 16px"></i>
+                <span id="i18n-activation-office-title">Office</span>
+              </h3>
+              <p id="i18n-activation-office-desc" class="text-sm text-muted">
+                Safe Ohook method for all Office versions including Microsoft
+                365
+              </p>
+              <button
+                id="page-active-office-btn"
+                class="btn btn-primary w-full mt-auto"
+              >
+                <i data-lucide="file-text" style="width: 16px"></i>
+                <span id="i18n-activation-office-btn">Activate Office</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="font-bold mb-1 flex items-center gap-2">
+              <i data-lucide="wrench" style="width: 16px"></i>
+              <span id="i18n-activation-troubleshoot-title">Troubleshoot</span>
+            </h3>
+            <p
+              id="i18n-activation-troubleshoot-desc"
+              class="text-sm text-muted"
+              style="margin-top: 1rem"
+            >
+              Fix common activation issues like ISPs block or TLS errors
+            </p>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+                margin-top: 1rem;
+              "
+            >
+              <button id="page-dns-fix-btn" class="btn btn-outline w-full">
+                <i data-lucide="globe" style="width: 16px"></i>
+                <span id="i18n-activation-dns-btn">Run ISPs Fix</span>
+              </button>
+              <button id="page-tls-fix-btn" class="btn btn-outline w-full">
+                <i data-lucide="lock" style="width: 16px"></i>
+                <span id="i18n-activation-tls-btn">Run TLS Fix</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="tab-settings" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-settings-title">Settings</h1>
+            <p id="i18n-settings-subtitle">
+              Manage application data and preferences
+            </p>
+          </div>
+          <div class="settings-stack">
+            <div class="card settings-card bg-accent-5">
+              <div class="theme-option">
+                <div class="theme-copy">
+                  <h4 id="i18n-settings-appearance-title" class="font-bold">
+                    Appearance
+                  </h4>
+                  <p
+                    id="i18n-settings-appearance-desc"
+                    class="text-sm text-muted"
+                  >
+                    Switch between dark and light themes
+                  </p>
+                </div>
+                <div class="theme-switch-wrap">
+                  <span id="theme-mode-label" class="theme-mode-label"
+                    >Dark Mode</span
+                  >
+                  <label class="theme-switch" for="theme-mode-toggle">
+                    <input type="checkbox" id="theme-mode-toggle" />
+                    <span class="theme-switch-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="card settings-card bg-accent-5">
+              <div class="theme-option">
+                <div class="theme-copy">
+                  <h4 id="i18n-settings-language-title" class="font-bold">
+                    Language
+                  </h4>
+                  <p
+                    id="i18n-settings-language-desc"
+                    class="text-sm text-muted"
+                  >
+                    Choose application display language
+                  </p>
+                </div>
+                <div class="theme-switch-wrap language-select-wrap">
+                  <select id="app-language-select" class="input">
+                    <option value="en">English</option>
+                    <option value="vi">Tiếng Việt</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="card settings-card bg-accent-5">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h4 id="i18n-settings-reset-title" class="font-bold">
+                    Reset Applications
+                  </h4>
+                  <p id="i18n-settings-reset-desc" class="text-sm text-muted">
+                    Clear all saved application data. This cannot be undone
+                  </p>
+                </div>
+                <button
+                  id="clear-all-data-btn"
+                  class="btn btn-outline"
+                  style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2)"
+                >
+                  <span id="i18n-settings-reset-btn">Reset All</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- About Section -->
+        <div id="tab-about" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-about-title">About</h1>
+            <p id="i18n-about-subtitle">Project information</p>
+          </div>
+
+          <div class="settings-stack">
+            <div class="card settings-card bg-accent-5">
+              <div class="credit-item" style="padding: 0">
+                <span id="i18n-credit-about-label" class="credit-label"
+                  >About</span
+                >
+                <span id="i18n-credit-about-value" class="credit-value"
+                  >Windows toolkit for auto install apps</span
+                >
+              </div>
+            </div>
+            <div class="card settings-card bg-accent-5">
+              <div class="credit-item" style="padding: 0">
+                <span id="i18n-credit-version-label" class="credit-label"
+                  >Version</span
+                >
+                <span class="credit-value">1.0.0</span>
+              </div>
+            </div>
+            <div class="card settings-card bg-accent-5">
+              <div class="credit-item" style="padding: 0">
+                <span id="i18n-credit-created-label" class="credit-label"
+                  >Created by</span
+                >
+                <a href="#" id="creator-link" class="credit-link"
+                  >mhqb365.com</a
+                >
+              </div>
+            </div>
+            <div class="card settings-card bg-accent-5">
+              <div class="credit-item" style="padding: 0">
+                <span id="i18n-credit-source-label" class="credit-label"
+                  >Opensource at</span
+                >
+                <a href="#" id="github-link" class="credit-link"
+                  >github.com/mhqb365/Winstaller-Hub</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="winget-modal" class="panel modal-center" style="display: none">
+      <div class="panel-header">
+        <h3 id="i18n-winget-modal-title" class="font-bold">
+          Search Winget Repository
+        </h3>
+        <button
+          id="close-modal"
+          class="btn btn-ghost"
+          style="width: 32px; padding: 0"
+        >
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="panel-content">
+        <div class="flex gap-2 mb-4">
+          <input
+            type="text"
+            id="winget-search-input"
+            class="input"
+            placeholder="Enter app name (e.g. Chrome)"
+          />
+          <button id="winget-search-btn" class="btn btn-primary">
+            <span id="i18n-winget-search-btn">Search</span>
+          </button>
+        </div>
+        <div
+          id="winget-results"
+          class="flex flex-col gap-2 overflow-y-auto"
+          style="max-height: 400px"
+        >
+          <p
+            id="i18n-winget-results-placeholder"
+            class="text-center text-muted text-sm py-4"
+          >
+            Search results will appear here
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="floating-dock">
+      <button id="task-toggle" class="dock-btn" title="Installation tasks">
+        <i data-lucide="package-check"></i>
+        <span id="task-badge" class="badge"></span>
+      </button>
+      <div class="dock-separator"></div>
+      <button
+        id="notification-toggle"
+        class="dock-btn"
+        title="System notifications"
+      >
+        <i data-lucide="bell"></i>
+        <span id="noti-badge" class="badge"></span>
+      </button>
+    </div>
+    <div class="floating-coffee">
+      <button
+        id="coffee-toggle"
+        class="dock-btn dock-btn-pill"
+        title="Buy me a Coffee"
+      >
+        <i data-lucide="coffee"></i>
+        <span id="i18n-buy-coffee-btn">Buy me a Coffee</span>
+      </button>
+    </div>
+
+    <script src="/js/lucide.min.js"></script>
+    <script type="module" src="/src/renderer/main.js"></script>
+  </body>
+</html>

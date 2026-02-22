@@ -35,6 +35,7 @@ const api = {
   deleteFile: (path) => ipcRenderer.invoke("delete-file", path),
   saveLibrary: (data) => ipcRenderer.invoke("save-library", data),
   loadLibrary: () => ipcRenderer.invoke("load-library"),
+  getAppVersion: () => ipcRenderer.invoke("get-app-version"),
   wingetSourceUpdate: () => ipcRenderer.invoke("winget-source-update"),
   getInstalledApps: (options) =>
     ipcRenderer.invoke("get-installed-apps", options),

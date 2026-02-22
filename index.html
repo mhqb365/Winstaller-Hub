@@ -19,7 +19,15 @@
   <body>
     <div id="notification-container"></div>
     <div id="system-loader" class="system-loader">
-      <div class="loader-spinner animate-spin"></div>
+      <div class="loader-spinner">
+        <div class="loader-spinner-ring animate-spin"></div>
+        <img
+          src="/src/renderer/icon.ico"
+          alt=""
+          aria-hidden="true"
+          class="loader-center-icon"
+        />
+      </div>
       <div id="system-loader-text" class="loader-text">System checking...</div>
     </div>
 
@@ -637,49 +645,6 @@
 
               <div class="office-online-option-group">
                 <h3
-                  id="i18n-office-online-audience-title"
-                  class="text-sm font-bold"
-                >
-                  Audience
-                </h3>
-                <label
-                  id="office-online-license-all-label"
-                  class="office-online-option-item"
-                  ><input
-                    type="radio"
-                    name="office-online-license"
-                    id="office-online-license-all"
-                    value="all"
-                    checked
-                  />
-                  All</label
-                >
-                <label
-                  id="office-online-license-retail-label"
-                  class="office-online-option-item"
-                  ><input
-                    type="radio"
-                    name="office-online-license"
-                    id="office-online-license-retail"
-                    value="retail"
-                  />
-                  Personal</label
-                >
-                <label
-                  id="office-online-license-volume-label"
-                  class="office-online-option-item"
-                  ><input
-                    type="radio"
-                    name="office-online-license"
-                    id="office-online-license-volume"
-                    value="volume"
-                  />
-                  Business</label
-                >
-              </div>
-
-              <div class="office-online-option-group">
-                <h3
                   id="i18n-office-online-language-title"
                   class="text-sm font-bold"
                 >
@@ -1051,7 +1016,7 @@
                 <span id="i18n-credit-version-label" class="credit-label"
                   >Version</span
                 >
-                <span class="credit-value">1.0.0</span>
+                <span id="about-version-value" class="credit-value">--</span>
               </div>
             </div>
             <div class="card settings-card bg-accent-5">

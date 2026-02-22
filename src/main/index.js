@@ -129,6 +129,13 @@ app.whenReady().then(() => {
       return [];
     }
   });
+  ipcMain.handle("get-app-version", async () => {
+    try {
+      return app.getVersion();
+    } catch (e) {
+      return "";
+    }
+  });
   const runningProcesses = /* @__PURE__ */ new Map();
   const mountedIsos = /* @__PURE__ */ new Set();
   function cleanup() {

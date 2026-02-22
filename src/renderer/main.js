@@ -45,7 +45,6 @@ let officeUniversalFilter =
 let officeX64Filter = localStorage.getItem("officeX64Filter") !== "false";
 let officeX86Filter = localStorage.getItem("officeX86Filter") !== "false";
 let officeSearchTerm = "";
-let officeOnlineLicenseFilter = "all";
 let officeOnlineSelectedProductIds = /* @__PURE__ */ new Set();
 let driverBackupPath = localStorage.getItem("driverBackupPath") || "";
 let driverRestorePath = localStorage.getItem("driverRestorePath") || "";
@@ -69,6 +68,7 @@ const LANGUAGE_STORAGE_KEY = "appLanguage";
 const themeToggleInput = document.getElementById("theme-mode-toggle");
 const themeModeLabel = document.getElementById("theme-mode-label");
 const appLanguageSelect = document.getElementById("app-language-select");
+const aboutVersionValue = document.getElementById("about-version-value");
 let currentLanguage = resolveLanguage(
   localStorage.getItem(LANGUAGE_STORAGE_KEY),
 );
@@ -156,7 +156,6 @@ const UI_TEXT = {
     "i18n-office-online-subtitle": "Install or download Office from Microsoft",
     "i18n-office-online-arch-title": "Architecture",
     "i18n-office-online-mode-title": "Mode",
-    "i18n-office-online-audience-title": "Audience",
     "i18n-office-online-language-title": "Language",
     "i18n-office-online-choose-products": "Choose Products",
     "i18n-btn-office-clean-online": "Clean Office",
@@ -297,7 +296,6 @@ const UI_TEXT = {
     "i18n-office-online-subtitle": "Cài hoặc tải Office từ Microsoft",
     "i18n-office-online-arch-title": "Kiến trúc",
     "i18n-office-online-mode-title": "Chế độ",
-    "i18n-office-online-audience-title": "Đối tượng",
     "i18n-office-online-language-title": "Ngôn ngữ",
     "i18n-office-online-choose-products": "Chọn sản phẩm",
     "i18n-btn-office-clean-online": "Dọn Office",
@@ -402,7 +400,7 @@ const MSG = {
     local: "Local",
     noApplicationsFound: "No applications found",
     noOfficeInstallersFound: "No Office installers found",
-    officeCatalogFull: "1. Full",
+    officeCatalogFull: "1. Suites",
     officeCatalogStandalone: "2. Standalone",
     officeCatalogNoProducts: "No products available with current filter",
     officeCatalogNoFullSuite: "No full-suite package in this version",
@@ -417,9 +415,6 @@ const MSG = {
     themeLightMode: "Light Mode",
     languageEnglish: "English",
     languageVietnamese: "Vietnamese",
-    audienceAll: "All",
-    audiencePersonal: "Personal",
-    audienceBusiness: "Business",
     architectureX64: "x64",
     architectureX86: "x86",
     live: "Live",
@@ -497,9 +492,6 @@ const MSG = {
     themeLightMode: "Chế độ sáng",
     languageEnglish: "English",
     languageVietnamese: "Tiếng Việt",
-    audienceAll: "Tất cả",
-    audiencePersonal: "Cá nhân",
-    audienceBusiness: "Doanh nghiệp",
     architectureX64: "x64",
     architectureX86: "x86",
     live: "Trực tiếp",
@@ -592,9 +584,6 @@ function applyStaticI18n() {
   setLabelText("office-online-arch-x86-label", tr("architectureX86"));
   setLabelText("office-online-mode-install-label", tr("install"));
   setLabelText("office-online-mode-download-label", tr("download"));
-  setLabelText("office-online-license-all-label", tr("audienceAll"));
-  setLabelText("office-online-license-retail-label", tr("audiencePersonal"));
-  setLabelText("office-online-license-volume-label", tr("audienceBusiness"));
   if (appLanguageSelect) {
     const enOpt = appLanguageSelect.querySelector('option[value="en"]');
     const viOpt = appLanguageSelect.querySelector('option[value="vi"]');
@@ -685,10 +674,12 @@ const officeOnlineLanguages = [
   { id: "uk-ua", name: "Ukrainian" },
   { id: "vi-vn", name: "Vietnamese" },
 ];
+// Synced with Microsoft OCT product manifest loaded by
+// https://config.office.com/deploymentsettings (checked: 2026-02-22).
 const officeOnlineCatalogData = [
   {
     key: "m365",
-    title: "Microsoft 365",
+    title: "Microsoft 365 Apps",
     tagClass: "office-online-tag-m365",
     products: [
       {
@@ -696,22 +687,36 @@ const officeOnlineCatalogData = [
         name: "Apps for enterprise",
         license: "retail",
       },
+      // {
+      //   id: "O365ProPlusEEANoTeamsRetail",
+      //   name: "Apps for enterprise (no Teams)",
+      //   license: "retail",
+      // },
       {
         id: "O365BusinessRetail",
         name: "Apps for business",
         license: "retail",
       },
-      { id: "O365HomePremRetail", name: "Home Premium", license: "retail" },
-      { id: "AccessRetail", name: "Access", license: "retail" },
-      { id: "ExcelRetail", name: "Excel", license: "retail" },
-      { id: "OutlookRetail", name: "Outlook", license: "retail" },
-      { id: "PowerPointRetail", name: "PowerPoint", license: "retail" },
-      { id: "PublisherRetail", name: "Publisher", license: "retail" },
-      { id: "WordRetail", name: "Word", license: "retail" },
-      { id: "ProjectProRetail", name: "Project Pro", license: "retail" },
-      { id: "ProjectStdRetail", name: "Project Standard", license: "retail" },
-      { id: "VisioProRetail", name: "Visio Pro", license: "retail" },
-      { id: "VisioStdRetail", name: "Visio Standard", license: "retail" },
+      // {
+      //   id: "O365BusinessEEANoTeamsRetail",
+      //   name: "Apps for business (no Teams)",
+      //   license: "retail",
+      // },
+      {
+        id: "ProjectProRetail",
+        name: "Project Online Desktop",
+        license: "retail",
+      },
+      {
+        id: "VisioProRetail",
+        name: "Visio Plan 2",
+        license: "retail",
+      },
+      {
+        id: "AccessRuntimeRetail",
+        name: "Access Runtime",
+        license: "retail",
+      },
     ],
   },
   {
@@ -719,44 +724,16 @@ const officeOnlineCatalogData = [
     title: "Office LTSC 2024",
     tagClass: "office-online-tag-2024",
     products: [
-      { id: "Professional2024Retail", name: "Professional", license: "retail" },
-      { id: "Professional2024Volume", name: "Professional", license: "volume" },
-      { id: "Standard2024Volume", name: "Standard", license: "volume" },
       { id: "ProPlus2024Volume", name: "Pro Plus", license: "volume" },
-      { id: "ProjectPro2024Retail", name: "Project Pro", license: "retail" },
+      { id: "Standard2024Volume", name: "Standard", license: "volume" },
       { id: "ProjectPro2024Volume", name: "Project Pro", license: "volume" },
-      {
-        id: "ProjectStd2024Retail",
-        name: "Project Standard",
-        license: "retail",
-      },
       {
         id: "ProjectStd2024Volume",
         name: "Project Standard",
         license: "volume",
       },
-      { id: "VisioPro2024Retail", name: "Visio Pro", license: "retail" },
       { id: "VisioPro2024Volume", name: "Visio Pro", license: "volume" },
-      { id: "VisioStd2024Retail", name: "Visio Standard", license: "retail" },
       { id: "VisioStd2024Volume", name: "Visio Standard", license: "volume" },
-      { id: "Word2024Retail", name: "Word", license: "retail" },
-      { id: "Word2024Volume", name: "Word", license: "volume" },
-      { id: "Excel2024Retail", name: "Excel", license: "retail" },
-      { id: "Excel2024Volume", name: "Excel", license: "volume" },
-      { id: "PowerPoint2024Retail", name: "PowerPoint", license: "retail" },
-      { id: "PowerPoint2024Volume", name: "PowerPoint", license: "volume" },
-      { id: "Outlook2024Retail", name: "Outlook", license: "retail" },
-      { id: "Outlook2024Volume", name: "Outlook", license: "volume" },
-      { id: "Access2024Retail", name: "Access", license: "retail" },
-      { id: "Access2024Volume", name: "Access", license: "volume" },
-      { id: "Publisher2024Retail", name: "Publisher", license: "retail" },
-      { id: "Publisher2024Volume", name: "Publisher", license: "volume" },
-      { id: "HomeStudent2024Retail", name: "Home Student", license: "retail" },
-      {
-        id: "HomeBusiness2024Retail",
-        name: "Home Business",
-        license: "retail",
-      },
     ],
   },
   {
@@ -764,44 +741,22 @@ const officeOnlineCatalogData = [
     title: "Office LTSC 2021",
     tagClass: "office-online-tag-2021",
     products: [
-      { id: "Professional2021Retail", name: "Professional", license: "retail" },
-      { id: "Professional2021Volume", name: "Professional", license: "volume" },
-      { id: "Standard2021Volume", name: "Standard", license: "volume" },
       { id: "ProPlus2021Volume", name: "Pro Plus", license: "volume" },
-      { id: "ProjectPro2021Retail", name: "Project Pro", license: "retail" },
+      { id: "Standard2021Volume", name: "Standard", license: "volume" },
+      // { id: "ProPlusSPLA2021Volume", name: "Pro Plus SPLA", license: "volume" },
+      // {
+      //   id: "StandardSPLA2021Volume",
+      //   name: "Standard SPLA",
+      //   license: "volume",
+      // },
       { id: "ProjectPro2021Volume", name: "Project Pro", license: "volume" },
-      {
-        id: "ProjectStd2021Retail",
-        name: "Project Standard",
-        license: "retail",
-      },
       {
         id: "ProjectStd2021Volume",
         name: "Project Standard",
         license: "volume",
       },
-      { id: "VisioPro2021Retail", name: "Visio Pro", license: "retail" },
       { id: "VisioPro2021Volume", name: "Visio Pro", license: "volume" },
-      { id: "VisioStd2021Retail", name: "Visio Standard", license: "retail" },
       { id: "VisioStd2021Volume", name: "Visio Standard", license: "volume" },
-      { id: "Word2021Retail", name: "Word", license: "retail" },
-      { id: "Word2021Volume", name: "Word", license: "volume" },
-      { id: "Excel2021Retail", name: "Excel", license: "retail" },
-      { id: "Excel2021Volume", name: "Excel", license: "volume" },
-      { id: "PowerPoint2021Retail", name: "PowerPoint", license: "retail" },
-      { id: "PowerPoint2021Volume", name: "PowerPoint", license: "volume" },
-      { id: "Outlook2021Retail", name: "Outlook", license: "retail" },
-      { id: "Outlook2021Volume", name: "Outlook", license: "volume" },
-      { id: "Access2021Retail", name: "Access", license: "retail" },
-      { id: "Access2021Volume", name: "Access", license: "volume" },
-      { id: "Publisher2021Retail", name: "Publisher", license: "retail" },
-      { id: "Publisher2021Volume", name: "Publisher", license: "volume" },
-      { id: "HomeStudent2021Retail", name: "Home Student", license: "retail" },
-      {
-        id: "HomeBusiness2021Retail",
-        name: "Home Business",
-        license: "retail",
-      },
     ],
   },
   {
@@ -819,6 +774,26 @@ const officeOnlineCatalogData = [
       },
       { id: "VisioPro2019Volume", name: "Visio Pro", license: "volume" },
       { id: "VisioStd2019Volume", name: "Visio Standard", license: "volume" },
+      // {
+      //   id: "SkypeforBusinessEntry2019Retail",
+      //   name: "Skype for Business Basic",
+      //   license: "retail",
+      // },
+    ],
+  },
+  {
+    key: "2016",
+    title: "Office 2016",
+    tagClass: "office-online-tag-m365",
+    products: [
+      { id: "ProjectProXVolume", name: "Project Pro", license: "volume" },
+      {
+        id: "ProjectStdXVolume",
+        name: "Project Standard",
+        license: "volume",
+      },
+      { id: "VisioProXVolume", name: "Visio Pro", license: "volume" },
+      { id: "VisioStdXVolume", name: "Visio Standard", license: "volume" },
     ],
   },
 ];
@@ -2053,9 +2028,6 @@ const officeOnlineCleanBtn = document.getElementById("office-online-clean-btn");
 const officeOnlineModeInputs = document.querySelectorAll(
   'input[name="office-online-mode"]',
 );
-const officeOnlineLicenseInputs = document.querySelectorAll(
-  'input[name="office-online-license"]',
-);
 const driverBackupPathInput = document.getElementById("driver-backup-path");
 const driverBackupBrowseBtn = document.getElementById(
   "driver-backup-browse-btn",
@@ -2086,39 +2058,48 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 function getOfficeOnlineChannel(productId) {
+  if (productId === "AccessRuntimeRetail") return "SemiAnnual";
+  if (productId.endsWith("XVolume")) return "SemiAnnual";
+  if (productId === "SkypeforBusinessEntry2019Retail") return "PerpetualVL2019";
   if (productId.includes("2024Volume")) return "PerpetualVL2024";
   if (productId.includes("2021Volume")) return "PerpetualVL2021";
   if (productId.includes("2019Volume")) return "PerpetualVL2019";
   return "Current";
 }
 function getOfficeOnlineFilteredCatalog() {
-  return officeOnlineCatalogData
-    .map((version) => ({
-      ...version,
-      products: version.products.filter(
-        (product) =>
-          officeOnlineLicenseFilter === "all" ||
-          product.license === officeOnlineLicenseFilter,
-      ),
-    }))
-    .filter((version) => version.products.length > 0);
+  return officeOnlineCatalogData;
 }
 function isOfficeOnlineFullSuiteName(name) {
   const suiteNames = /* @__PURE__ */ new Set([
     "apps for enterprise",
+    "apps for enterprise (no teams)",
     "apps for business",
-    "home premium",
-    "professional",
+    "apps for business (no teams)",
     "standard",
+    "standard spla",
     "pro plus",
-    "home student",
-    "home business",
+    "pro plus spla",
   ]);
   return suiteNames.has(
     String(name || "")
       .toLowerCase()
       .trim(),
   );
+}
+function getOfficeOnlineStandaloneFamily(product) {
+  if (!product || isOfficeOnlineFullSuiteName(product.name)) return "";
+  const productId = String(product.id || "").toLowerCase();
+  const productName = String(product.name || "").toLowerCase();
+  if (productId.includes("project") || productName.includes("project")) {
+    return "project";
+  }
+  if (productId.includes("visio") || productName.includes("visio")) {
+    return "visio";
+  }
+  if (productId.includes("access") || productName.includes("access")) {
+    return "access";
+  }
+  return `single:${productId || productName}`;
 }
 function findOfficeOnlineProduct(productId) {
   for (const version of officeOnlineCatalogData) {
@@ -2144,10 +2125,44 @@ function ensureOfficeOnlineSelection(filteredCatalog) {
     officeOnlineSelectedProductIds = /* @__PURE__ */ new Set();
     return;
   }
-  const prunedSelection = Array.from(officeOnlineSelectedProductIds).filter(
-    (id) => visibleIds.includes(id),
+  const visibleIdSet = new Set(visibleIds);
+  const selectedIds = Array.from(officeOnlineSelectedProductIds).filter((id) =>
+    visibleIdSet.has(id),
   );
-  officeOnlineSelectedProductIds = new Set(prunedSelection);
+  if (selectedIds.length === 0) {
+    officeOnlineSelectedProductIds = /* @__PURE__ */ new Set();
+    return;
+  }
+
+  // Keep selection coherent: one Office version, one suite, one standalone per family.
+  const latestProduct = findOfficeOnlineProduct(
+    selectedIds[selectedIds.length - 1],
+  );
+  if (!latestProduct) {
+    officeOnlineSelectedProductIds = /* @__PURE__ */ new Set();
+    return;
+  }
+  const normalizedIdsReversed = [];
+  let suiteSelected = false;
+  const standaloneFamilySelected = /* @__PURE__ */ new Set();
+  for (let i = selectedIds.length - 1; i >= 0; i -= 1) {
+    const id = selectedIds[i];
+    const product = findOfficeOnlineProduct(id);
+    if (!product) continue;
+    if (product.versionKey !== latestProduct.versionKey) continue;
+    const isSuite = isOfficeOnlineFullSuiteName(product.name);
+    if (isSuite) {
+      if (suiteSelected) continue;
+      suiteSelected = true;
+    } else {
+      const standaloneFamily = getOfficeOnlineStandaloneFamily(product);
+      if (standaloneFamilySelected.has(standaloneFamily)) continue;
+      standaloneFamilySelected.add(standaloneFamily);
+    }
+    normalizedIdsReversed.push(id);
+  }
+  normalizedIdsReversed.reverse();
+  officeOnlineSelectedProductIds = new Set(normalizedIdsReversed);
 }
 function getSelectedOfficeOnlineProducts() {
   return Array.from(officeOnlineSelectedProductIds)
@@ -2241,7 +2256,7 @@ function renderOfficeOnlineCatalog() {
                 : currentLanguage === "vi"
                   ? "Retail"
                   : "Retail";
-            const rowLabel = `${product.name} ${licenseLabel}`;
+            const rowLabel = `${product.name}`;
             return `
               <label class="office-online-product-option ${checkedClass}">
                 <input type="checkbox" name="office-online-product" value="${product.id}" ${checked ? "checked" : ""} />
@@ -2299,29 +2314,44 @@ function renderOfficeOnlineCatalog() {
         const productId = event.target.value;
         if (event.target.checked) {
           const targetProduct = findOfficeOnlineProduct(productId);
-          const hasDifferentVersion = getSelectedOfficeOnlineProducts().some(
-            (product) =>
-              targetProduct && product.versionKey !== targetProduct.versionKey,
-          );
-          if (hasDifferentVersion) {
-            officeOnlineSelectedProductIds.clear();
-            officeOnlineCatalogEl
-              .querySelectorAll('input[name="office-online-product"]')
-              .forEach((checkbox) => {
-                checkbox.checked = false;
-                const row = checkbox.closest(".office-online-product-option");
-                if (row) row.classList.remove("is-selected");
-              });
+          if (targetProduct) {
+            const targetIsSuite = isOfficeOnlineFullSuiteName(
+              targetProduct.name,
+            );
+            const targetStandaloneFamily = targetIsSuite
+              ? ""
+              : getOfficeOnlineStandaloneFamily(targetProduct);
+            const nextSelection = /* @__PURE__ */ new Set();
+            Array.from(officeOnlineSelectedProductIds).forEach((selectedId) => {
+              if (selectedId === productId) return;
+              const selectedProduct = findOfficeOnlineProduct(selectedId);
+              if (!selectedProduct) return;
+              if (selectedProduct.versionKey !== targetProduct.versionKey) {
+                return;
+              }
+              const selectedIsSuite = isOfficeOnlineFullSuiteName(
+                selectedProduct.name,
+              );
+              if (targetIsSuite && selectedIsSuite) return;
+              if (!targetIsSuite && !selectedIsSuite) {
+                const selectedStandaloneFamily =
+                  getOfficeOnlineStandaloneFamily(selectedProduct);
+                if (
+                  targetStandaloneFamily &&
+                  selectedStandaloneFamily === targetStandaloneFamily
+                ) {
+                  return;
+                }
+              }
+              nextSelection.add(selectedId);
+            });
+            nextSelection.add(productId);
+            officeOnlineSelectedProductIds = nextSelection;
           }
-          officeOnlineSelectedProductIds.add(productId);
         } else {
           officeOnlineSelectedProductIds.delete(productId);
         }
-        const option = event.target.closest(".office-online-product-option");
-        if (option) {
-          option.classList.toggle("is-selected", event.target.checked);
-        }
-        updateOfficeOnlineSelectionLabel();
+        renderOfficeOnlineCatalog();
       };
     });
   updateOfficeOnlineSelectionLabel();
@@ -3691,14 +3721,6 @@ if (officeX86Check) {
     renderOfficeLocal();
   };
 }
-if (officeOnlineLicenseInputs && officeOnlineLicenseInputs.length > 0) {
-  officeOnlineLicenseInputs.forEach((input) => {
-    input.onchange = (event) => {
-      officeOnlineLicenseFilter = event.target.value || "all";
-      renderOfficeOnlineCatalog();
-    };
-  });
-}
 if (officeOnlineModeInputs && officeOnlineModeInputs.length > 0) {
   officeOnlineModeInputs.forEach((input) => {
     input.onchange = () => updateOfficeOnlineSubmitButtonLabel();
@@ -4157,6 +4179,17 @@ function hideSystemLoader() {
 }
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+async function initAboutVersion() {
+  if (!aboutVersionValue || !window.api || !window.api.getAppVersion) return;
+  try {
+    const version = String((await window.api.getAppVersion()) || "").trim();
+    if (!version) return;
+    aboutVersionValue.innerText = version;
+  } catch (error) {
+    console.warn("Failed to load app version:", error);
+  }
+}
+
 async function checkAndInstallWinget() {
   if (!window.api || !window.api.checkWingetStatus || !window.api.installWinget)
     return;
@@ -4254,6 +4287,7 @@ async function checkAndInstallWinget() {
 async function initApp() {
   initLanguageSelector();
   initThemeToggle();
+  await initAboutVersion();
   await checkAndInstallWinget();
   if (window.api && window.api.onInstalledAppsUpdated) {
     disposeInstalledAppsUpdatedListener = window.api.onInstalledAppsUpdated(
@@ -4263,12 +4297,6 @@ async function initApp() {
 
   if (window.api && window.api.loadLibrary) {
     installers = await window.api.loadLibrary();
-  }
-  const selectedLicenseInput = document.querySelector(
-    'input[name="office-online-license"]:checked',
-  );
-  if (selectedLicenseInput) {
-    officeOnlineLicenseFilter = selectedLicenseInput.value || "all";
   }
   renderOfficeOnlineCatalog();
   updateOfficeOnlineSubmitButtonLabel();

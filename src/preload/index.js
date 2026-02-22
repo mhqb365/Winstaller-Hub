@@ -36,6 +36,9 @@ const api = {
   saveLibrary: (data) => ipcRenderer.invoke("save-library", data),
   loadLibrary: () => ipcRenderer.invoke("load-library"),
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  getWindowsUpdateState: () => ipcRenderer.invoke("get-windows-update-state"),
+  setWindowsUpdateDisabled: (disabled) =>
+    ipcRenderer.invoke("set-windows-update-disabled", disabled),
   wingetSourceUpdate: () => ipcRenderer.invoke("winget-source-update"),
   getInstalledApps: (options) =>
     ipcRenderer.invoke("get-installed-apps", options),

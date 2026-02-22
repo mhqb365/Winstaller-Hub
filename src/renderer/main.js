@@ -52,6 +52,8 @@ let driverBackupBusy = false;
 let driverRestoreBusy = false;
 let cleanupRamBusy = false;
 let cleanupDiskBusy = false;
+let windowsUpdateBusy = false;
+let windowsUpdateState = null;
 let benchmarkBusy = false;
 let benchmarkHealthBusy = false;
 let benchmarkLastMeta = null;
@@ -88,6 +90,8 @@ const UI_TEXT = {
     "i18n-nav-office-images": "Images Setup",
     "i18n-nav-driver": "Drivers",
     "i18n-nav-cleanup": "Cleanup",
+    "i18n-nav-utilities": "Utilities",
+    "i18n-nav-utilities-home": "System",
     "i18n-nav-activation": "Activation",
     "i18n-nav-settings": "Settings",
     "i18n-nav-about": "About",
@@ -160,29 +164,35 @@ const UI_TEXT = {
     "i18n-office-online-choose-products": "Choose Products",
     "i18n-btn-office-clean-online": "Clean Office",
     "i18n-btn-office-online-submit": "Install",
-    "i18n-driver-title": "Driver Backup & Restore",
-    "i18n-driver-subtitle":
-      "Backup installed drivers and restore them when needed",
-    "i18n-driver-backup-title": "Backup Drivers",
-    "i18n-driver-backup-desc": "Backup all driver packages from this system",
+    "i18n-driver-title": "Drivers",
+    "i18n-driver-subtitle": "Backup or restore drivers",
+    "i18n-driver-backup-title": "Backup",
+    "i18n-driver-backup-desc": "Backup all driver packages",
     "i18n-driver-backup-browse": "Browse",
     "i18n-driver-backup-run": "Backup",
     "i18n-driver-backup-hint": "Should save backups on another partition",
-    "i18n-driver-restore-title": "Restore Drivers",
-    "i18n-driver-restore-desc": "Restore drivers from a backup folder",
+    "i18n-driver-restore-title": "Restore",
+    "i18n-driver-restore-desc": "Restore drivers from backup folder",
     "i18n-driver-restore-browse": "Browse",
     "i18n-driver-restore-run": "Restore",
     "i18n-driver-restore-hint": "Run as Administrator for best compatibility",
-    "i18n-cleanup-title": "System Cleanup",
+    "i18n-cleanup-title": "Cleanup",
     "i18n-cleanup-subtitle": "Free RAM and clean temporary disk data",
     "i18n-cleanup-ram-title": "RAM Cleanup",
     "i18n-cleanup-ram-desc": "Trim working sets and purge standby memory",
     "i18n-cleanup-ram-btn": "Clean RAM",
     "i18n-cleanup-ram-hint": "Best results when running as Administrator",
-    "i18n-cleanup-disk-title": "Disk Deep Cleanup",
+    "i18n-cleanup-disk-title": "Disk Cleanup",
     "i18n-cleanup-disk-desc": "Remove temp files, recycle bin and more",
-    "i18n-cleanup-disk-btn": "Deep Clean Disk",
-    "i18n-cleanup-disk-hint": "Deep cleanup may take several minutes",
+    "i18n-cleanup-disk-btn": "Clean Disk",
+    "i18n-cleanup-disk-hint": "Cleanup may take several minutes",
+    "i18n-utilities-title": "System",
+    "i18n-utilities-subtitle": "Useful system tools",
+    "i18n-utilities-wu-title": "Windows Update",
+    "i18n-utilities-wu-desc": "Quickly disable or enable Windows Update",
+    "i18n-utilities-wu-status-label": "Current status",
+    "i18n-utilities-wu-hint":
+      "Requires Administrator privileges to apply changes",
     "i18n-activation-title": "Activation",
     "i18n-activation-subtitle":
       "Activation scripts based on MAS (massgrave.dev)",
@@ -220,7 +230,7 @@ const UI_TEXT = {
     "i18n-noti-empty": "Chưa có thông báo nào",
     "i18n-clear-noti-history": "Xóa lịch sử",
 
-    "i18n-nav-dashboard": "Bảng điều khiển",
+    "i18n-nav-dashboard": "Tổng quan",
     "i18n-nav-benchmark": "Benchmark",
     "i18n-nav-library": "Ứng dụng",
     "i18n-nav-office-parent": "Office",
@@ -228,6 +238,8 @@ const UI_TEXT = {
     "i18n-nav-office-images": "Cài từ file",
     "i18n-nav-driver": "Driver",
     "i18n-nav-cleanup": "Dọn dẹp",
+    "i18n-nav-utilities": "Tiện ích",
+    "i18n-nav-utilities-home": "Hệ thống",
     "i18n-nav-activation": "Kích hoạt",
     "i18n-nav-settings": "Cài đặt",
     "i18n-nav-about": "Giới thiệu",
@@ -238,7 +250,7 @@ const UI_TEXT = {
     "i18n-credit-source-label": "Mã nguồn mở",
     "i18n-about-title": "Giới thiệu",
     "i18n-about-subtitle": "Thông tin dự án",
-    "i18n-dashboard-title": "Bảng điều khiển",
+    "i18n-dashboard-title": "Tổng quan",
     "i18n-dashboard-subtitle": "Tổng quan hệ thống",
     "i18n-benchmark-title": "Benchmark",
     "i18n-benchmark-subtitle":
@@ -300,29 +312,35 @@ const UI_TEXT = {
     "i18n-office-online-choose-products": "Chọn sản phẩm",
     "i18n-btn-office-clean-online": "Dọn Office",
     "i18n-btn-office-online-submit": "Cài đặt",
-    "i18n-driver-title": "Sao lưu & Khôi phục Driver",
-    "i18n-driver-subtitle": "Sao lưu driver đã cài và khôi phục khi cần",
-    "i18n-driver-backup-title": "Sao lưu Driver",
-    "i18n-driver-backup-desc": "Sao lưu toàn bộ gói driver từ hệ thống này",
+    "i18n-driver-title": "Driver",
+    "i18n-driver-subtitle": "Sao lưu hoặc khôi phục driver",
+    "i18n-driver-backup-title": "Sao lưu",
+    "i18n-driver-backup-desc": "Sao lưu toàn bộ gói driver",
     "i18n-driver-backup-browse": "Duyệt",
     "i18n-driver-backup-run": "Sao lưu",
     "i18n-driver-backup-hint": "Nên lưu bản sao ở phân vùng khác",
-    "i18n-driver-restore-title": "Khôi phục Driver",
+    "i18n-driver-restore-title": "Khôi phục",
     "i18n-driver-restore-desc": "Khôi phục driver từ thư mục sao lưu",
     "i18n-driver-restore-browse": "Duyệt",
     "i18n-driver-restore-run": "Khôi phục",
     "i18n-driver-restore-hint": "Nên chạy Administrator để tương thích tốt",
-    "i18n-cleanup-title": "Dọn dẹp hệ thống",
+    "i18n-cleanup-title": "Dọn dẹp",
     "i18n-cleanup-subtitle": "Giải phóng RAM và dọn dữ liệu tạm trên ổ đĩa",
     "i18n-cleanup-ram-title": "Dọn RAM",
     "i18n-cleanup-ram-desc": "Thu gọn working set và làm sạch standby",
     "i18n-cleanup-ram-btn": "Dọn RAM",
     "i18n-cleanup-ram-hint":
       "Hiệu quả tốt hơn khi chạy với quyền Administrator",
-    "i18n-cleanup-disk-title": "Dọn sâu ổ đĩa",
+    "i18n-cleanup-disk-title": "Dọn ổ đĩa",
     "i18n-cleanup-disk-desc": "Xóa file tạm, thùng rác và cleanup",
-    "i18n-cleanup-disk-btn": "Dọn sâu ổ đĩa",
-    "i18n-cleanup-disk-hint": "Dọn sâu có thể mất vài phút",
+    "i18n-cleanup-disk-btn": "Dọn ổ đĩa",
+    "i18n-cleanup-disk-hint": "Dọn ổ đĩa có thể mất vài phút",
+    "i18n-utilities-title": "Hệ thống",
+    "i18n-utilities-subtitle": "Công cụ hệ thống hữu ích",
+    "i18n-utilities-wu-title": "Windows Update",
+    "i18n-utilities-wu-desc": "Bật tắt nhanh dịch vụ Windows Update",
+    "i18n-utilities-wu-status-label": "Trạng thái hiện tại",
+    "i18n-utilities-wu-hint": "Cần quyền Administrator để áp dụng thay đổi",
     "i18n-activation-title": "Kích hoạt",
     "i18n-activation-subtitle": "Script kích hoạt dựa trên MAS (massgrave.dev)",
     "i18n-activation-windows-title": "Windows",
@@ -458,6 +476,16 @@ const MSG = {
     systemChecking: "Checking system",
     installingSmartMon: "Checking SmartMonTools",
     wingetCheck: "Checking Winget status",
+    windowsUpdateEnabled: "Enabled",
+    windowsUpdateDisabled: "Disabled",
+    windowsUpdateUnknown: "Unknown",
+    windowsUpdateDisableBtn: "Disable Windows Update",
+    windowsUpdateEnableBtn: "Enable Windows Update",
+    windowsUpdateApiUnavailable: "Windows Update control API is not available",
+    windowsUpdateRefreshFailed: "Failed to load Windows Update status",
+    windowsUpdateDisableSuccess: "Windows Update has been disabled",
+    windowsUpdateEnableSuccess: "Windows Update has been enabled",
+    windowsUpdateToggleFailed: "Failed to change Windows Update state",
   },
   vi: {
     processing: "Đang xử lý",
@@ -535,6 +563,16 @@ const MSG = {
     systemChecking: "Đang kiểm tra hệ thống",
     installingSmartMon: "Đang kiểm tra SmartMonTools",
     wingetCheck: "Đang kiểm tra Winget",
+    windowsUpdateEnabled: "Đang bật",
+    windowsUpdateDisabled: "Đã tắt",
+    windowsUpdateUnknown: "Không rõ",
+    windowsUpdateDisableBtn: "Tắt Windows Update",
+    windowsUpdateEnableBtn: "Bật Windows Update",
+    windowsUpdateApiUnavailable: "API Windows Update hiện không khả dụng",
+    windowsUpdateRefreshFailed: "Không thể tải trạng thái Windows Update",
+    windowsUpdateDisableSuccess: "Đã tắt Windows Update",
+    windowsUpdateEnableSuccess: "Đã bật Windows Update",
+    windowsUpdateToggleFailed: "Không thể đổi trạng thái Windows Update",
   },
 };
 function resolveLanguage(value) {
@@ -608,6 +646,7 @@ function applyLanguage(language, options = {}) {
   updateTaskPanelUI();
   setDriverButtonState();
   setCleanupButtonState();
+  renderWindowsUpdateCard();
   updateBenchmarkHealthUI();
   setBenchmarkButtonState();
   updateBenchmarkDisplayMeta();
@@ -1214,6 +1253,8 @@ const addWingetBtn = document.getElementById("add-winget-btn");
 const closeModal = document.getElementById("close-modal");
 const officeNavGroup = document.getElementById("nav-group-office");
 const officeNavParent = document.getElementById("nav-office-parent");
+const utilitiesNavGroup = document.getElementById("nav-group-utilities");
+const utilitiesNavParent = document.getElementById("nav-utilities-parent");
 const navItems = {
   dashboard: document.getElementById("nav-dashboard"),
   library: document.getElementById("nav-library"),
@@ -1221,6 +1262,7 @@ const navItems = {
   officeOnline: document.getElementById("nav-office-online"),
   driver: document.getElementById("nav-driver"),
   cleanup: document.getElementById("nav-cleanup"),
+  utilities: document.getElementById("nav-utilities"),
   activation: document.getElementById("nav-activation"),
   settings: document.getElementById("nav-settings"),
   about: document.getElementById("nav-about"),
@@ -1232,14 +1274,23 @@ const tabs = {
   officeOnline: document.getElementById("tab-office-online"),
   driver: document.getElementById("tab-driver"),
   cleanup: document.getElementById("tab-cleanup"),
+  utilities: document.getElementById("tab-utilities"),
   activation: document.getElementById("tab-activation"),
   settings: document.getElementById("tab-settings"),
   about: document.getElementById("tab-about"),
 };
 function switchTab(tabName) {
   const isOfficeTab = tabName === "office" || tabName === "officeOnline";
+  const isUtilitiesTab =
+    tabName === "utilities" ||
+    tabName === "activation" ||
+    tabName === "cleanup" ||
+    tabName === "driver";
   if (officeNavParent) {
     officeNavParent.classList.toggle("active", isOfficeTab);
+  }
+  if (utilitiesNavParent) {
+    utilitiesNavParent.classList.toggle("active", isUtilitiesTab);
   }
   Object.keys(navItems).forEach((key) => {
     if (navItems[key]) {
@@ -1264,6 +1315,9 @@ function switchTab(tabName) {
         if (key === "officeOnline") {
           renderOfficeOnlineCatalog();
         }
+        if (key === "utilities") {
+          refreshWindowsUpdateState(false);
+        }
       } else {
         tabs[key].style.display = "none";
         tabs[key].classList.remove("active");
@@ -1285,9 +1339,16 @@ if (navItems.officeOnline)
   navItems.officeOnline.onclick = () => switchTab("officeOnline");
 if (navItems.driver) navItems.driver.onclick = () => switchTab("driver");
 if (navItems.cleanup) navItems.cleanup.onclick = () => switchTab("cleanup");
+if (navItems.utilities)
+  navItems.utilities.onclick = () => switchTab("utilities");
 if (officeNavParent && officeNavGroup) {
   officeNavParent.onclick = () => {
     officeNavGroup.classList.toggle("open");
+  };
+}
+if (utilitiesNavParent && utilitiesNavGroup) {
+  utilitiesNavParent.onclick = () => {
+    utilitiesNavGroup.classList.toggle("open");
   };
 }
 if (navItems.activation)
@@ -2042,6 +2103,10 @@ const cleanupRamBtn = document.getElementById("cleanup-ram-btn");
 const cleanupDiskBtn = document.getElementById("cleanup-disk-btn");
 const cleanupRamResultEl = document.getElementById("cleanup-ram-result");
 const cleanupDiskResultEl = document.getElementById("cleanup-disk-result");
+const utilitiesWuStatusValueEl = document.getElementById(
+  "utilities-wu-status-value",
+);
+const utilitiesWuToggleBtn = document.getElementById("utilities-wu-toggle-btn");
 const benchmarkDriveInput = document.getElementById("benchmark-drive-input");
 const benchmarkRunDiskBtn = document.getElementById("benchmark-run-disk-btn");
 const benchmarkOutputEl = document.getElementById("benchmark-output");
@@ -2482,6 +2547,122 @@ function setCleanupButtonState() {
   }
   if (window.lucide) window.lucide.createIcons();
 }
+function normalizeWindowsUpdateState(raw) {
+  if (!raw || raw.success !== true) return null;
+  const startType = String(raw.startType || "").trim();
+  const status = String(raw.status || "").trim();
+  const isDisabled =
+    typeof raw.isDisabled === "boolean"
+      ? raw.isDisabled
+      : startType.toLowerCase() === "disabled";
+  return {
+    isDisabled,
+    startType,
+    status,
+  };
+}
+function renderWindowsUpdateCard() {
+  if (!utilitiesWuToggleBtn || !utilitiesWuStatusValueEl) return;
+  const isDisabled =
+    windowsUpdateState && typeof windowsUpdateState.isDisabled === "boolean"
+      ? windowsUpdateState.isDisabled
+      : null;
+  const stateKey =
+    isDisabled === true
+      ? "disabled"
+      : isDisabled === false
+        ? "enabled"
+        : "unknown";
+  utilitiesWuStatusValueEl.dataset.state = stateKey;
+  utilitiesWuStatusValueEl.innerText =
+    stateKey === "disabled"
+      ? tr("windowsUpdateDisabled")
+      : stateKey === "enabled"
+        ? tr("windowsUpdateEnabled")
+        : tr("windowsUpdateUnknown");
+
+  const buttonIcon = windowsUpdateBusy
+    ? "loader-2"
+    : isDisabled === true
+      ? "shield-check"
+      : "shield-off";
+  const buttonLabel = windowsUpdateBusy
+    ? tr("processing")
+    : isDisabled === true
+      ? tr("windowsUpdateEnableBtn")
+      : tr("windowsUpdateDisableBtn");
+  utilitiesWuToggleBtn.disabled = windowsUpdateBusy;
+  utilitiesWuToggleBtn.className =
+    isDisabled === false ? "btn btn-primary w-full" : "btn btn-outline w-full";
+  utilitiesWuToggleBtn.innerHTML = `<i data-lucide="${buttonIcon}" ${windowsUpdateBusy ? 'class="animate-spin"' : ""} style="width: 16px"></i> ${buttonLabel}`;
+  if (window.lucide) window.lucide.createIcons();
+}
+async function refreshWindowsUpdateState(showError = false) {
+  if (!window.api || !window.api.getWindowsUpdateState) {
+    if (showError) showNotification(tr("windowsUpdateApiUnavailable"), "error");
+    return null;
+  }
+  try {
+    const result = await window.api.getWindowsUpdateState();
+    const normalized = normalizeWindowsUpdateState(result);
+    if (!normalized) {
+      if (showError) {
+        showNotification(
+          (result && result.error) || tr("windowsUpdateRefreshFailed"),
+          "error",
+        );
+      }
+      return null;
+    }
+    windowsUpdateState = normalized;
+    renderWindowsUpdateCard();
+    return normalized;
+  } catch (error) {
+    if (showError) {
+      showNotification(tr("errorPrefix", { message: error.message }), "error");
+    }
+    return null;
+  }
+}
+async function toggleWindowsUpdateState() {
+  if (windowsUpdateBusy) return;
+  if (!window.api || !window.api.setWindowsUpdateDisabled) {
+    showNotification(tr("windowsUpdateApiUnavailable"), "error");
+    return;
+  }
+  const currentlyDisabled =
+    windowsUpdateState && typeof windowsUpdateState.isDisabled === "boolean"
+      ? windowsUpdateState.isDisabled
+      : false;
+  const targetDisable = !currentlyDisabled;
+  windowsUpdateBusy = true;
+  renderWindowsUpdateCard();
+  try {
+    const result = await window.api.setWindowsUpdateDisabled(targetDisable);
+    const normalized = normalizeWindowsUpdateState(result);
+    if (!normalized) {
+      showNotification(
+        (result && result.error) || tr("windowsUpdateToggleFailed"),
+        "error",
+      );
+      await refreshWindowsUpdateState(false);
+      return;
+    }
+    windowsUpdateState = normalized;
+    showNotification(
+      targetDisable
+        ? tr("windowsUpdateDisableSuccess")
+        : tr("windowsUpdateEnableSuccess"),
+      "success",
+    );
+  } catch (error) {
+    showNotification(tr("errorPrefix", { message: error.message }), "error");
+    await refreshWindowsUpdateState(false);
+  } finally {
+    windowsUpdateBusy = false;
+    renderWindowsUpdateCard();
+  }
+}
 async function runSystemRamCleanup() {
   if (cleanupRamBusy || cleanupDiskBusy) return;
   if (!window.api || !window.api.cleanSystemRam) {
@@ -2592,8 +2773,8 @@ async function runSystemDiskCleanup() {
   if (
     !confirm(
       currentLanguage === "vi"
-        ? "Chạy dọn sâu ổ đĩa ngay bây giờ? Tác vụ có thể mất vài phút."
-        : "Run deep disk cleanup now? This task can take several minutes.",
+        ? "Chạy dọn ổ đĩa ngay bây giờ? Tác vụ có thể mất vài phút."
+        : "Run disk cleanup now? This task can take several minutes.",
     )
   ) {
     return;
@@ -2608,7 +2789,7 @@ async function runSystemDiskCleanup() {
     },
   );
   activeTasks.set(taskKey, {
-    name: currentLanguage === "vi" ? "Dọn sâu ổ đĩa" : "Disk Deep Cleanup",
+    name: currentLanguage === "vi" ? "Dọn ổ đĩa" : "Disk Cleanup",
     startTime,
     statusLabel: tr("processing"),
   });
@@ -2620,9 +2801,7 @@ async function runSystemDiskCleanup() {
       currentLanguage === "vi" ? "Đang dọn ổ đĩa" : "Cleaning disk";
   }
   showNotification(
-    currentLanguage === "vi"
-      ? "Bắt đầu dọn sâu ổ đĩa"
-      : "Starting disk deep cleanup",
+    currentLanguage === "vi" ? "Bắt đầu dọn ổ đĩa" : "Starting disk cleanup",
     "info",
   );
 
@@ -3767,8 +3946,12 @@ if (cleanupRamBtn) {
 if (cleanupDiskBtn) {
   cleanupDiskBtn.onclick = () => runSystemDiskCleanup();
 }
+if (utilitiesWuToggleBtn) {
+  utilitiesWuToggleBtn.onclick = () => toggleWindowsUpdateState();
+}
 setDriverButtonState();
 setCleanupButtonState();
+renderWindowsUpdateCard();
 if (benchmarkDriveInput) {
   benchmarkDriveInput.value = normalizeBenchmarkDrive(
     benchmarkDriveInput.value,
@@ -4299,6 +4482,7 @@ async function initApp() {
     installers = await window.api.loadLibrary();
   }
   renderOfficeOnlineCatalog();
+  refreshWindowsUpdateState(false);
   updateOfficeOnlineSubmitButtonLabel();
   initSysInfo();
   switchTab("dashboard");

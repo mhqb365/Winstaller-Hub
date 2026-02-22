@@ -136,6 +136,114 @@ app.whenReady().then(() => {
       return "";
     }
   });
+  const runPowerShellJson = (script) =>
+    new Promise((resolve) => {
+      const child = spawn("powershell.exe", [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        script,
+      ]);
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (data) => {
+        stdout += data.toString();
+      });
+      child.stderr.on("data", (data) => {
+        stderr += data.toString();
+      });
+      child.on("close", () => {
+        const output = stdout.trim();
+        if (!output) {
+          resolve({
+            success: false,
+            error: stderr.trim() || "No response from PowerShell.",
+          });
+          return;
+        }
+        try {
+          const parsed = JSON.parse(output);
+          resolve(parsed);
+        } catch (error) {
+          resolve({
+            success: false,
+            error: `Invalid PowerShell response: ${output}`,
+          });
+        }
+      });
+      child.on("error", (error) => {
+        resolve({
+          success: false,
+          error: error.message,
+        });
+      });
+    });
+  ipcMain.handle("get-windows-update-state", async () => {
+    if (process.platform !== "win32") {
+      return {
+        success: false,
+        error: "Windows Update control is only supported on Windows.",
+      };
+    }
+    const script = `
+      $ErrorActionPreference = "Stop"
+      try {
+        $service = Get-Service -Name "wuauserv" -ErrorAction Stop
+        $serviceInfo = Get-CimInstance Win32_Service -Filter "Name='wuauserv'" -ErrorAction Stop
+        $payload = [PSCustomObject]@{
+          success = $true
+          isDisabled = [bool]($serviceInfo.StartMode -eq "Disabled")
+          status = [string]$service.Status
+          startType = [string]$serviceInfo.StartMode
+        }
+      } catch {
+        $payload = [PSCustomObject]@{
+          success = $false
+          error = [string]$_.Exception.Message
+        }
+      }
+      $payload | ConvertTo-Json -Compress
+    `;
+    return runPowerShellJson(script);
+  });
+  ipcMain.handle("set-windows-update-disabled", async (event, rawDisabled) => {
+    if (process.platform !== "win32") {
+      return {
+        success: false,
+        error: "Windows Update control is only supported on Windows.",
+      };
+    }
+    const shouldDisable = rawDisabled === true;
+    const script = `
+      $ErrorActionPreference = "Stop"
+      $shouldDisable = ${shouldDisable ? "$true" : "$false"}
+      try {
+        if ($shouldDisable) {
+          Stop-Service -Name "wuauserv" -Force -ErrorAction SilentlyContinue
+          Set-Service -Name "wuauserv" -StartupType Disabled -ErrorAction Stop
+        } else {
+          Set-Service -Name "wuauserv" -StartupType Manual -ErrorAction Stop
+          Start-Service -Name "wuauserv" -ErrorAction SilentlyContinue
+        }
+        $service = Get-Service -Name "wuauserv" -ErrorAction Stop
+        $serviceInfo = Get-CimInstance Win32_Service -Filter "Name='wuauserv'" -ErrorAction Stop
+        $payload = [PSCustomObject]@{
+          success = $true
+          isDisabled = [bool]($serviceInfo.StartMode -eq "Disabled")
+          status = [string]$service.Status
+          startType = [string]$serviceInfo.StartMode
+        }
+      } catch {
+        $payload = [PSCustomObject]@{
+          success = $false
+          error = [string]$_.Exception.Message
+        }
+      }
+      $payload | ConvertTo-Json -Compress
+    `;
+    return runPowerShellJson(script);
+  });
   const runningProcesses = /* @__PURE__ */ new Map();
   const mountedIsos = /* @__PURE__ */ new Set();
   function cleanup() {

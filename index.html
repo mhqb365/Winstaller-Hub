@@ -113,17 +113,26 @@
               </div>
             </div>
           </div>
-          <div class="nav-item" id="nav-activation">
-            <i data-lucide="shield-check"></i>
-            <span id="i18n-nav-activation">Activation</span>
-          </div>
-          <div class="nav-item" id="nav-cleanup">
-            <i data-lucide="sparkles"></i>
-            <span id="i18n-nav-cleanup">Cleanup</span>
-          </div>
-          <div class="nav-item" id="nav-driver">
-            <i data-lucide="hard-drive"></i>
-            <span id="i18n-nav-driver">Drivers</span>
+          <div class="nav-item-group" id="nav-group-utilities">
+            <div class="nav-item" id="nav-utilities-parent">
+              <i data-lucide="sparkles"></i>
+              <span id="i18n-nav-utilities">Utilities</span>
+              <i data-lucide="chevron-down" class="chevron"></i>
+            </div>
+            <div class="sub-menu">
+              <div class="sub-item" id="nav-activation">
+                <span id="i18n-nav-activation">Activation</span>
+              </div>
+              <div class="sub-item" id="nav-cleanup">
+                <span id="i18n-nav-cleanup">Cleanup</span>
+              </div>
+              <div class="sub-item" id="nav-driver">
+                <span id="i18n-nav-driver">Drivers</span>
+              </div>
+              <div class="sub-item" id="nav-utilities">
+                <span id="i18n-nav-utilities-home">System</span>
+              </div>
+            </div>
           </div>
           <div class="nav-item" id="nav-settings">
             <i data-lucide="settings"></i>
@@ -693,10 +702,8 @@
         <!-- Driver Section -->
         <div id="tab-driver" class="tab-content">
           <div class="section-header">
-            <h1 id="i18n-driver-title">Driver Backup & Restore</h1>
-            <p id="i18n-driver-subtitle">
-              Backup installed drivers and restore them when needed
-            </p>
+            <h1 id="i18n-driver-title">Drivers</h1>
+            <p id="i18n-driver-subtitle">Backup or restore drivers</p>
           </div>
 
           <div class="driver-tools-layout">
@@ -704,10 +711,10 @@
               <div class="driver-tool-header">
                 <h3 class="font-bold flex items-center gap-2">
                   <i data-lucide="archive" style="width: 16px"></i>
-                  <span id="i18n-driver-backup-title">Backup Drivers</span>
+                  <span id="i18n-driver-backup-title">Backup</span>
                 </h3>
                 <p id="i18n-driver-backup-desc" class="text-sm text-muted">
-                  Backup all driver packages from this system
+                  Backup all driver packages
                 </p>
               </div>
               <div class="driver-path-row">
@@ -741,7 +748,7 @@
               <div class="driver-tool-header">
                 <h3 class="font-bold flex items-center gap-2">
                   <i data-lucide="history" style="width: 16px"></i>
-                  <span id="i18n-driver-restore-title">Restore Drivers</span>
+                  <span id="i18n-driver-restore-title">Restore</span>
                 </h3>
                 <p id="i18n-driver-restore-desc" class="text-sm text-muted">
                   Restore drivers from a backup folder
@@ -779,7 +786,7 @@
         <!-- Cleanup Section -->
         <div id="tab-cleanup" class="tab-content">
           <div class="section-header">
-            <h1 id="i18n-cleanup-title">System Cleanup</h1>
+            <h1 id="i18n-cleanup-title">Cleanup</h1>
             <p id="i18n-cleanup-subtitle">
               Free RAM and clean temporary disk data
             </p>
@@ -827,6 +834,53 @@
               <p id="cleanup-disk-result" class="text-xs text-muted"></p>
               <p id="i18n-cleanup-disk-hint" class="text-xs text-muted">
                 Deep cleanup may take several minutes
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Utilities Section -->
+        <div id="tab-utilities" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-utilities-title">System</h1>
+            <p id="i18n-utilities-subtitle">Useful system tools</p>
+          </div>
+
+          <div class="utilities-grid">
+            <div class="card utility-card">
+              <div class="utility-card-head">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="refresh-cw-off" style="width: 16px"></i>
+                  <span id="i18n-utilities-wu-title"
+                    >Windows Update Control</span
+                  >
+                </h3>
+                <p id="i18n-utilities-wu-desc" class="text-sm text-muted">
+                  Quickly disable or enable Windows Update service
+                </p>
+              </div>
+              <div class="utility-status-row">
+                <span id="i18n-utilities-wu-status-label" class="text-xs">
+                  Current status
+                </span>
+                <span
+                  id="utilities-wu-status-value"
+                  class="utility-status-badge"
+                  data-state="unknown"
+                  >Unknown</span
+                >
+              </div>
+              <div class="driver-tool-actions">
+                <button
+                  id="utilities-wu-toggle-btn"
+                  class="btn btn-outline w-full"
+                >
+                  <i data-lucide="shield-off" style="width: 16px"></i>
+                  Disable Windows Update
+                </button>
+              </div>
+              <p id="i18n-utilities-wu-hint" class="text-xs text-muted">
+                Requires Administrator privileges to apply changes
               </p>
             </div>
           </div>

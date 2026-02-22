@@ -508,7 +508,8 @@ app.whenReady().then(() => {
         const cleanOutput = output.replace(/\x1B\[[0-9;]*[mGJK]/g, "");
         const lines = cleanOutput
           .split(/\r?\n/)
-          .map((l) => l.trimEnd())
+          .map((l) => String(l || "").split("\r").pop())
+          .map((l) => String(l || "").trimEnd())
           .filter((l) => l.trim().length > 0);
         if (lines.length < 2) return resolve([]);
         const sepIndex = lines.findIndex(
@@ -518,38 +519,63 @@ app.whenReady().then(() => {
           sepIndex !== -1
             ? lines.slice(sepIndex + 1)
             : lines.filter((l) => !l.includes("Name") && !l.includes("Id"));
-        const results = dataLines
-          .slice(0, 15)
-          .map((line) => {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed.length < 5) return null;
-            const parts = trimmed.split(/\s{2,}/);
-            if (parts.length >= 2) {
-              const name = parts[0];
-              const id = parts[1];
-              const version = parts[2] || "Unknown";
-              if (id && !id.includes(" ") && id.length > 2) {
-                return { name, id, version, isWinget: true };
-              }
+        const headerLine =
+          lines.find((l) => /^\s*Name\s+Id\s+Version/i.test(l)) ||
+          (sepIndex > 0 && lines[sepIndex - 1] ? lines[sepIndex - 1] : "");
+        const idStart = headerLine.indexOf("Id");
+        const versionStart = headerLine.indexOf("Version");
+        const sourceStart = headerLine.indexOf("Source");
+        const hasColumnBoundaries =
+          idStart > 0 && versionStart > idStart && sourceStart > versionStart;
+        const parseByBoundaries = (line) => ({
+          name: String(line.slice(0, idStart) || "").trim(),
+          id: String(line.slice(idStart, versionStart) || "").trim(),
+          version: String(line.slice(versionStart, sourceStart) || "").trim(),
+        });
+        const parseBySpacing = (line) => {
+          const parts = String(line || "")
+            .trim()
+            .split(/\s{2,}/);
+          if (parts.length < 2) return null;
+          return {
+            name: String(parts[0] || "").trim(),
+            id: String(parts[1] || "").trim(),
+            version: String(parts[2] || "").trim(),
+          };
+        };
+        const results = [];
+        const seenIds = /* @__PURE__ */ new Set();
+        for (const line of dataLines.slice(0, 100)) {
+          const trimmed = String(line || "").trim();
+          if (!trimmed || trimmed.length < 5) continue;
+          let parsed = null;
+          if (hasColumnBoundaries) {
+            const parsedByBoundary = parseByBoundaries(line);
+            if (parsedByBoundary && parsedByBoundary.id) {
+              parsed = parsedByBoundary;
             }
-            const allParts = trimmed.split(/\s+/);
-            if (allParts.length >= 2) {
-              const potentialId = allParts.find(
-                (p, i) => i > 0 && (p.includes(".") || p.length > 5),
-              );
-              if (potentialId) {
-                return {
-                  name: allParts[0],
-                  id: potentialId,
-                  version:
-                    allParts[allParts.indexOf(potentialId) + 1] || "Unknown",
-                  isWinget: true,
-                };
-              }
-            }
-            return null;
-          })
-          .filter(Boolean);
+          }
+          if (!parsed) {
+            parsed = parseBySpacing(line);
+          }
+          if (!parsed) continue;
+          const name = parsed.name;
+          const id = parsed.id;
+          const version = parsed.version || "Unknown";
+          if (!name || !id) continue;
+          if (id.includes(" ")) continue;
+          if (!/^[A-Za-z0-9._-]+$/.test(id)) continue;
+          const idKey = id.toLowerCase();
+          if (seenIds.has(idKey)) continue;
+          seenIds.add(idKey);
+          results.push({
+            name,
+            id,
+            version,
+            isWinget: true,
+          });
+          if (results.length >= 15) break;
+        }
         console.log(
           `Successfully caught ${results.length} results via Smart Parser.`,
         );

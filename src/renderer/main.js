@@ -4127,7 +4127,26 @@ if (wingetSearchBtn && window.api) {
             }</button>
           `;
           item.querySelector(".add-pkg-btn").onclick = () => {
-            if (installers.some((i) => i.path === pkg.id)) {
+            const normalizedPkgId = String(pkg.id || "")
+              .trim()
+              .toLowerCase();
+            if (!normalizedPkgId) {
+              showNotification(
+                currentLanguage === "vi"
+                  ? "ID gói Winget không hợp lệ"
+                  : "Invalid Winget package id",
+                "error",
+              );
+              return;
+            }
+            if (
+              installers.some(
+                (i) =>
+                  String(i.path || "")
+                    .trim()
+                    .toLowerCase() === normalizedPkgId,
+              )
+            ) {
               showNotification(
                 currentLanguage === "vi"
                   ? "Ứng dụng đã có trong thư viện"
@@ -4138,7 +4157,7 @@ if (wingetSearchBtn && window.api) {
             }
             const newApp = {
               name: pkg.name,
-              path: pkg.id,
+              path: String(pkg.id || "").trim(),
               isWinget: true,
               arch: "Universal",
             };

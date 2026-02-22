@@ -22,6 +22,7 @@
 - **Clean Office**: Gỡ bỏ hoàn toàn các phiên bản Office cũ trước khi cài mới để tránh xung đột
 
 ### Tiện ích
+- **Xem thông tin**: Xem được thông tin thiết bị, độ chai pin, sức khỏe ổ cứng
 - **Kích hoạt bản quyền**: Tích hợp công cụ MAS của massgrave.dev giúp kích hoạt Windows/Office nhanh chóng
 - **Cleanup**: Dọn dẹp RAM, dọn dẹp thùng rác, dọn dẹp temp
 - **Drivers**: Sao lưu và khôi phục các driver trên máy tính

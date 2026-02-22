@@ -1027,6 +1027,11 @@ main {
   gap: 1rem;
 }
 
+.list-total-count {
+  transform: translateY(-1px);
+  white-space: nowrap;
+}
+
 @media (max-width: 1280px) {
   .app-action-bar {
     flex-wrap: wrap;

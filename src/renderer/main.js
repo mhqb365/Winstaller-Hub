@@ -71,6 +71,8 @@ const themeToggleInput = document.getElementById("theme-mode-toggle");
 const themeModeLabel = document.getElementById("theme-mode-label");
 const appLanguageSelect = document.getElementById("app-language-select");
 const aboutVersionValue = document.getElementById("about-version-value");
+const appTotalCountEl = document.getElementById("app-total-count");
+const officeTotalCountEl = document.getElementById("office-total-count");
 let currentLanguage = resolveLanguage(
   localStorage.getItem(LANGUAGE_STORAGE_KEY),
 );
@@ -476,6 +478,8 @@ const MSG = {
     systemChecking: "Checking system",
     installingSmartMon: "Checking SmartMonTools",
     wingetCheck: "Checking Winget status",
+    appsCountLabel: "{count} apps",
+    officeImagesCountLabel: "{count} images",
     windowsUpdateEnabled: "Enabled",
     windowsUpdateDisabled: "Disabled",
     windowsUpdateUnknown: "Unknown",
@@ -563,6 +567,8 @@ const MSG = {
     systemChecking: "Đang kiểm tra hệ thống",
     installingSmartMon: "Đang kiểm tra SmartMonTools",
     wingetCheck: "Đang kiểm tra Winget",
+    appsCountLabel: "{count} ứng dụng",
+    officeImagesCountLabel: "{count} bộ cài",
     windowsUpdateEnabled: "Đang bật",
     windowsUpdateDisabled: "Đã tắt",
     windowsUpdateUnknown: "Không rõ",
@@ -1822,6 +1828,12 @@ function replaceLucidePlaceholders(root) {
     }
   });
 }
+function setViewToggleButtonIcon(buttonId, iconId, iconName) {
+  const button = document.getElementById(buttonId);
+  if (!button) return;
+  button.innerHTML = `<i id="${iconId}" data-lucide="${iconName}"></i>`;
+  replaceLucidePlaceholders(button);
+}
 function renderInstallers() {
   if (!installerGrid) return;
   const filtered = installers.filter((app) => {
@@ -1845,9 +1857,17 @@ function renderInstallers() {
       numeric: true,
     }),
   );
+  if (appTotalCountEl) {
+    appTotalCountEl.innerText = tr("appsCountLabel", { count: filtered.length });
+  }
   installerGrid.innerHTML = "";
   installerGrid.className =
     viewMode === "grid" ? "installer-grid" : "flex flex-col gap-2";
+  setViewToggleButtonIcon(
+    "view-toggle",
+    "view-toggle-icon",
+    viewMode === "grid" ? "list" : "layout-grid",
+  );
   const installedLocalEntries = installedApps
     .map((sys) => ({
       id: String(sys.id || "").trim(),
@@ -1875,13 +1895,6 @@ function renderInstallers() {
     );
     return matched ? matched.id : null;
   };
-  const viewToggleIcon = document.getElementById("view-toggle-icon");
-  if (viewToggleIcon) {
-    viewToggleIcon.setAttribute(
-      "data-lucide",
-      viewMode === "grid" ? "list" : "layout-grid",
-    );
-  }
   if (filtered.length === 0) {
     installerGrid.innerHTML = `
       <div class="col-span-full py-12 text-center text-muted">
@@ -3786,16 +3799,19 @@ async function renderOfficeLocal() {
         numeric: true,
       }),
     );
+    if (officeTotalCountEl) {
+      officeTotalCountEl.innerText = tr("officeImagesCountLabel", {
+        count: files.length,
+      });
+    }
     officeList.innerHTML = "";
     officeList.className =
       officeViewMode === "grid" ? "installer-grid" : "flex flex-col gap-2";
-    const viewToggleIcon = document.getElementById("office-view-toggle-icon");
-    if (viewToggleIcon) {
-      viewToggleIcon.setAttribute(
-        "data-lucide",
-        officeViewMode === "grid" ? "list" : "layout-grid",
-      );
-    }
+    setViewToggleButtonIcon(
+      "office-view-toggle",
+      "office-view-toggle-icon",
+      officeViewMode === "grid" ? "list" : "layout-grid",
+    );
     if (files.length === 0) {
       officeList.innerHTML = `
         <div class="col-span-full py-12 text-center text-muted">
@@ -3853,6 +3869,9 @@ async function renderOfficeLocal() {
     });
     if (window.lucide) window.lucide.createIcons();
   } catch (e) {
+    if (officeTotalCountEl) {
+      officeTotalCountEl.innerText = tr("officeImagesCountLabel", { count: 0 });
+    }
     officeList.innerHTML = `<p class='text-center py-8 text-muted'>${
       currentLanguage === "vi"
         ? "Lỗi quét thư mục Office"

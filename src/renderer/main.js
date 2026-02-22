@@ -4260,6 +4260,7 @@ async function initApp() {
       (apps) => applyInstalledAppsSnapshot(apps, false),
     );
   }
+
   if (window.api && window.api.loadLibrary) {
     installers = await window.api.loadLibrary();
   }

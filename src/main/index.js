@@ -3286,6 +3286,7 @@ try {
       const psScript = `
         try {
           $ErrorActionPreference = "Stop"
+          $OutputEncoding = [System.Text.Encoding]::UTF8
 
           $productIdsCsv = "${productIds.join(",")}"
           $languageId = "${languageId}"
@@ -3297,6 +3298,8 @@ try {
           $odtRoot = Join-Path $env:ProgramData "WinstallerHub\\OfficeODT"
           New-Item -Path $odtRoot -ItemType Directory -Force | Out-Null
 
+          Set-Location -Path $odtRoot
+          
           $setupPath = $null
           $programFilesX86 = [Environment]::GetFolderPath("ProgramFilesX86")
           $candidatePaths = @(
@@ -3332,6 +3335,7 @@ try {
             throw "Cannot find Office Deployment Tool setup.exe. Please install 'Microsoft.OfficeDeploymentTool' first."
           }
 
+
           $configPath = Join-Path $odtRoot "online-config-$([Guid]::NewGuid().ToString('N')).xml"
           $removeMsiNode = ""
           if ($removeMsi -eq "true") {
@@ -3359,12 +3363,13 @@ try {
 $productsXml
   </Add>
   $removeMsiNode
-  <Display Level="None" AcceptEULA="TRUE" />
+  <Display Level="Full" AcceptEULA="TRUE" />
   <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
 </Configuration>
 "@
 
           [System.IO.File]::WriteAllText($configPath, $configXml, [System.Text.Encoding]::UTF8)
+
           Write-Host "Using setup: $setupPath"
           Write-Host "Generated config: $configPath"
 
@@ -3375,27 +3380,37 @@ $productsXml
             $args = @("/configure", $configPath)
           }
 
-          $proc = Start-Process -FilePath $setupPath -ArgumentList $args -PassThru -Wait
-          Write-Host "ODT exited with code $($proc.ExitCode)"
-          exit $proc.ExitCode
+          $setupProc = Start-Process -FilePath $setupPath -ArgumentList $args -PassThru
+          $procId = $setupProc.Id
+          
+          $setupProc.WaitForExit()
+          Write-Host "ODT exited with code $($setupProc.ExitCode)"
+          exit $setupProc.ExitCode
         } catch {
           Write-Host "Critical Error: $($_.Exception.Message)"
           exit 1
         }
       `;
       return new Promise((resolve) => {
-        const child = spawn("powershell.exe", [
-          "-NoProfile",
-          "-ExecutionPolicy",
-          "Bypass",
-          "-Command",
-          psScript,
-        ]);
+        const child = spawn(
+          "powershell.exe",
+          [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-WindowStyle",
+            "Hidden",
+            "-Command",
+            psScript,
+          ],
+          { windowsHide: true },
+        );
         runningProcesses.set(taskKey, child);
         let output = "";
         child.stdout.on("data", (data) => {
           const text = data.toString();
           output += text;
+
           console.log(`[Office Online Out]: ${text.trim()}`);
         });
         child.stderr.on("data", (data) => {

@@ -9,7 +9,7 @@ const notiBadge = document.getElementById("noti-badge");
 const closeNotiBtn = document.getElementById("close-noti-panel");
 const clearNotiBtn = document.getElementById("clear-noti-history");
 const taskToggle = document.getElementById("task-toggle");
-const coffeeToggle = document.getElementById("coffee-toggle");
+
 const taskPanel = document.getElementById("task-panel");
 const taskList = document.getElementById("task-list");
 const taskBadge = document.getElementById("task-badge");
@@ -79,7 +79,7 @@ const UI_TEXT = {
     "i18n-noti-panel-title": "Notifications History",
     "i18n-noti-empty": "No notifications yet",
     "i18n-clear-noti-history": "Clear History",
-    "i18n-buy-coffee-btn": "Buy me a Coffee",
+
     "i18n-nav-dashboard": "Dashboard",
     "i18n-nav-benchmark": "Benchmark",
     "i18n-nav-library": "Applications",
@@ -220,7 +220,7 @@ const UI_TEXT = {
     "i18n-noti-panel-title": "Lịch sử thông báo",
     "i18n-noti-empty": "Chưa có thông báo nào",
     "i18n-clear-noti-history": "Xóa lịch sử",
-    "i18n-buy-coffee-btn": "Buy me a Coffee",
+
     "i18n-nav-dashboard": "Bảng điều khiển",
     "i18n-nav-benchmark": "Benchmark",
     "i18n-nav-library": "Ứng dụng",
@@ -377,12 +377,10 @@ const UI_TITLES = {
   en: {
     "task-toggle": "Installation tasks",
     "notification-toggle": "System notifications",
-    "coffee-toggle": "Buy me a Coffee",
   },
   vi: {
     "task-toggle": "Tác vụ cài đặt",
     "notification-toggle": "Thông báo hệ thống",
-    "coffee-toggle": "Buy me a Coffee",
   },
 };
 const MSG = {
@@ -3799,13 +3797,7 @@ taskToggle.onclick = (e) => {
 };
 closeTaskBtn.onclick = () => taskPanel.classList.remove("active");
 taskPanel.onclick = (e) => e.stopPropagation();
-if (coffeeToggle && window.api && window.api.openExternal) {
-  coffeeToggle.onclick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    window.api.openExternal("https://mhqb365.com/buymeacoffee.html");
-  };
-}
+
 document.addEventListener("click", () => {
   notiPanel.classList.remove("active");
   taskPanel.classList.remove("active");
@@ -4239,7 +4231,7 @@ async function checkAndInstallWinget() {
     const perfMsg =
       currentLanguage === "vi"
         ? "Đang lấy thông tin hệ thống"
-        : "Collecting system data";
+        : "Collecting system info";
     showSystemLoader(perfMsg);
 
     // Run both in parallel to save time

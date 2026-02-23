@@ -37,6 +37,10 @@ const api = {
   activeWindows: () => ipcRenderer.invoke("active-windows"),
   activeOffice: (type = "standard") =>
     ipcRenderer.invoke("active-office", type),
+  activateWindowsByKey: (key) =>
+    ipcRenderer.invoke("activate-windows-key", { key }),
+  activateOfficeByKey: (key) =>
+    ipcRenderer.invoke("activate-office-key", { key }),
   cancelInstallation: (path) => ipcRenderer.invoke("cancel-installation", path),
   deleteFile: (path) => ipcRenderer.invoke("delete-file", path),
   saveLibrary: (data) => ipcRenderer.invoke("save-library", data),

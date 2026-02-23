@@ -4260,7 +4260,9 @@ $removeNodeXml
         "Bypass",
         "-Command",
         psScript,
-      ]);
+      ], {
+        windowsHide: true,
+      });
       runningProcesses.set(taskKey, child);
       let output = "";
       child.stdout.on("data", (data) => {
@@ -5340,6 +5342,247 @@ public static class MemoryTools {
         });
       });
     });
+  });
+  function normalizeProductKey(rawValue) {
+    const compact = String(rawValue || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+    if (compact.length !== 25) return "";
+    return compact.match(/.{1,5}/g).join("-");
+  }
+  function parsePowerShellCriticalError(outputText, fallbackMessage) {
+    const output = String(outputText || "");
+    const criticalMatch = output.match(/Critical Error:\s*([^\r\n]+)/i);
+    if (criticalMatch && criticalMatch[1]) {
+      return String(criticalMatch[1]).trim();
+    }
+    if (output.toLowerCase().includes("access is denied")) {
+      return "Administrator privileges are required to perform activation.";
+    }
+    return fallbackMessage;
+  }
+  function runPowerShellScript(psScript, taskKey, logPrefix = "PowerShell") {
+    return new Promise((resolve) => {
+      const child = spawn("powershell.exe", [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        psScript,
+      ]);
+      runningProcesses.set(taskKey, child);
+      let output = "";
+      child.stdout.on("data", (data) => {
+        const text = data.toString();
+        output += text;
+        console.log(`[${logPrefix} Out]: ${text.trim()}`);
+      });
+      child.stderr.on("data", (data) => {
+        const text = data.toString();
+        output += text;
+        console.error(`[${logPrefix} Err]: ${text.trim()}`);
+      });
+      child.on("close", (code) => {
+        runningProcesses.delete(taskKey);
+        resolve({
+          success: code === 0,
+          code,
+          output,
+        });
+      });
+      child.on("error", (error) => {
+        runningProcesses.delete(taskKey);
+        resolve({
+          success: false,
+          code: -1,
+          output,
+          error: error.message,
+        });
+      });
+    });
+  }
+  ipcMain.handle("activate-windows-key", async (event, payload = {}) => {
+    console.log("Main process: activate-windows-key triggered");
+    if (process.platform !== "win32") {
+      return {
+        success: false,
+        error: "Windows product key activation is only supported on Windows.",
+      };
+    }
+    const productKey = normalizeProductKey(payload?.key);
+    if (!productKey) {
+      return {
+        success: false,
+        error:
+          "Invalid product key format. Use XXXXX-XXXXX-XXXXX-XXXXX-XXXXX.",
+      };
+    }
+    const taskKey = `activation-windows-key-${Date.now()}`;
+    const psScript = `
+      $ErrorActionPreference = "Stop"
+      try {
+        $productKey = ${JSON.stringify(productKey)}
+        $cscriptPath = Join-Path $env:SystemRoot "System32\\cscript.exe"
+        if (-not (Test-Path -LiteralPath $cscriptPath)) {
+          $cscriptPath = "cscript.exe"
+        }
+        $slmgrPath = Join-Path $env:SystemRoot "System32\\slmgr.vbs"
+        if (-not (Test-Path -LiteralPath $slmgrPath)) {
+          throw "Could not find slmgr.vbs."
+        }
+
+        & $cscriptPath //nologo $slmgrPath /ipk $productKey | Out-Host
+        $installCode = $LASTEXITCODE
+        Write-Host "WINDOWS_KEY_INSTALL_CODE:$installCode"
+        if ($installCode -ne 0) {
+          throw "Failed to install Windows product key (code $installCode)."
+        }
+
+        & $cscriptPath //nologo $slmgrPath /ato | Out-Host
+        $activateCode = $LASTEXITCODE
+        Write-Host "WINDOWS_KEY_ACTIVATE_CODE:$activateCode"
+        if ($activateCode -ne 0) {
+          throw "Failed to activate Windows online (code $activateCode)."
+        }
+
+        Write-Host "WINDOWS_KEY_ACTIVATION_DONE"
+        exit 0
+      } catch {
+        Write-Host "Critical Error: $($_.Exception.Message)"
+        exit 1
+      }
+    `;
+    const result = await runPowerShellScript(
+      psScript,
+      taskKey,
+      "Windows Key Activation",
+    );
+    if (result.success) {
+      return {
+        success: true,
+        taskKey,
+        output: result.output,
+      };
+    }
+    return {
+      success: false,
+      taskKey,
+      output: result.output,
+      error:
+        result.error ||
+        parsePowerShellCriticalError(
+          result.output,
+          "Windows key activation failed.",
+        ),
+    };
+  });
+  ipcMain.handle("activate-office-key", async (event, payload = {}) => {
+    console.log("Main process: activate-office-key triggered");
+    if (process.platform !== "win32") {
+      return {
+        success: false,
+        error: "Office product key activation is only supported on Windows.",
+      };
+    }
+    const productKey = normalizeProductKey(payload?.key);
+    if (!productKey) {
+      return {
+        success: false,
+        error:
+          "Invalid product key format. Use XXXXX-XXXXX-XXXXX-XXXXX-XXXXX.",
+      };
+    }
+    const taskKey = `activation-office-key-${Date.now()}`;
+    const psScript = `
+      $ErrorActionPreference = "Stop"
+      try {
+        $productKey = ${JSON.stringify(productKey)}
+        $cscriptPath = Join-Path $env:SystemRoot "System32\\cscript.exe"
+        if (-not (Test-Path -LiteralPath $cscriptPath)) {
+          $cscriptPath = "cscript.exe"
+        }
+
+        $searchRoots = @(
+          (Join-Path $env:ProgramFiles "Microsoft Office"),
+          (Join-Path $env:ProgramFiles "Microsoft Office\\root")
+        )
+        $programFilesX86 = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
+        if ($programFilesX86) {
+          $searchRoots += (Join-Path $programFilesX86 "Microsoft Office")
+          $searchRoots += (Join-Path $programFilesX86 "Microsoft Office\\root")
+        }
+        $searchRoots = @(
+          $searchRoots |
+            Where-Object { $_ -and (Test-Path -LiteralPath $_) } |
+            Select-Object -Unique
+        )
+
+        $osppCandidates = @()
+        foreach ($root in $searchRoots) {
+          $found = Get-ChildItem -LiteralPath $root -Filter OSPP.VBS -Recurse -File -ErrorAction SilentlyContinue
+          if ($found) {
+            $osppCandidates += @($found.FullName)
+          }
+        }
+        $osppCandidates = @($osppCandidates | Select-Object -Unique)
+        if ($osppCandidates.Count -le 0) {
+          throw "Could not find OSPP.VBS. Please ensure Office desktop apps are installed."
+        }
+
+        $osppPath = $osppCandidates | Where-Object { $_ -match "[\\\\/]root[\\\\/]Office16[\\\\/]" } | Select-Object -First 1
+        if (-not $osppPath) {
+          $osppPath = $osppCandidates | Where-Object { $_ -match "[\\\\/]Office16[\\\\/]" } | Select-Object -First 1
+        }
+        if (-not $osppPath) {
+          $osppPath = $osppCandidates | Select-Object -First 1
+        }
+
+        Push-Location (Split-Path -Parent $osppPath)
+        try {
+          & $cscriptPath //nologo $osppPath "/inpkey:$productKey" | Out-Host
+          $installCode = $LASTEXITCODE
+          Write-Host "OFFICE_KEY_INSTALL_CODE:$installCode"
+          if ($installCode -ne 0) {
+            throw "Failed to install Office product key (code $installCode)."
+          }
+
+          & $cscriptPath //nologo $osppPath /act | Out-Host
+          $activateCode = $LASTEXITCODE
+          Write-Host "OFFICE_KEY_ACTIVATE_CODE:$activateCode"
+          if ($activateCode -ne 0) {
+            throw "Failed to activate Office online (code $activateCode)."
+          }
+
+          Write-Host "OFFICE_KEY_ACTIVATION_DONE"
+        } finally {
+          Pop-Location
+        }
+        exit 0
+      } catch {
+        Write-Host "Critical Error: $($_.Exception.Message)"
+        exit 1
+      }
+    `;
+    const result = await runPowerShellScript(
+      psScript,
+      taskKey,
+      "Office Key Activation",
+    );
+    if (result.success) {
+      return {
+        success: true,
+        taskKey,
+        output: result.output,
+      };
+    }
+    return {
+      success: false,
+      taskKey,
+      output: result.output,
+      error:
+        result.error ||
+        parsePowerShellCriticalError(result.output, "Office key activation failed."),
+    };
   });
   ipcMain.handle("active-windows", async () => {
     console.log("Main process: Active Windows triggered");

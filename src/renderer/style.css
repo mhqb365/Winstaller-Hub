@@ -1510,6 +1510,36 @@ main {
   gap: 0.75rem;
 }
 
+.activation-key-layout {
+  margin-bottom: 0;
+}
+
+.activation-mas-note {
+  margin: 2.5rem 0;
+}
+
+.activation-mas-note h3 {
+  color: hsl(var(--foreground));
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.activation-key-hint {
+  margin-bottom: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 1rem;
+}
+
+.product-key-input {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
 .data-folder-toolbar {
   display: flex;
   align-items: center;

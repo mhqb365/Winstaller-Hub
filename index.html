@@ -1033,9 +1033,77 @@
         <!-- Activation Section -->
         <div id="tab-activation" class="tab-content">
           <div class="section-header">
-            <h1 id="i18n-activation-title">Activation</h1>
+            <h1 id="i18n-activation-title">Microsoft Activation</h1>
             <p id="i18n-activation-subtitle">
-              Activation scripts based on MAS (massgrave.dev)
+              Official active methods for Windows and Office
+            </p>
+          </div>
+
+          <div class="driver-tools-layout activation-key-layout">
+            <div class="card driver-tool-card">
+              <div class="driver-tool-header">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="key-round" style="width: 16px"></i>
+                  <span id="i18n-activation-win-key-title"
+                    >Windows Product Key</span
+                  >
+                </h3>
+              </div>
+              <div class="driver-path-row">
+                <input
+                  id="activation-win-key-input"
+                  class="input product-key-input"
+                  maxlength="29"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </div>
+              <div class="driver-tool-actions">
+                <button
+                  id="activation-win-key-btn"
+                  class="btn btn-primary w-full"
+                >
+                  <i data-lucide="key-round" style="width: 16px"></i>
+                  <span id="i18n-activation-win-key-btn">Activate by Key</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="card driver-tool-card">
+              <div class="driver-tool-header">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="file-key-2" style="width: 16px"></i>
+                  <span id="i18n-activation-office-key-title"
+                    >Office Product Key</span
+                  >
+                </h3>
+              </div>
+              <div class="driver-path-row">
+                <input
+                  id="activation-office-key-input"
+                  class="input product-key-input"
+                  maxlength="29"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </div>
+              <div class="driver-tool-actions">
+                <button
+                  id="activation-office-key-btn"
+                  class="btn btn-primary w-full"
+                >
+                  <i data-lucide="file-key-2" style="width: 16px"></i>
+                  <span id="i18n-activation-office-key-btn"
+                    >Activate by Key</span
+                  >
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="activation-mas-note">
+            <h3 id="i18n-activation-mas-title">MAS</h3>
+            <p id="i18n-activation-key-hint" class="activation-key-hint">
+              Active script by massgrave.dev
             </p>
           </div>
 

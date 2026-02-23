@@ -79,6 +79,8 @@ let benchmarkRunningType = "";
 let benchmarkHealthData = [];
 let performancePollingTimer = null;
 let performancePollingBusy = false;
+let activationWindowsKeyBusy = false;
+let activationOfficeKeyBusy = false;
 const PERFORMANCE_REFRESH_MS = 3e3;
 const PERFORMANCE_GPU_COLORS = ["#a855f7", "#14b8a6", "#f59e0b", "#ef4444"];
 const PERFORMANCE_NETWORK_COLORS = ["#06b6d4", "#0891b2", "#0ea5e9", "#2563eb"];
@@ -244,9 +246,9 @@ const UI_TEXT = {
     "i18n-utilities-wu-status-label": "Current status",
     "i18n-utilities-wu-hint":
       "Requires Administrator privileges to apply changes",
-    "i18n-activation-title": "Activation",
+    "i18n-activation-title": "MS Activation",
     "i18n-activation-subtitle":
-      "Activation scripts based on MAS (massgrave.dev)",
+      "Official active methods for Windows and Office",
     "i18n-activation-windows-title": "Windows",
     "i18n-activation-windows-desc":
       "Permanent Digital License (HWID) activation for Windows 10 & 11",
@@ -255,6 +257,14 @@ const UI_TEXT = {
     "i18n-activation-office-desc":
       "Safe Ohook method for all Office versions including Microsoft 365",
     "i18n-activation-office-btn": "Activate Office",
+    "i18n-activation-win-key-title": "Windows Product Key",
+    "i18n-activation-win-key-desc": "Using your genuine Microsoft key",
+    "i18n-activation-win-key-btn": "Activate by Key",
+    "i18n-activation-office-key-title": "Office Product Key",
+    "i18n-activation-office-key-desc": "Using your genuine Microsoft key",
+    "i18n-activation-office-key-btn": "Activate by Key",
+    "i18n-activation-mas-title": "MAS",
+    "i18n-activation-key-hint": "Active script by massgrave.dev",
     "i18n-activation-troubleshoot-title": "Troubleshoot",
     "i18n-activation-troubleshoot-desc":
       "Fix common activation issues like ISPs block or TLS errors",
@@ -412,8 +422,9 @@ const UI_TEXT = {
     "i18n-utilities-wu-desc": "Bật tắt nhanh dịch vụ Windows Update",
     "i18n-utilities-wu-status-label": "Trạng thái hiện tại",
     "i18n-utilities-wu-hint": "Cần quyền Administrator để áp dụng thay đổi",
-    "i18n-activation-title": "Kích hoạt",
-    "i18n-activation-subtitle": "Script kích hoạt dựa trên MAS (massgrave.dev)",
+    "i18n-activation-title": "MS Activation",
+    "i18n-activation-subtitle":
+      "Công cụ kích hoạt chính thức cho Windows và Office",
     "i18n-activation-windows-title": "Windows",
     "i18n-activation-windows-desc":
       "Kích hoạt Digital License vĩnh viễn (HWID) cho Windows 10 & 11",
@@ -422,6 +433,16 @@ const UI_TEXT = {
     "i18n-activation-office-desc":
       "Phương pháp Ohook an toàn cho mọi phiên bản Office gồm Microsoft 365",
     "i18n-activation-office-btn": "Kích hoạt Office",
+    "i18n-activation-win-key-title": "Windows Product Key",
+    "i18n-activation-win-key-desc":
+      "Kích hoạt Windows bằng key Microsoft bản quyền của bạn",
+    "i18n-activation-win-key-btn": "Kích hoạt bằng key",
+    "i18n-activation-office-key-title": "Office Product Key",
+    "i18n-activation-office-key-desc":
+      "Kích hoạt Office bằng key Microsoft bản quyền của bạn",
+    "i18n-activation-office-key-btn": "Kích hoạt bằng key",
+    "i18n-activation-mas-title": "MAS",
+    "i18n-activation-key-hint": "Script kích hoạt của massgrave.dev",
     "i18n-activation-troubleshoot-title": "Khắc phục sự cố",
     "i18n-activation-troubleshoot-desc":
       "Sửa lỗi kích hoạt thường gặp như bị ISP chặn hoặc lỗi TLS",
@@ -451,6 +472,8 @@ const UI_PLACEHOLDERS = {
     "driver-restore-path": "Select data folder",
     "data-backup-path": "Select backup folder",
     "data-restore-path": "Select data backup folder",
+    "activation-win-key-input": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+    "activation-office-key-input": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
     "winget-search-input": "Enter app name (e.g. Chrome)",
   },
   vi: {
@@ -461,6 +484,8 @@ const UI_PLACEHOLDERS = {
     "driver-restore-path": "Chọn thư mục dữ liệu",
     "data-backup-path": "Chọn thư mục sao lưu",
     "data-restore-path": "Chọn thư mục dữ liệu",
+    "activation-win-key-input": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
+    "activation-office-key-input": "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX",
     "winget-search-input": "Nhập tên app (ví dụ: Chrome)",
   },
 };
@@ -578,6 +603,14 @@ const MSG = {
     windowsUpdateDisableSuccess: "Windows Update has been disabled",
     windowsUpdateEnableSuccess: "Windows Update has been enabled",
     windowsUpdateToggleFailed: "Failed to change Windows Update state",
+    invalidProductKey:
+      "Invalid product key format. Use 25 characters (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX).",
+    windowsKeyActivationStarting: "Activating Windows using product key",
+    windowsKeyActivationSuccess: "Windows activated successfully by key",
+    windowsKeyActivationFailed: "Windows key activation failed",
+    officeKeyActivationStarting: "Activating Office using product key",
+    officeKeyActivationSuccess: "Office activated successfully by key",
+    officeKeyActivationFailed: "Office key activation failed",
   },
   vi: {
     processing: "Đang xử lý",
@@ -683,6 +716,14 @@ const MSG = {
     windowsUpdateDisableSuccess: "Đã tắt Windows Update",
     windowsUpdateEnableSuccess: "Đã bật Windows Update",
     windowsUpdateToggleFailed: "Không thể đổi trạng thái Windows Update",
+    invalidProductKey:
+      "Định dạng key không hợp lệ. Dùng 25 ký tự (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX).",
+    windowsKeyActivationStarting: "Bắt đầu kích hoạt Windows bằng product key",
+    windowsKeyActivationSuccess: "Kích hoạt Windows bằng key thành công",
+    windowsKeyActivationFailed: "Kích hoạt Windows bằng key thất bại",
+    officeKeyActivationStarting: "Bắt đầu kích hoạt Office bằng product key",
+    officeKeyActivationSuccess: "Kích hoạt Office bằng key thành công",
+    officeKeyActivationFailed: "Kích hoạt Office bằng key thất bại",
   },
 };
 function resolveLanguage(value) {
@@ -5505,6 +5546,32 @@ const launchRevoUninstaller = () => {
 if (revoBtn) {
   revoBtn.onclick = launchRevoUninstaller;
 }
+function normalizeProductKey(rawValue) {
+  const compact = String(rawValue || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  if (compact.length !== 25) return "";
+  return compact.match(/.{1,5}/g).join("-");
+}
+function bindProductKeyInput(inputEl) {
+  if (!inputEl) return;
+  inputEl.addEventListener("blur", () => {
+    const normalized = normalizeProductKey(inputEl.value);
+    if (normalized) inputEl.value = normalized;
+  });
+  inputEl.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    const triggerId =
+      inputEl.id === "activation-win-key-input"
+        ? "activation-win-key-btn"
+        : "activation-office-key-btn";
+    const triggerBtn = document.getElementById(triggerId);
+    if (triggerBtn) {
+      event.preventDefault();
+      triggerBtn.click();
+    }
+  });
+}
 const winHwidBtn = document.getElementById("active-win-hwid-btn");
 if (winHwidBtn && window.api) {
   winHwidBtn.onclick = async () => {
@@ -5532,6 +5599,90 @@ if (winHwidBtn && window.api) {
         );
     } catch (e) {
       showNotification(tr("errorPrefix", { message: e.message }), "error");
+    }
+  };
+}
+const activationWinKeyInput = document.getElementById(
+  "activation-win-key-input",
+);
+const activationWinKeyBtn = document.getElementById("activation-win-key-btn");
+if (
+  activationWinKeyInput &&
+  activationWinKeyBtn &&
+  window.api &&
+  window.api.activateWindowsByKey
+) {
+  bindProductKeyInput(activationWinKeyInput);
+  activationWinKeyBtn.onclick = async () => {
+    if (activationWindowsKeyBusy) return;
+    const productKey = normalizeProductKey(activationWinKeyInput.value);
+    if (!productKey) {
+      showNotification(tr("invalidProductKey"), "error");
+      activationWinKeyInput.focus();
+      return;
+    }
+    activationWinKeyInput.value = productKey;
+    activationWindowsKeyBusy = true;
+    activationWinKeyBtn.disabled = true;
+    showNotification(tr("windowsKeyActivationStarting"), "info");
+    try {
+      const result = await window.api.activateWindowsByKey(productKey);
+      if (result && result.success) {
+        showNotification(tr("windowsKeyActivationSuccess"), "success");
+      } else {
+        showNotification(
+          (result && result.error) || tr("windowsKeyActivationFailed"),
+          "error",
+        );
+      }
+    } catch (error) {
+      showNotification(tr("errorPrefix", { message: error.message }), "error");
+    } finally {
+      activationWindowsKeyBusy = false;
+      activationWinKeyBtn.disabled = false;
+    }
+  };
+}
+const activationOfficeKeyInput = document.getElementById(
+  "activation-office-key-input",
+);
+const activationOfficeKeyBtn = document.getElementById(
+  "activation-office-key-btn",
+);
+if (
+  activationOfficeKeyInput &&
+  activationOfficeKeyBtn &&
+  window.api &&
+  window.api.activateOfficeByKey
+) {
+  bindProductKeyInput(activationOfficeKeyInput);
+  activationOfficeKeyBtn.onclick = async () => {
+    if (activationOfficeKeyBusy) return;
+    const productKey = normalizeProductKey(activationOfficeKeyInput.value);
+    if (!productKey) {
+      showNotification(tr("invalidProductKey"), "error");
+      activationOfficeKeyInput.focus();
+      return;
+    }
+    activationOfficeKeyInput.value = productKey;
+    activationOfficeKeyBusy = true;
+    activationOfficeKeyBtn.disabled = true;
+    showNotification(tr("officeKeyActivationStarting"), "info");
+    try {
+      const result = await window.api.activateOfficeByKey(productKey);
+      if (result && result.success) {
+        showNotification(tr("officeKeyActivationSuccess"), "success");
+      } else {
+        showNotification(
+          (result && result.error) || tr("officeKeyActivationFailed"),
+          "error",
+        );
+      }
+    } catch (error) {
+      showNotification(tr("errorPrefix", { message: error.message }), "error");
+    } finally {
+      activationOfficeKeyBusy = false;
+      activationOfficeKeyBtn.disabled = false;
     }
   };
 }

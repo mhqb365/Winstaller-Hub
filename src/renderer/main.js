@@ -1,7 +1,7 @@
 ﻿const installerGrid = document.getElementById("installer-grid");
 const addBtn = document.getElementById("add-installer-btn");
 const searchInput = document.getElementById("search-input");
-document.getElementById("notification-container");
+const notificationContainer = document.getElementById("notification-container");
 const notiHistoryList = document.getElementById("noti-history-list");
 const notiToggle = document.getElementById("notification-toggle");
 const notiPanel = document.getElementById("notification-panel");
@@ -18,6 +18,8 @@ const systemLoader = document.getElementById("system-loader");
 const systemLoaderText = document.getElementById("system-loader-text");
 let notificationHistory = [];
 let unreadCount = 0;
+let toastSequence = 0;
+const activeToastTimers = /* @__PURE__ */ new Map();
 let activeTasks = /* @__PURE__ */ new Map();
 let installers = [];
 let selectedInstallerKeys = /* @__PURE__ */ new Set();
@@ -1521,18 +1523,67 @@ if (navItems.activation)
   navItems.activation.onclick = () => switchTab("activation");
 if (navItems.settings) navItems.settings.onclick = () => switchTab("settings");
 if (navItems.about) navItems.about.onclick = () => switchTab("about");
-function showNotification(message, type = "info", duration = 4e3) {
+function showNotification(message, type = "info", duration = 3e3) {
+  const safeMessage = String(message || "").trim();
+  if (!safeMessage) return;
+  const normalizedType =
+    type === "success" || type === "error" ? type : "info";
   const time = /* @__PURE__ */ new Date().toLocaleTimeString(getUiLocale(), {
     hour: "2-digit",
     minute: "2-digit",
   });
-  notificationHistory.unshift({ message, type, time });
+  notificationHistory.unshift({ message: safeMessage, type: normalizedType, time });
   updateNotiPanelUI();
-  if (!notiPanel.classList.contains("active")) {
+  if (notiPanel && !notiPanel.classList.contains("active") && notiBadge) {
     unreadCount++;
     notiBadge.innerText = unreadCount > 9 ? "9+" : unreadCount;
     notiBadge.style.display = "flex";
   }
+  if (!notificationContainer) return;
+
+  const toastId = ++toastSequence;
+  const iconName =
+    normalizedType === "success"
+      ? "check-circle-2"
+      : normalizedType === "error"
+        ? "alert-circle"
+        : "info";
+  const toastEl = document.createElement("div");
+  toastEl.className = `toast toast-${normalizedType}`;
+  toastEl.setAttribute("role", normalizedType === "error" ? "alert" : "status");
+  toastEl.setAttribute(
+    "aria-live",
+    normalizedType === "error" ? "assertive" : "polite",
+  );
+  toastEl.innerHTML = `
+    <span class="toast-icon">
+      <i data-lucide="${iconName}" style="width: 14px; height: 14px"></i>
+    </span>
+    <span class="toast-message">${escapeHtml(safeMessage)}</span>
+  `;
+
+  const dismissToast = () => {
+    if (!toastEl || toastEl.dataset.dismissed === "1") return;
+    toastEl.dataset.dismissed = "1";
+    const timerId = activeToastTimers.get(toastId);
+    if (timerId) {
+      clearTimeout(timerId);
+      activeToastTimers.delete(toastId);
+    }
+    toastEl.classList.add("toast-exit");
+    const removeToast = () => {
+      toastEl.remove();
+    };
+    toastEl.addEventListener("transitionend", removeToast, { once: true });
+    setTimeout(removeToast, 220);
+  };
+
+  toastEl.onclick = () => dismissToast();
+  notificationContainer.prepend(toastEl);
+  replaceLucidePlaceholders(toastEl);
+  const hideDelay = Math.max(0, Number(duration) || 3000);
+  const timerId = setTimeout(() => dismissToast(), hideDelay);
+  activeToastTimers.set(toastId, timerId);
 }
 function updateNotiPanelUI() {
   if (!notiHistoryList) return;
@@ -5800,6 +5851,10 @@ window.addEventListener("beforeunload", () => {
     disposeInstalledAppsUpdatedListener();
     disposeInstalledAppsUpdatedListener = null;
   }
+  activeToastTimers.forEach((timerId) => {
+    clearTimeout(timerId);
+  });
+  activeToastTimers.clear();
 });
 function showSystemLoader(text) {
   if (systemLoader && systemLoaderText) {

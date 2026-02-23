@@ -60,6 +60,7 @@
     },
     "asar": true,
     "asarUnpack": [],
+    "afterPack": "build/after-pack.cjs",
     "extraFiles": [
       {
         "from": "src/apps/installers.json",

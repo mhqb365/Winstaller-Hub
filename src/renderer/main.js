@@ -248,7 +248,7 @@ const UI_TEXT = {
     "i18n-utilities-wu-status-label": "Current status",
     "i18n-utilities-wu-hint":
       "Requires Administrator privileges to apply changes",
-    "i18n-activation-title": "MS Activation",
+    "i18n-activation-title": "Microsoft Activation",
     "i18n-activation-subtitle":
       "Official active methods for Windows and Office",
     "i18n-activation-windows-title": "Windows",
@@ -424,7 +424,7 @@ const UI_TEXT = {
     "i18n-utilities-wu-desc": "Bật tắt nhanh dịch vụ Windows Update",
     "i18n-utilities-wu-status-label": "Trạng thái hiện tại",
     "i18n-utilities-wu-hint": "Cần quyền Administrator để áp dụng thay đổi",
-    "i18n-activation-title": "MS Activation",
+    "i18n-activation-title": "Kích hoạt Microsoft",
     "i18n-activation-subtitle":
       "Công cụ kích hoạt chính thức cho Windows và Office",
     "i18n-activation-windows-title": "Windows",
@@ -1526,13 +1526,16 @@ if (navItems.about) navItems.about.onclick = () => switchTab("about");
 function showNotification(message, type = "info", duration = 3e3) {
   const safeMessage = String(message || "").trim();
   if (!safeMessage) return;
-  const normalizedType =
-    type === "success" || type === "error" ? type : "info";
+  const normalizedType = type === "success" || type === "error" ? type : "info";
   const time = /* @__PURE__ */ new Date().toLocaleTimeString(getUiLocale(), {
     hour: "2-digit",
     minute: "2-digit",
   });
-  notificationHistory.unshift({ message: safeMessage, type: normalizedType, time });
+  notificationHistory.unshift({
+    message: safeMessage,
+    type: normalizedType,
+    time,
+  });
   updateNotiPanelUI();
   if (notiPanel && !notiPanel.classList.contains("active") && notiBadge) {
     unreadCount++;

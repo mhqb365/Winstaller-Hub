@@ -129,6 +129,9 @@
               <div class="sub-item" id="nav-driver">
                 <span id="i18n-nav-driver">Drivers</span>
               </div>
+              <div class="sub-item" id="nav-data-backup">
+                <span id="i18n-nav-data-backup">Data</span>
+              </div>
               <div class="sub-item" id="nav-utilities">
                 <span id="i18n-nav-utilities-home">System</span>
               </div>
@@ -488,7 +491,10 @@
                 id="selected-count"
                 class="text-xs font-bold text-muted"
               ></span>
-              <button id="clear-selection-btn" class="btn btn-outline h-8 text-xs">
+              <button
+                id="clear-selection-btn"
+                class="btn btn-outline h-8 text-xs"
+              >
                 <span id="i18n-btn-clear-selection">Clear Selection</span>
               </button>
               <button
@@ -739,7 +745,7 @@
                   type="text"
                   id="driver-backup-path"
                   class="input"
-                  placeholder="Select backup destination folder"
+                  placeholder="Select backup folder"
                   readonly
                 />
                 <button id="driver-backup-browse-btn" class="btn btn-outline">
@@ -776,7 +782,7 @@
                   type="text"
                   id="driver-restore-path"
                   class="input"
-                  placeholder="Select driver backup folder"
+                  placeholder="Select backup folder"
                   readonly
                 />
                 <button id="driver-restore-browse-btn" class="btn btn-outline">
@@ -795,6 +801,127 @@
               </div>
               <p id="i18n-driver-restore-hint" class="text-xs text-muted">
                 Run as Administrator for best compatibility
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Backup Section -->
+        <div id="tab-data-backup" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-data-backup-title">Backup Data</h1>
+            <p id="i18n-data-backup-subtitle">
+              Backup and restore default user folders
+            </p>
+          </div>
+
+          <div class="driver-tools-layout">
+            <div class="card driver-tool-card">
+              <div class="driver-tool-header">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="archive" style="width: 16px"></i>
+                  <span id="i18n-data-backup-run-title">Backup</span>
+                </h3>
+                <p id="i18n-data-backup-run-desc" class="text-sm text-muted">
+                  Copy selected default folders
+                </p>
+              </div>
+
+              <div class="data-folder-toolbar">
+                <div class="data-folder-stats">
+                  <span
+                    id="data-backup-selection-count"
+                    class="text-xs text-muted"
+                  ></span>
+                  <span
+                    id="data-backup-size-summary"
+                    class="text-xs text-muted"
+                  ></span>
+                </div>
+                <div class="driver-tool-actions">
+                  <button
+                    id="data-backup-add-folder-btn"
+                    class="btn btn-outline h-8 text-xs"
+                  >
+                    <i data-lucide="folder-plus" style="width: 14px"></i>
+                    <span id="i18n-data-backup-add-folder">Add folder</span>
+                  </button>
+                  <button
+                    id="data-backup-select-all-btn"
+                    class="btn btn-outline h-8 text-xs"
+                  >
+                    <i data-lucide="check-square" style="width: 14px"></i>
+                    <span id="i18n-data-backup-select-all">Select all</span>
+                  </button>
+                  <button
+                    id="data-backup-clear-all-btn"
+                    class="btn btn-outline h-8 text-xs"
+                  >
+                    <!-- <i data-lucide="square" style="width: 14px"></i> -->
+                    <span id="i18n-data-backup-clear-all">Clear</span>
+                  </button>
+                </div>
+              </div>
+              <div id="data-backup-folder-list" class="data-folder-list"></div>
+
+              <div class="driver-path-row">
+                <input
+                  type="text"
+                  id="data-backup-path"
+                  class="input"
+                  placeholder="Select backup folder"
+                  readonly
+                />
+                <button id="data-backup-browse-btn" class="btn btn-outline">
+                  <i data-lucide="folder-open" style="width: 16px"></i>
+                  <span id="i18n-data-backup-browse">Browse</span>
+                </button>
+              </div>
+              <div class="driver-tool-actions">
+                <button id="data-backup-run-btn" class="btn btn-primary w-full">
+                  <i data-lucide="download" style="width: 16px"></i>
+                  <span id="i18n-data-backup-run-btn">Backup</span>
+                </button>
+              </div>
+              <p id="i18n-data-backup-run-hint" class="text-xs text-muted">
+                Uses multithreaded copy to improve speed
+              </p>
+            </div>
+
+            <div class="card driver-tool-card">
+              <div class="driver-tool-header">
+                <h3 class="font-bold flex items-center gap-2">
+                  <i data-lucide="history" style="width: 16px"></i>
+                  <span id="i18n-data-restore-title">Restore</span>
+                </h3>
+                <p id="i18n-data-restore-desc" class="text-sm text-muted">
+                  Restore selected folders from backup
+                </p>
+              </div>
+              <div class="driver-path-row">
+                <input
+                  type="text"
+                  id="data-restore-path"
+                  class="input"
+                  placeholder="Select data backup folder"
+                  readonly
+                />
+                <button id="data-restore-browse-btn" class="btn btn-outline">
+                  <i data-lucide="folder-open" style="width: 16px"></i>
+                  <span id="i18n-data-restore-browse">Browse</span>
+                </button>
+              </div>
+              <div class="driver-tool-actions">
+                <button
+                  id="data-restore-run-btn"
+                  class="btn btn-primary w-full"
+                >
+                  <i data-lucide="upload" style="width: 16px"></i>
+                  <span id="i18n-data-restore-run-btn">Restore</span>
+                </button>
+              </div>
+              <p id="i18n-data-restore-hint" class="text-xs text-muted">
+                Existing files are kept, changed files are updated
               </p>
             </div>
           </div>

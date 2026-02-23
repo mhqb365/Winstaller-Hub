@@ -47,10 +47,27 @@ let officeX64Filter = localStorage.getItem("officeX64Filter") !== "false";
 let officeX86Filter = localStorage.getItem("officeX86Filter") !== "false";
 let officeSearchTerm = "";
 let officeOnlineSelectedProductIds = /* @__PURE__ */ new Set();
-let driverBackupPath = localStorage.getItem("driverBackupPath") || "";
-let driverRestorePath = localStorage.getItem("driverRestorePath") || "";
+let driverBackupPath = "";
+let driverRestorePath = "";
 let driverBackupBusy = false;
 let driverRestoreBusy = false;
+let dataBackupPath = "";
+let dataRestorePath = "";
+let dataBackupBusy = false;
+let dataRestoreBusy = false;
+let dataDefaultFolders = [];
+let dataSelectedFolderIds = /* @__PURE__ */ new Set();
+let dataCustomFolders = [];
+let dataSizeBusy = false;
+let dataSelectedTotalBytes = 0;
+let dataSelectedTotalFiles = 0;
+let dataSizeRefreshTimer = null;
+let dataSizeRequestId = 0;
+let dataSizeRefreshQueued = false;
+let dataSizeSelectionVersion = 0;
+const DATA_SIZE_REFRESH_IDLE_MS = 900;
+const DATA_DEFAULT_SELECTED_IDS = ["desktop", "documents", "downloads"];
+const DATA_CUSTOM_RESTORE_PROFILE_ID = "userprofile";
 let cleanupRamBusy = false;
 let cleanupDiskBusy = false;
 let windowsUpdateBusy = false;
@@ -68,6 +85,14 @@ const PERFORMANCE_NETWORK_COLORS = ["#06b6d4", "#0891b2", "#0ea5e9", "#2563eb"];
 const PERFORMANCE_DISK_COLORS = ["#0ea5e9", "#0284c7", "#0369a1", "#38bdf8"];
 const THEME_STORAGE_KEY = "themeMode";
 const LANGUAGE_STORAGE_KEY = "appLanguage";
+const PATH_STORAGE_KEYS = [
+  "driverBackupPath",
+  "driverRestorePath",
+  "dataBackupPath",
+  "dataRestorePath",
+  "dataSelectedFolderIds",
+  "dataCustomFolders",
+];
 const themeToggleInput = document.getElementById("theme-mode-toggle");
 const themeModeLabel = document.getElementById("theme-mode-label");
 const appLanguageSelect = document.getElementById("app-language-select");
@@ -97,6 +122,7 @@ const UI_TEXT = {
     "i18n-nav-office-online": "Online Setup",
     "i18n-nav-office-images": "Images Setup",
     "i18n-nav-driver": "Drivers",
+    "i18n-nav-data-backup": "Data",
     "i18n-nav-cleanup": "Cleanup",
     "i18n-nav-utilities": "Utilities",
     "i18n-nav-utilities-home": "System",
@@ -185,6 +211,22 @@ const UI_TEXT = {
     "i18n-driver-restore-browse": "Browse",
     "i18n-driver-restore-run": "Restore",
     "i18n-driver-restore-hint": "Run as Administrator for best compatibility",
+    "i18n-data-backup-title": "Data",
+    "i18n-data-backup-subtitle": "Backup and restore default user folders",
+    "i18n-data-backup-run-title": "Backup",
+    "i18n-data-backup-run-desc": "Copy selected default folders",
+    "i18n-data-backup-add-folder": "Add folder",
+    "i18n-data-backup-select-all": "Select all",
+    "i18n-data-backup-clear-all": "Clear",
+    "i18n-data-backup-browse": "Browse",
+    "i18n-data-backup-run-btn": "Backup",
+    "i18n-data-backup-run-hint": "Uses multithreaded copy to improve speed",
+    "i18n-data-restore-title": "Restore",
+    "i18n-data-restore-desc": "Restore selected folders from backup",
+    "i18n-data-restore-browse": "Browse",
+    "i18n-data-restore-run-btn": "Restore",
+    "i18n-data-restore-hint":
+      "Existing files are kept, changed files are updated",
     "i18n-cleanup-title": "Cleanup",
     "i18n-cleanup-subtitle": "Free RAM and clean temporary disk data",
     "i18n-cleanup-ram-title": "RAM Cleanup",
@@ -246,6 +288,7 @@ const UI_TEXT = {
     "i18n-nav-office-online": "Cài online",
     "i18n-nav-office-images": "Cài từ file",
     "i18n-nav-driver": "Driver",
+    "i18n-nav-data-backup": "Dữ liệu",
     "i18n-nav-cleanup": "Dọn dẹp",
     "i18n-nav-utilities": "Tiện ích",
     "i18n-nav-utilities-home": "Hệ thống",
@@ -334,6 +377,24 @@ const UI_TEXT = {
     "i18n-driver-restore-browse": "Duyệt",
     "i18n-driver-restore-run": "Khôi phục",
     "i18n-driver-restore-hint": "Nên chạy Administrator để tương thích tốt",
+    "i18n-data-backup-title": "Dữ liệu",
+    "i18n-data-backup-subtitle":
+      "Sao lưu và khôi phục các thư mục mặc định của người dùng",
+    "i18n-data-backup-run-title": "Sao lưu",
+    "i18n-data-backup-run-desc":
+      "Sao chép các thư mục mặc định đã chọn của người dùng hiện tại",
+    "i18n-data-backup-add-folder": "Tự chọn",
+    "i18n-data-backup-select-all": "Tất cả",
+    "i18n-data-backup-clear-all": "Bỏ chọn",
+    "i18n-data-backup-browse": "Duyệt",
+    "i18n-data-backup-run-btn": "Sao lưu",
+    "i18n-data-backup-run-hint": "Dùng sao chép đa luồng để tăng tốc độ",
+    "i18n-data-restore-title": "Khôi phục",
+    "i18n-data-restore-desc":
+      "Khôi phục các thư mục đã chọn từ bản sao lưu vào hồ sơ người dùng hiện tại",
+    "i18n-data-restore-browse": "Duyệt",
+    "i18n-data-restore-run-btn": "Khôi phục",
+    "i18n-data-restore-hint": "Giữ file cũ, cập nhật file đã thay đổi",
     "i18n-cleanup-title": "Dọn dẹp",
     "i18n-cleanup-subtitle": "Giải phóng RAM và dọn dữ liệu tạm trên ổ đĩa",
     "i18n-cleanup-ram-title": "Dọn RAM",
@@ -386,16 +447,20 @@ const UI_PLACEHOLDERS = {
     "search-input": "Search applications",
     "office-search-input": "Search Office versions",
     "benchmark-drive-input": "C:",
-    "driver-backup-path": "Select backup destination folder",
-    "driver-restore-path": "Select driver backup folder",
+    "driver-backup-path": "Select backup folder",
+    "driver-restore-path": "Select data folder",
+    "data-backup-path": "Select backup folder",
+    "data-restore-path": "Select data backup folder",
     "winget-search-input": "Enter app name (e.g. Chrome)",
   },
   vi: {
     "search-input": "Tìm ứng dụng",
     "office-search-input": "Tìm phiên bản Office",
     "benchmark-drive-input": "C:",
-    "driver-backup-path": "Chọn thư mục lưu sao lưu",
-    "driver-restore-path": "Chọn thư mục sao lưu driver",
+    "driver-backup-path": "Chọn thư mục sao lưu",
+    "driver-restore-path": "Chọn thư mục dữ liệu",
+    "data-backup-path": "Chọn thư mục sao lưu",
+    "data-restore-path": "Chọn thư mục dữ liệu",
     "winget-search-input": "Nhập tên app (ví dụ: Chrome)",
   },
 };
@@ -487,6 +552,16 @@ const MSG = {
     installingSmartMon: "Checking SmartMonTools",
     wingetCheck: "Checking Winget status",
     appsCountLabel: "{count} apps",
+    dataFoldersSelectedLabel: "{count} folders selected",
+    dataFolderExists: "Ready",
+    dataFolderMissing: "Missing",
+    dataFolderCustomTag: "Manual",
+    dataFolderCustomRestoreHint: "Restore to user folder: {target}\\{subPath}",
+    dataSizeCalculating: "Calculating size...",
+    dataSizeSummary: "{size} | {count} files",
+    dataCustomFolderAdded: "Added manual folder: {name}",
+    dataCustomFolderExists: "This folder is already in the backup list",
+    dataCustomFolderRemoved: "Removed manual folder: {name}",
     selectedAppsLabel: "{count} selected",
     installSelectedStarted: "Started installing {count} applications",
     installSelectedNoEligible: "Selected applications are already installed",
@@ -581,6 +656,17 @@ const MSG = {
     installingSmartMon: "Đang kiểm tra SmartMonTools",
     wingetCheck: "Đang kiểm tra Winget",
     appsCountLabel: "{count} ứng dụng",
+    dataFoldersSelectedLabel: "Đã chọn {count} thư mục",
+    dataFolderExists: "Sẵn sàng",
+    dataFolderMissing: "Thiếu",
+    dataFolderCustomTag: "Thủ công",
+    dataFolderCustomRestoreHint:
+      "Khôi phục vào thư mục người dùng: {target}\\{subPath}",
+    dataSizeCalculating: "Đang tính dung lượng...",
+    dataSizeSummary: "{size} | {count} tệp",
+    dataCustomFolderAdded: "Đã thêm thư mục thủ công: {name}",
+    dataCustomFolderExists: "Thư mục này đã có trong danh sách sao lưu",
+    dataCustomFolderRemoved: "Đã xóa thư mục thủ công: {name}",
     selectedAppsLabel: "Đã chọn {count}",
     installSelectedStarted: "Đã bắt đầu cài {count} ứng dụng",
     installSelectedNoEligible: "Các ứng dụng đã chọn đã được cài sẵn",
@@ -654,6 +740,11 @@ function applyStaticI18n() {
   }
   document.documentElement.setAttribute("lang", currentLanguage);
 }
+function clearStoredPathHistory() {
+  PATH_STORAGE_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+  });
+}
 function applyLanguage(language, options = {}) {
   const { persist = true, rerender = true } = options;
   currentLanguage = resolveLanguage(language);
@@ -669,6 +760,8 @@ function applyLanguage(language, options = {}) {
   updateNotiPanelUI();
   updateTaskPanelUI();
   setDriverButtonState();
+  setDataBackupButtonState();
+  renderDataBackupFolderList();
   setCleanupButtonState();
   renderWindowsUpdateCard();
   updateBenchmarkHealthUI();
@@ -1285,6 +1378,7 @@ const navItems = {
   office: document.getElementById("nav-office"),
   officeOnline: document.getElementById("nav-office-online"),
   driver: document.getElementById("nav-driver"),
+  dataBackup: document.getElementById("nav-data-backup"),
   cleanup: document.getElementById("nav-cleanup"),
   utilities: document.getElementById("nav-utilities"),
   activation: document.getElementById("nav-activation"),
@@ -1297,6 +1391,7 @@ const tabs = {
   office: document.getElementById("tab-office"),
   officeOnline: document.getElementById("tab-office-online"),
   driver: document.getElementById("tab-driver"),
+  dataBackup: document.getElementById("tab-data-backup"),
   cleanup: document.getElementById("tab-cleanup"),
   utilities: document.getElementById("tab-utilities"),
   activation: document.getElementById("tab-activation"),
@@ -1309,7 +1404,8 @@ function switchTab(tabName) {
     tabName === "utilities" ||
     tabName === "activation" ||
     tabName === "cleanup" ||
-    tabName === "driver";
+    tabName === "driver" ||
+    tabName === "dataBackup";
   if (officeNavParent) {
     officeNavParent.classList.toggle("active", isOfficeTab);
   }
@@ -1342,6 +1438,9 @@ function switchTab(tabName) {
         if (key === "utilities") {
           refreshWindowsUpdateState(false);
         }
+        if (key === "dataBackup") {
+          loadUserDefaultFolders();
+        }
       } else {
         tabs[key].style.display = "none";
         tabs[key].classList.remove("active");
@@ -1362,6 +1461,8 @@ if (navItems.office) navItems.office.onclick = () => switchTab("office");
 if (navItems.officeOnline)
   navItems.officeOnline.onclick = () => switchTab("officeOnline");
 if (navItems.driver) navItems.driver.onclick = () => switchTab("driver");
+if (navItems.dataBackup)
+  navItems.dataBackup.onclick = () => switchTab("dataBackup");
 if (navItems.cleanup) navItems.cleanup.onclick = () => switchTab("cleanup");
 if (navItems.utilities)
   navItems.utilities.onclick = () => switchTab("utilities");
@@ -2326,6 +2427,30 @@ const driverRestoreBrowseBtn = document.getElementById(
   "driver-restore-browse-btn",
 );
 const driverRestoreRunBtn = document.getElementById("driver-restore-run-btn");
+const dataBackupFolderListEl = document.getElementById(
+  "data-backup-folder-list",
+);
+const dataBackupSelectionCountEl = document.getElementById(
+  "data-backup-selection-count",
+);
+const dataBackupSizeSummaryEl = document.getElementById(
+  "data-backup-size-summary",
+);
+const dataBackupAddFolderBtn = document.getElementById(
+  "data-backup-add-folder-btn",
+);
+const dataBackupSelectAllBtn = document.getElementById(
+  "data-backup-select-all-btn",
+);
+const dataBackupClearAllBtn = document.getElementById(
+  "data-backup-clear-all-btn",
+);
+const dataBackupPathInput = document.getElementById("data-backup-path");
+const dataBackupBrowseBtn = document.getElementById("data-backup-browse-btn");
+const dataBackupRunBtn = document.getElementById("data-backup-run-btn");
+const dataRestorePathInput = document.getElementById("data-restore-path");
+const dataRestoreBrowseBtn = document.getElementById("data-restore-browse-btn");
+const dataRestoreRunBtn = document.getElementById("data-restore-run-btn");
 const cleanupRamBtn = document.getElementById("cleanup-ram-btn");
 const cleanupDiskBtn = document.getElementById("cleanup-disk-btn");
 const cleanupRamResultEl = document.getElementById("cleanup-ram-result");
@@ -2678,21 +2803,11 @@ function setDriverBackupPath(value) {
   if (driverBackupPathInput) {
     driverBackupPathInput.value = driverBackupPath;
   }
-  if (driverBackupPath) {
-    localStorage.setItem("driverBackupPath", driverBackupPath);
-  } else {
-    localStorage.removeItem("driverBackupPath");
-  }
 }
 function setDriverRestorePath(value) {
   driverRestorePath = String(value || "").trim();
   if (driverRestorePathInput) {
     driverRestorePathInput.value = driverRestorePath;
-  }
-  if (driverRestorePath) {
-    localStorage.setItem("driverRestorePath", driverRestorePath);
-  } else {
-    localStorage.removeItem("driverRestorePath");
   }
 }
 function setDriverButtonState() {
@@ -2716,16 +2831,887 @@ function setDriverButtonState() {
   }
   if (window.lucide) window.lucide.createIcons();
 }
+function getSavedDataFolderSelection() {
+  return Array.from(dataSelectedFolderIds)
+    .map((id) =>
+      String(id || "")
+        .trim()
+        .toLowerCase(),
+    )
+    .filter(Boolean);
+}
+function persistDataFolderSelection() {
+  // Keep selected folders in-memory only for current app session.
+}
+function getFolderPathLeaf(folderPath) {
+  const normalized = String(folderPath || "")
+    .trim()
+    .replace(/[\\/]+$/, "");
+  if (!normalized) return "";
+  const parts = normalized.split(/[\\/]+/).filter(Boolean);
+  return parts.length > 0 ? parts[parts.length - 1] : normalized;
+}
+function isGenericCustomFolderName(name) {
+  const normalized = String(name || "")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return true;
+  const genericPatterns = [
+    /^custom(?:[\s_-].*)?$/i,
+    /^manual(?:[\s_-].*)?$/i,
+    /^thu\s*cong(?:[\s_-].*)?$/i,
+    /^thủ\s*công(?:[\s_-].*)?$/i,
+  ];
+  return genericPatterns.some((pattern) => pattern.test(normalized));
+}
+function createCustomDataFolderId(folderPath) {
+  const seed = String(folderPath || "")
+    .trim()
+    .toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return `custom-${hash.toString(36)}`;
+}
+function normalizeCustomDataFolderList(rawFolders) {
+  if (!Array.isArray(rawFolders)) return [];
+  const seenIds = new Set();
+  const seenPaths = new Set();
+  return rawFolders
+    .map((folder, index) => {
+      const folderPath = String(folder?.path || "").trim();
+      if (!folderPath) return null;
+      const normalizedPath = folderPath.replace(/[\\/]+$/, "");
+      if (!normalizedPath) return null;
+      const pathKey = normalizedPath.toLowerCase();
+      if (seenPaths.has(pathKey)) return null;
+      seenPaths.add(pathKey);
+      let id = String(folder?.id || "")
+        .trim()
+        .toLowerCase();
+      if (!id) id = createCustomDataFolderId(normalizedPath);
+      if (!id.startsWith("custom-")) id = `custom-${id}`;
+      id = id.replace(/[^a-z0-9_-]/g, "-");
+      if (!id) id = `custom-${index + 1}`;
+      let uniqueId = id;
+      let suffix = 2;
+      while (seenIds.has(uniqueId)) {
+        uniqueId = `${id}-${suffix}`;
+        suffix += 1;
+      }
+      seenIds.add(uniqueId);
+      const fallbackName = getFolderPathLeaf(normalizedPath) || uniqueId;
+      const rawName = String(folder?.name || "").trim();
+      const name =
+        !rawName || isGenericCustomFolderName(rawName) ? fallbackName : rawName;
+      const restoreToId = DATA_CUSTOM_RESTORE_PROFILE_ID;
+      const restoreSubPath = String(folder?.restoreSubPath || "").trim();
+      return {
+        id: uniqueId,
+        name,
+        path: normalizedPath,
+        exists: true,
+        type: "custom",
+        restoreToId,
+        restoreSubPath,
+      };
+    })
+    .filter(Boolean);
+}
+function getSavedCustomDataFolderList() {
+  return normalizeCustomDataFolderList(dataCustomFolders);
+}
+function persistCustomDataFolderList(customFolders) {
+  const normalized = normalizeCustomDataFolderList(customFolders);
+  dataCustomFolders = normalized;
+  return normalized;
+}
+function getDataFolderDisplayName(folderId) {
+  const id = String(folderId || "")
+    .trim()
+    .toLowerCase();
+  if (id === DATA_CUSTOM_RESTORE_PROFILE_ID) {
+    return currentLanguage === "vi" ? "Thư mục người dùng" : "User Profile";
+  }
+  const builtIn = {
+    desktop: "Desktop",
+    documents: "Documents",
+    downloads: "Downloads",
+    pictures: "Pictures",
+    music: "Music",
+    videos: "Videos",
+  };
+  return builtIn[id] || id || "Documents";
+}
+function getDefaultDataFolderSelection(availableIds) {
+  if (!(availableIds instanceof Set) || availableIds.size === 0) return [];
+  const preferred = DATA_DEFAULT_SELECTED_IDS.filter((id) =>
+    availableIds.has(id),
+  );
+  if (preferred.length > 0) return preferred;
+  return Array.from(availableIds);
+}
+function getSelectedDefaultFolderIds() {
+  return dataDefaultFolders
+    .filter(
+      (folder) =>
+        folder.type !== "custom" && dataSelectedFolderIds.has(folder.id),
+    )
+    .map((folder) => folder.id);
+}
+function getSelectedCustomFolders() {
+  return dataDefaultFolders
+    .filter(
+      (folder) =>
+        folder.type === "custom" && dataSelectedFolderIds.has(folder.id),
+    )
+    .map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+      sourcePath: folder.path,
+      restoreToId: folder.restoreToId || DATA_CUSTOM_RESTORE_PROFILE_ID,
+      restoreSubPath: String(folder.restoreSubPath || "").trim(),
+    }));
+}
+function normalizeDataFolderList(rawFolders) {
+  if (!Array.isArray(rawFolders)) return [];
+  return rawFolders
+    .map((folder) => {
+      const id = String(folder?.id || "")
+        .trim()
+        .toLowerCase();
+      const name = String(folder?.name || "").trim();
+      const folderPath = String(folder?.path || "").trim();
+      if (!id || !name || !folderPath) return null;
+      return {
+        id,
+        name,
+        path: folderPath,
+        exists: Boolean(folder?.exists),
+        type: "default",
+        restoreToId: id,
+        restoreSubPath: "",
+      };
+    })
+    .filter(Boolean);
+}
+function composeDataFolderList(defaultFolders, customFolders) {
+  const defaultList = Array.isArray(defaultFolders) ? defaultFolders : [];
+  const customList = Array.isArray(customFolders) ? customFolders : [];
+  return [...customList, ...defaultList];
+}
+function setDataBackupPath(value) {
+  dataBackupPath = String(value || "").trim();
+  if (dataBackupPathInput) {
+    dataBackupPathInput.value = dataBackupPath;
+  }
+}
+function setDataRestorePath(value) {
+  dataRestorePath = String(value || "").trim();
+  if (dataRestorePathInput) {
+    dataRestorePathInput.value = dataRestorePath;
+  }
+}
+async function addCustomDataFolder() {
+  if (!window.api || !window.api.selectFolder) return;
+  const title =
+    currentLanguage === "vi"
+      ? "Chọn thư mục dữ liệu thủ công để sao lưu"
+      : "Select manual data folder to back up";
+  const selectedPath = await window.api.selectFolder({ title });
+  if (!selectedPath) return;
+  const normalizedPath = String(selectedPath || "")
+    .trim()
+    .replace(/[\\/]+$/, "");
+  if (!normalizedPath) return;
+  const pathKey = normalizedPath.toLowerCase();
+  const duplicate = dataDefaultFolders.some(
+    (folder) =>
+      String(folder.path || "")
+        .trim()
+        .toLowerCase() === pathKey,
+  );
+  if (duplicate) {
+    showNotification(tr("dataCustomFolderExists"), "info");
+    return;
+  }
+  const savedCustomFolders = getSavedCustomDataFolderList();
+  let nextId = createCustomDataFolderId(normalizedPath);
+  if (!nextId.startsWith("custom-")) nextId = `custom-${nextId}`;
+  let uniqueId = nextId;
+  let suffix = 2;
+  while (savedCustomFolders.some((folder) => folder.id === uniqueId)) {
+    uniqueId = `${nextId}-${suffix}`;
+    suffix += 1;
+  }
+  const folderName = getFolderPathLeaf(normalizedPath) || uniqueId;
+  const nextCustomFolders = persistCustomDataFolderList([
+    {
+      id: uniqueId,
+      name: folderName,
+      path: normalizedPath,
+      restoreToId: DATA_CUSTOM_RESTORE_PROFILE_ID,
+      restoreSubPath: "",
+    },
+    ...savedCustomFolders,
+  ]);
+  dataSelectedFolderIds.add(uniqueId);
+  dataSizeSelectionVersion += 1;
+  persistDataFolderSelection();
+  const builtInFolders = dataDefaultFolders.filter(
+    (folder) => folder.type !== "custom",
+  );
+  dataDefaultFolders = composeDataFolderList(builtInFolders, nextCustomFolders);
+  renderDataBackupFolderList();
+  scheduleDataSizeRefresh(DATA_SIZE_REFRESH_IDLE_MS);
+  showNotification(
+    tr("dataCustomFolderAdded", { name: folderName }),
+    "success",
+  );
+}
+async function removeCustomDataFolderById(folderId) {
+  const targetId = String(folderId || "")
+    .trim()
+    .toLowerCase();
+  if (!targetId) return;
+  const savedCustomFolders = getSavedCustomDataFolderList();
+  const targetFolder = savedCustomFolders.find(
+    (folder) => folder.id === targetId,
+  );
+  if (!targetFolder) return;
+  const nextCustomFolders = savedCustomFolders.filter(
+    (folder) => folder.id !== targetId,
+  );
+  persistCustomDataFolderList(nextCustomFolders);
+  dataSelectedFolderIds.delete(targetId);
+  dataSizeSelectionVersion += 1;
+  persistDataFolderSelection();
+  const builtInFolders = dataDefaultFolders.filter(
+    (folder) => folder.type !== "custom",
+  );
+  dataDefaultFolders = composeDataFolderList(builtInFolders, nextCustomFolders);
+  renderDataBackupFolderList();
+  scheduleDataSizeRefresh(DATA_SIZE_REFRESH_IDLE_MS);
+  showNotification(
+    tr("dataCustomFolderRemoved", { name: targetFolder.name }),
+    "info",
+  );
+}
+function pruneDataFolderSelection() {
+  if (dataSelectedFolderIds.size === 0) return;
+  const availableIds = new Set(
+    dataDefaultFolders.map((folder) => String(folder.id || "").toLowerCase()),
+  );
+  let changed = false;
+  Array.from(dataSelectedFolderIds).forEach((id) => {
+    if (!availableIds.has(id)) {
+      dataSelectedFolderIds.delete(id);
+      changed = true;
+    }
+  });
+  if (changed) {
+    persistDataFolderSelection();
+  }
+}
+function updateDataBackupStatsUI() {
+  const selectedCount = dataSelectedFolderIds.size;
+  if (dataBackupSelectionCountEl) {
+    dataBackupSelectionCountEl.innerText = tr("dataFoldersSelectedLabel", {
+      count: selectedCount,
+    });
+  }
+  if (!dataBackupSizeSummaryEl) return;
+  if (selectedCount === 0) {
+    dataBackupSizeSummaryEl.innerText = tr("dataSizeSummary", {
+      size: formatBytes(0),
+      count: Number(0).toLocaleString(getUiLocale()),
+    });
+    return;
+  }
+  if (dataSizeBusy) {
+    dataBackupSizeSummaryEl.innerText = tr("dataSizeCalculating");
+    return;
+  }
+  dataBackupSizeSummaryEl.innerText = tr("dataSizeSummary", {
+    size: formatBytes(dataSelectedTotalBytes),
+    count: Number(dataSelectedTotalFiles || 0).toLocaleString(getUiLocale()),
+  });
+}
+function scheduleDataSizeRefresh(delayMs = DATA_SIZE_REFRESH_IDLE_MS) {
+  if (dataSizeRefreshTimer) {
+    clearTimeout(dataSizeRefreshTimer);
+    dataSizeRefreshTimer = null;
+  }
+  dataSizeRefreshTimer = setTimeout(
+    () => {
+      refreshSelectedDataSize();
+    },
+    Math.max(0, Number(delayMs) || 0),
+  );
+}
+async function refreshSelectedDataSize() {
+  if (dataSizeRefreshTimer) {
+    clearTimeout(dataSizeRefreshTimer);
+    dataSizeRefreshTimer = null;
+  }
+  if (dataSizeBusy) {
+    dataSizeRefreshQueued = true;
+    return;
+  }
+  const requestId = ++dataSizeRequestId;
+  const selectionVersion = dataSizeSelectionVersion;
+  const selectedDefaultFolderIds = getSelectedDefaultFolderIds();
+  const selectedCustomFolders = getSelectedCustomFolders();
+  if (
+    selectedDefaultFolderIds.length === 0 &&
+    selectedCustomFolders.length === 0
+  ) {
+    dataSelectedTotalBytes = 0;
+    dataSelectedTotalFiles = 0;
+    dataSizeBusy = false;
+    dataSizeRefreshQueued = false;
+    updateDataBackupStatsUI();
+    return;
+  }
+  if (!window.api || !window.api.getUserDataSize) {
+    dataSelectedTotalBytes = 0;
+    dataSelectedTotalFiles = 0;
+    dataSizeBusy = false;
+    dataSizeRefreshQueued = false;
+    updateDataBackupStatsUI();
+    return;
+  }
+  dataSizeBusy = true;
+  updateDataBackupStatsUI();
+  try {
+    const result = await window.api.getUserDataSize({
+      selectedFolderIds: selectedDefaultFolderIds,
+      customFolders: selectedCustomFolders,
+    });
+    if (
+      requestId !== dataSizeRequestId ||
+      selectionVersion !== dataSizeSelectionVersion
+    )
+      return;
+    if (result && result.success) {
+      const totalBytes = Number(result.totalBytes);
+      const totalFiles = Number(result.totalFiles);
+      dataSelectedTotalBytes = Number.isFinite(totalBytes) ? totalBytes : 0;
+      dataSelectedTotalFiles = Number.isFinite(totalFiles) ? totalFiles : 0;
+    } else {
+      dataSelectedTotalBytes = 0;
+      dataSelectedTotalFiles = 0;
+    }
+  } catch {
+    if (
+      requestId !== dataSizeRequestId ||
+      selectionVersion !== dataSizeSelectionVersion
+    )
+      return;
+    dataSelectedTotalBytes = 0;
+    dataSelectedTotalFiles = 0;
+  } finally {
+    if (requestId === dataSizeRequestId) {
+      dataSizeBusy = false;
+      updateDataBackupStatsUI();
+    }
+    if (dataSizeRefreshQueued) {
+      dataSizeRefreshQueued = false;
+      scheduleDataSizeRefresh(DATA_SIZE_REFRESH_IDLE_MS);
+    }
+  }
+}
+function renderDataBackupFolderList() {
+  if (!dataBackupFolderListEl) return;
+  pruneDataFolderSelection();
+  if (!Array.isArray(dataDefaultFolders) || dataDefaultFolders.length === 0) {
+    dataSelectedTotalBytes = 0;
+    dataSelectedTotalFiles = 0;
+    dataSizeBusy = false;
+    dataSizeRefreshQueued = false;
+    dataBackupFolderListEl.innerHTML = `<div class="data-folder-empty">${
+      currentLanguage === "vi"
+        ? "Không tìm thấy thư mục mặc định cho người dùng hiện tại"
+        : "No default folders found for current user"
+    }</div>`;
+    updateDataBackupStatsUI();
+    setDataBackupButtonState(false);
+    return;
+  }
+  updateDataBackupStatsUI();
+  dataBackupFolderListEl.innerHTML = dataDefaultFolders
+    .map((folder) => {
+      const checked = dataSelectedFolderIds.has(folder.id);
+      const isCustom = folder.type === "custom";
+      const stateLabel = folder.exists
+        ? tr("dataFolderExists")
+        : tr("dataFolderMissing");
+      const stateClass = folder.exists
+        ? "data-folder-state"
+        : "data-folder-state missing";
+      const customTag = isCustom
+        ? `<span class="data-folder-custom-tag">${escapeHtml(tr("dataFolderCustomTag"))}</span>`
+        : "";
+      const customHint = isCustom
+        ? tr("dataFolderCustomRestoreHint", {
+            target: getDataFolderDisplayName(
+              folder.restoreToId || DATA_CUSTOM_RESTORE_PROFILE_ID,
+            ),
+            subPath:
+              String(folder.restoreSubPath || "").trim() ||
+              getFolderPathLeaf(folder.path),
+          })
+        : "";
+      const removeTitle =
+        currentLanguage === "vi"
+          ? "Xóa thư mục thủ công"
+          : "Remove manual folder";
+      return `
+        <label class="data-folder-item">
+          <input type="checkbox" class="data-folder-checkbox" data-folder-id="${escapeHtml(folder.id)}" ${checked ? "checked" : ""} />
+          <div>
+            <div class="data-folder-name">${escapeHtml(folder.name)}${customTag}</div>
+            <div class="data-folder-path">${escapeHtml(folder.path)}</div>
+            ${customHint ? `<div class="data-folder-restore-hint">${escapeHtml(customHint)}</div>` : ""}
+          </div>
+          <div class="data-folder-meta">
+            <span class="${stateClass}">${escapeHtml(stateLabel)}</span>
+            ${isCustom ? `<button type="button" class="data-folder-remove-btn" data-folder-id="${escapeHtml(folder.id)}" title="${escapeHtml(removeTitle)}" aria-label="${escapeHtml(removeTitle)}"><i data-lucide="x" style="width: 12px"></i></button>` : ""}
+          </div>
+        </label>
+      `;
+    })
+    .join("");
+  dataBackupFolderListEl
+    .querySelectorAll(".data-folder-checkbox")
+    .forEach((input) => {
+      input.onchange = (event) => {
+        const folderId = String(event.target?.dataset?.folderId || "");
+        if (!folderId) return;
+        if (event.target.checked) {
+          dataSelectedFolderIds.add(folderId);
+        } else {
+          dataSelectedFolderIds.delete(folderId);
+        }
+        dataSizeSelectionVersion += 1;
+        persistDataFolderSelection();
+        updateDataBackupStatsUI();
+        setDataBackupButtonState(false);
+        scheduleDataSizeRefresh(DATA_SIZE_REFRESH_IDLE_MS);
+      };
+    });
+  dataBackupFolderListEl
+    .querySelectorAll(".data-folder-remove-btn")
+    .forEach((btn) => {
+      btn.onmousedown = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+      btn.onclick = async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const folderId = String(event.currentTarget?.dataset?.folderId || "")
+          .trim()
+          .toLowerCase();
+        if (!folderId) return;
+        await removeCustomDataFolderById(folderId);
+      };
+    });
+  if (window.lucide) window.lucide.createIcons();
+  setDataBackupButtonState(false);
+}
+function setDataBackupButtonState(refreshIcons = true) {
+  const selectedCount = dataSelectedFolderIds.size;
+  const hasFolders =
+    Array.isArray(dataDefaultFolders) && dataDefaultFolders.length > 0;
+  if (dataBackupBrowseBtn) {
+    dataBackupBrowseBtn.disabled = dataBackupBusy;
+  }
+  if (dataRestoreBrowseBtn) {
+    dataRestoreBrowseBtn.disabled = dataRestoreBusy;
+  }
+  if (dataBackupAddFolderBtn) {
+    dataBackupAddFolderBtn.disabled = dataBackupBusy || dataRestoreBusy;
+  }
+  if (dataBackupRunBtn) {
+    dataBackupRunBtn.disabled =
+      dataBackupBusy || !hasFolders || selectedCount === 0;
+    dataBackupRunBtn.innerHTML = dataBackupBusy
+      ? `<i data-lucide="loader-2" class="animate-spin" style="width: 16px"></i> ${tr("processing")}`
+      : `<i data-lucide="download" style="width: 16px"></i> ${tr("backup")}`;
+  }
+  if (dataRestoreRunBtn) {
+    dataRestoreRunBtn.disabled = dataRestoreBusy;
+    dataRestoreRunBtn.innerHTML = dataRestoreBusy
+      ? `<i data-lucide="loader-2" class="animate-spin" style="width: 16px"></i> ${tr("processing")}`
+      : `<i data-lucide="upload" style="width: 16px"></i> ${tr("restore")}`;
+  }
+  if (dataBackupSelectAllBtn) {
+    dataBackupSelectAllBtn.disabled =
+      !hasFolders || dataBackupBusy || dataRestoreBusy;
+  }
+  if (dataBackupClearAllBtn) {
+    dataBackupClearAllBtn.disabled =
+      !hasFolders || dataBackupBusy || dataRestoreBusy || selectedCount === 0;
+  }
+  if (refreshIcons && window.lucide) window.lucide.createIcons();
+}
+async function loadUserDefaultFolders(options = {}) {
+  const { resetSelection = false, notifyError = false } = options;
+  if (!window.api || !window.api.getUserDefaultFolders) return;
+  try {
+    const result = await window.api.getUserDefaultFolders();
+    if (!result || !result.success) {
+      dataDefaultFolders = [];
+      dataSelectedFolderIds = /* @__PURE__ */ new Set();
+      dataSizeSelectionVersion += 1;
+      dataSelectedTotalBytes = 0;
+      dataSelectedTotalFiles = 0;
+      dataSizeBusy = false;
+      dataSizeRefreshQueued = false;
+      persistDataFolderSelection();
+      renderDataBackupFolderList();
+      if (notifyError) {
+        showNotification(
+          result && result.error
+            ? result.error
+            : currentLanguage === "vi"
+              ? "Không thể tải danh sách thư mục mặc định"
+              : "Failed to load default folder list",
+          "error",
+        );
+      }
+      return;
+    }
+    const builtInFolders = normalizeDataFolderList(result.folders);
+    const builtInPathSet = new Set(
+      builtInFolders.map((folder) =>
+        String(folder.path || "")
+          .trim()
+          .toLowerCase(),
+      ),
+    );
+    const customFolders = getSavedCustomDataFolderList().filter((folder) => {
+      const pathKey = String(folder.path || "")
+        .trim()
+        .toLowerCase();
+      return !builtInPathSet.has(pathKey);
+    });
+    persistCustomDataFolderList(customFolders);
+    dataDefaultFolders = composeDataFolderList(builtInFolders, customFolders);
+    const availableIds = new Set(dataDefaultFolders.map((folder) => folder.id));
+    let nextSelected = [];
+    if (!resetSelection) {
+      nextSelected = getSavedDataFolderSelection().filter((id) =>
+        availableIds.has(id),
+      );
+    }
+    if (nextSelected.length === 0) {
+      nextSelected = getDefaultDataFolderSelection(availableIds);
+    }
+    dataSelectedFolderIds = new Set(nextSelected);
+    dataSizeSelectionVersion += 1;
+    dataSelectedTotalBytes = 0;
+    dataSelectedTotalFiles = 0;
+    dataSizeBusy = false;
+    dataSizeRefreshQueued = false;
+    persistDataFolderSelection();
+    renderDataBackupFolderList();
+    scheduleDataSizeRefresh(DATA_SIZE_REFRESH_IDLE_MS);
+  } catch (error) {
+    dataDefaultFolders = [];
+    dataSelectedFolderIds = /* @__PURE__ */ new Set();
+    dataSizeSelectionVersion += 1;
+    dataSelectedTotalBytes = 0;
+    dataSelectedTotalFiles = 0;
+    dataSizeBusy = false;
+    dataSizeRefreshQueued = false;
+    persistDataFolderSelection();
+    renderDataBackupFolderList();
+    if (notifyError) {
+      showNotification(tr("errorPrefix", { message: error.message }), "error");
+    }
+  }
+}
+async function pickDataFolder(type) {
+  if (!window.api || !window.api.selectFolder) return;
+  const title =
+    type === "backup"
+      ? currentLanguage === "vi"
+        ? "Chọn thư mục đích để sao lưu dữ liệu"
+        : "Select backup folder"
+      : currentLanguage === "vi"
+        ? "Chọn thư mục chứa bản sao lưu dữ liệu"
+        : "Select data backup folder to restore";
+  const selectedPath = await window.api.selectFolder({ title });
+  if (!selectedPath) return;
+  if (type === "backup") {
+    setDataBackupPath(selectedPath);
+  } else {
+    setDataRestorePath(selectedPath);
+  }
+}
+function getDataOperationError(result, fallbackMessage) {
+  if (result && result.error) return String(result.error);
+  if (result && Number.isFinite(Number(result.code)) && Number(result.code) > 0)
+    return `${fallbackMessage} (code ${result.code})`;
+  return fallbackMessage;
+}
+async function runDataBackup() {
+  if (dataBackupBusy) return;
+  if (!window.api || !window.api.backupUserData) {
+    showNotification(
+      currentLanguage === "vi"
+        ? "API sao lưu dữ liệu hiện không khả dụng"
+        : "Data backup API is not available",
+      "error",
+    );
+    return;
+  }
+  const selectedDefaultFolderIds = getSelectedDefaultFolderIds();
+  const selectedCustomFolders = getSelectedCustomFolders();
+  if (
+    selectedDefaultFolderIds.length === 0 &&
+    selectedCustomFolders.length === 0
+  ) {
+    showNotification(
+      currentLanguage === "vi"
+        ? "Vui lòng chọn ít nhất một thư mục để sao lưu"
+        : "Please select at least one folder to back up",
+      "error",
+    );
+    return;
+  }
+  if (!dataBackupPath) {
+    await pickDataFolder("backup");
+  }
+  if (!dataBackupPath) {
+    showNotification(
+      currentLanguage === "vi"
+        ? "Vui lòng chọn thư mục đích để sao lưu dữ liệu"
+        : "Please select a backup destination folder",
+      "error",
+    );
+    return;
+  }
+
+  const taskKey = `data-backup-${Date.now()}`;
+  const startTime = /* @__PURE__ */ new Date().toLocaleTimeString(
+    getUiLocale(),
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
+  activeTasks.set(taskKey, {
+    name:
+      currentLanguage === "vi"
+        ? "Sao lưu dữ liệu người dùng"
+        : "Backup User Data",
+    startTime,
+    statusLabel: tr("processing"),
+  });
+  updateTaskPanelUI();
+  dataBackupBusy = true;
+  setDataBackupButtonState();
+  showNotification(
+    currentLanguage === "vi"
+      ? "Bắt đầu sao lưu dữ liệu người dùng"
+      : "Starting user data backup",
+    "info",
+  );
+
+  try {
+    const result = await window.api.backupUserData(
+      {
+        targetPath: dataBackupPath,
+        selectedFolderIds: selectedDefaultFolderIds,
+        customFolders: selectedCustomFolders,
+        createSubfolder: true,
+      },
+      taskKey,
+    );
+    if (result && result.success) {
+      const copiedCount = Number.isFinite(Number(result.copiedFolderCount))
+        ? Number(result.copiedFolderCount)
+        : 0;
+      const outputPath = String(result.outputPath || "").trim();
+      if (outputPath) {
+        setDataRestorePath(outputPath);
+      }
+      const countText =
+        copiedCount > 0
+          ? currentLanguage === "vi"
+            ? ` (${copiedCount.toLocaleString(getUiLocale())} thư mục)`
+            : ` (${copiedCount.toLocaleString(getUiLocale())} folders)`
+          : "";
+      showNotification(
+        currentLanguage === "vi"
+          ? `Sao lưu dữ liệu hoàn tất${countText}`
+          : `Data backup completed${countText}`,
+        "success",
+      );
+      const missingCount = Number.isFinite(Number(result.missingFolderCount))
+        ? Number(result.missingFolderCount)
+        : 0;
+      if (missingCount > 0) {
+        showNotification(
+          currentLanguage === "vi"
+            ? `${missingCount.toLocaleString(getUiLocale())} thư mục nguồn không tồn tại nên đã bỏ qua`
+            : `${missingCount.toLocaleString(getUiLocale())} source folders were missing and skipped`,
+          "info",
+        );
+      }
+    } else {
+      showNotification(
+        getDataOperationError(
+          result,
+          currentLanguage === "vi"
+            ? "Sao lưu dữ liệu thất bại"
+            : "Data backup failed",
+        ),
+        "error",
+      );
+    }
+  } catch (error) {
+    showNotification(tr("errorPrefix", { message: error.message }), "error");
+  } finally {
+    activeTasks.delete(taskKey);
+    updateTaskPanelUI();
+    dataBackupBusy = false;
+    setDataBackupButtonState();
+  }
+}
+async function runDataRestore() {
+  if (dataRestoreBusy) return;
+  if (!window.api || !window.api.restoreUserData) {
+    showNotification(
+      currentLanguage === "vi"
+        ? "API khôi phục dữ liệu hiện không khả dụng"
+        : "Data restore API is not available",
+      "error",
+    );
+    return;
+  }
+  if (!dataRestorePath) {
+    await pickDataFolder("restore");
+  }
+  if (!dataRestorePath) {
+    showNotification(
+      currentLanguage === "vi"
+        ? "Vui lòng chọn thư mục chứa bản sao lưu dữ liệu"
+        : "Please select a data backup folder",
+      "error",
+    );
+    return;
+  }
+  const hasManualSelection = dataSelectedFolderIds.size > 0;
+  if (
+    !confirm(
+      currentLanguage === "vi"
+        ? hasManualSelection
+          ? "Khôi phục các thư mục đã chọn từ bản sao lưu này? File trùng tên có thể bị ghi đè"
+          : "Không có thư mục nào được chọn. Tự động phát hiện thư mục trong backup và khôi phục? File trùng tên có thể bị ghi đè"
+        : hasManualSelection
+          ? "Restore selected folders from this backup? Existing files with same name may be overwritten"
+          : "No folders selected. Auto-detect available folders in backup and restore them? Existing files with same name may be overwritten",
+    )
+  ) {
+    return;
+  }
+
+  const taskKey = `data-restore-${Date.now()}`;
+  const startTime = /* @__PURE__ */ new Date().toLocaleTimeString(
+    getUiLocale(),
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
+  activeTasks.set(taskKey, {
+    name:
+      currentLanguage === "vi"
+        ? "Khôi phục dữ liệu người dùng"
+        : "Restore User Data",
+    startTime,
+    statusLabel: tr("processing"),
+  });
+  updateTaskPanelUI();
+  dataRestoreBusy = true;
+  setDataBackupButtonState();
+  showNotification(
+    currentLanguage === "vi"
+      ? "Bắt đầu khôi phục dữ liệu người dùng"
+      : "Starting user data restore",
+    "info",
+  );
+
+  try {
+    const result = await window.api.restoreUserData(
+      {
+        sourcePath: dataRestorePath,
+        selectedFolderIds: Array.from(dataSelectedFolderIds),
+      },
+      taskKey,
+    );
+    if (result && result.success) {
+      const restoredCount = Number.isFinite(Number(result.restoredFolderCount))
+        ? Number(result.restoredFolderCount)
+        : 0;
+      const countText =
+        restoredCount > 0
+          ? currentLanguage === "vi"
+            ? ` (${restoredCount.toLocaleString(getUiLocale())} thư mục)`
+            : ` (${restoredCount.toLocaleString(getUiLocale())} folders)`
+          : "";
+      showNotification(
+        currentLanguage === "vi"
+          ? `Khôi phục dữ liệu hoàn tất${countText}`
+          : `Data restore completed${countText}`,
+        "success",
+      );
+      const missingCount = Number.isFinite(Number(result.missingFolderCount))
+        ? Number(result.missingFolderCount)
+        : 0;
+      if (missingCount > 0) {
+        showNotification(
+          currentLanguage === "vi"
+            ? `${missingCount.toLocaleString(getUiLocale())} thư mục không có trong bản sao lưu nên đã bỏ qua`
+            : `${missingCount.toLocaleString(getUiLocale())} folders were not found in backup and skipped`,
+          "info",
+        );
+      }
+    } else {
+      showNotification(
+        getDataOperationError(
+          result,
+          currentLanguage === "vi"
+            ? "Khôi phục dữ liệu thất bại"
+            : "Data restore failed",
+        ),
+        "error",
+      );
+    }
+  } catch (error) {
+    showNotification(tr("errorPrefix", { message: error.message }), "error");
+  } finally {
+    activeTasks.delete(taskKey);
+    updateTaskPanelUI();
+    dataRestoreBusy = false;
+    setDataBackupButtonState();
+  }
+}
 async function pickDriverFolder(type) {
   if (!window.api || !window.api.selectFolder) return;
   const title =
     type === "backup"
       ? currentLanguage === "vi"
         ? "Chọn thư mục đích để sao lưu"
-        : "Select backup destination folder"
+        : "Select backup folder"
       : currentLanguage === "vi"
-        ? "Chọn thư mục sao lưu driver để khôi phục"
-        : "Select driver backup folder to restore";
+        ? "Chọn thư mục sao lưu để khôi phục"
+        : "Select backup folder to restore";
   const selectedPath = await window.api.selectFolder({ title });
   if (!selectedPath) return;
   if (type === "backup") {
@@ -3533,7 +4519,7 @@ async function runDriverRestore() {
   if (!driverRestorePath) {
     showNotification(
       currentLanguage === "vi"
-        ? "Vui lòng chọn thư mục sao lưu driver"
+        ? "Vui lòng Chọn thư mục sao lưu"
         : "Please select a driver backup folder",
       "error",
     );
@@ -4161,17 +5147,65 @@ if (driverBackupPathInput) {
 if (driverRestorePathInput) {
   driverRestorePathInput.value = driverRestorePath;
 }
+if (dataBackupPathInput) {
+  dataBackupPathInput.value = dataBackupPath;
+}
+if (dataRestorePathInput) {
+  dataRestorePathInput.value = dataRestorePath;
+}
 if (driverBackupBrowseBtn) {
   driverBackupBrowseBtn.onclick = () => pickDriverFolder("backup");
 }
 if (driverRestoreBrowseBtn) {
   driverRestoreBrowseBtn.onclick = () => pickDriverFolder("restore");
 }
+if (dataBackupBrowseBtn) {
+  dataBackupBrowseBtn.onclick = () => pickDataFolder("backup");
+}
+if (dataRestoreBrowseBtn) {
+  dataRestoreBrowseBtn.onclick = () => pickDataFolder("restore");
+}
+if (dataBackupAddFolderBtn) {
+  dataBackupAddFolderBtn.onclick = () => addCustomDataFolder();
+}
 if (driverBackupRunBtn) {
   driverBackupRunBtn.onclick = () => runDriverBackup();
 }
 if (driverRestoreRunBtn) {
   driverRestoreRunBtn.onclick = () => runDriverRestore();
+}
+if (dataBackupRunBtn) {
+  dataBackupRunBtn.onclick = () => runDataBackup();
+}
+if (dataRestoreRunBtn) {
+  dataRestoreRunBtn.onclick = () => runDataRestore();
+}
+if (dataBackupSelectAllBtn) {
+  dataBackupSelectAllBtn.onclick = () => {
+    dataSelectedFolderIds = new Set(
+      dataDefaultFolders.map((folder) => String(folder.id || "").toLowerCase()),
+    );
+    dataSizeSelectionVersion += 1;
+    persistDataFolderSelection();
+    renderDataBackupFolderList();
+    scheduleDataSizeRefresh(DATA_SIZE_REFRESH_IDLE_MS);
+  };
+}
+if (dataBackupClearAllBtn) {
+  dataBackupClearAllBtn.onclick = () => {
+    dataSelectedFolderIds = /* @__PURE__ */ new Set();
+    dataSizeSelectionVersion += 1;
+    dataSelectedTotalBytes = 0;
+    dataSelectedTotalFiles = 0;
+    dataSizeBusy = false;
+    dataSizeRefreshQueued = false;
+    if (dataSizeRefreshTimer) {
+      clearTimeout(dataSizeRefreshTimer);
+      dataSizeRefreshTimer = null;
+    }
+    persistDataFolderSelection();
+    renderDataBackupFolderList();
+  };
 }
 if (cleanupRamBtn) {
   cleanupRamBtn.onclick = () => runSystemRamCleanup();
@@ -4183,6 +5217,7 @@ if (utilitiesWuToggleBtn) {
   utilitiesWuToggleBtn.onclick = () => toggleWindowsUpdateState();
 }
 setDriverButtonState();
+setDataBackupButtonState();
 setCleanupButtonState();
 renderWindowsUpdateCard();
 if (benchmarkDriveInput) {
@@ -4606,6 +5641,10 @@ window.addEventListener("beforeunload", () => {
     clearTimeout(pendingInstalledRenderTimer);
     pendingInstalledRenderTimer = null;
   }
+  if (dataSizeRefreshTimer) {
+    clearTimeout(dataSizeRefreshTimer);
+    dataSizeRefreshTimer = null;
+  }
   if (typeof disposeInstalledAppsUpdatedListener === "function") {
     disposeInstalledAppsUpdatedListener();
     disposeInstalledAppsUpdatedListener = null;
@@ -4730,6 +5769,7 @@ async function checkAndInstallWinget() {
   }
 }
 async function initApp() {
+  clearStoredPathHistory();
   initLanguageSelector();
   initThemeToggle();
   await initAboutVersion();
@@ -4744,6 +5784,7 @@ async function initApp() {
     installers = await window.api.loadLibrary();
   }
   renderOfficeOnlineCatalog();
+  await loadUserDefaultFolders({ resetSelection: false, notifyError: false });
   refreshWindowsUpdateState(false);
   updateOfficeOnlineSubmitButtonLabel();
   initSysInfo();

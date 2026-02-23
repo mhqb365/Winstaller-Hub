@@ -104,6 +104,230 @@ app.whenReady().then(() => {
     }
     return path.join(appsPath, "installers.json");
   }
+  function safeGetAppPath(name, fallback = "") {
+    try {
+      return app.getPath(name);
+    } catch {
+      return fallback;
+    }
+  }
+  function getUserDefaultFoldersList() {
+    const homePath =
+      safeGetAppPath("home", "") ||
+      process.env.USERPROFILE ||
+      process.env.HOME ||
+      "";
+    const downloadsPath =
+      safeGetAppPath("downloads", "") ||
+      (homePath ? path.join(homePath, "Downloads") : "");
+    const folderDefs = [
+      { id: "desktop", name: "Desktop", path: safeGetAppPath("desktop", "") },
+      {
+        id: "documents",
+        name: "Documents",
+        path: safeGetAppPath("documents", ""),
+      },
+      { id: "downloads", name: "Downloads", path: downloadsPath },
+      { id: "pictures", name: "Pictures", path: safeGetAppPath("pictures", "") },
+      { id: "music", name: "Music", path: safeGetAppPath("music", "") },
+      { id: "videos", name: "Videos", path: safeGetAppPath("videos", "") },
+    ];
+    const uniquePaths = new Set();
+    return folderDefs
+      .map((folder) => {
+        const folderPath = String(folder.path || "").trim();
+        if (!folderPath) return null;
+        const normalizedPath = path.resolve(folderPath);
+        const dedupeKey = normalizedPath.toLowerCase();
+        if (uniquePaths.has(dedupeKey)) return null;
+        uniquePaths.add(dedupeKey);
+        return {
+          id: folder.id,
+          name: folder.name,
+          path: normalizedPath,
+          exists: fs.existsSync(normalizedPath),
+        };
+      })
+      .filter(Boolean);
+  }
+  function parseSelectedFolderIds(rawIds) {
+    if (!Array.isArray(rawIds)) return [];
+    return Array.from(
+      new Set(
+        rawIds
+          .map((value) => String(value || "").trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    );
+  }
+  function sanitizePathSegment(value) {
+    return String(value || "")
+      .trim()
+      .replace(/[<>:"/\\|?*\u0000-\u001F]+/g, "-")
+      .replace(/\.+$/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  function sanitizeRelativeSubPath(value) {
+    const parts = String(value || "")
+      .split(/[\\/]+/)
+      .map((part) => sanitizePathSegment(part))
+      .filter((part) => part && part !== "." && part !== "..");
+    return parts.join(path.sep);
+  }
+  const USER_PROFILE_RESTORE_ID = "userprofile";
+  function getCurrentUserHomePath() {
+    const homePath =
+      safeGetAppPath("home", "") ||
+      process.env.USERPROFILE ||
+      process.env.HOME ||
+      "";
+    return homePath ? path.resolve(homePath) : "";
+  }
+  function getRelativePathWithinBase(targetPath, basePath) {
+    const normalizedTarget = path.resolve(String(targetPath || "").trim());
+    const normalizedBase = path.resolve(String(basePath || "").trim());
+    if (!normalizedTarget || !normalizedBase) return "";
+    const relativePath = path.relative(normalizedBase, normalizedTarget);
+    if (!relativePath || relativePath === ".") return "";
+    const isOutsideBase =
+      relativePath === ".." ||
+      relativePath.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(relativePath);
+    if (isOutsideBase) return "";
+    return sanitizeRelativeSubPath(relativePath);
+  }
+  function parseCustomUserDataFolders(rawFolders) {
+    if (!Array.isArray(rawFolders) || rawFolders.length === 0) return [];
+    const userHomePath = getCurrentUserHomePath();
+    const dedupeByPath = new Set();
+    const dedupeById = new Set();
+    return rawFolders
+      .map((rawFolder, index) => {
+        const sourcePathRaw = String(
+          rawFolder?.sourcePath || rawFolder?.path || "",
+        ).trim();
+        if (!sourcePathRaw) return null;
+        const normalizedSourcePath = path.resolve(sourcePathRaw);
+        const sourcePathKey = normalizedSourcePath.toLowerCase();
+        if (dedupeByPath.has(sourcePathKey)) return null;
+        dedupeByPath.add(sourcePathKey);
+        let id = String(rawFolder?.id || "")
+          .trim()
+          .toLowerCase();
+        if (!id) id = `custom-${index + 1}`;
+        if (!id.startsWith("custom-")) id = `custom-${id}`;
+        id = id.replace(/[^a-z0-9_-]/g, "-");
+        if (!id) id = `custom-${index + 1}`;
+        let uniqueId = id;
+        let suffix = 2;
+        while (dedupeById.has(uniqueId)) {
+          uniqueId = `${id}-${suffix}`;
+          suffix += 1;
+        }
+        dedupeById.add(uniqueId);
+        const fallbackName =
+          sanitizePathSegment(path.basename(normalizedSourcePath)) || uniqueId;
+        const name =
+          sanitizePathSegment(rawFolder?.name || "") || fallbackName || uniqueId;
+        const restoreToId = USER_PROFILE_RESTORE_ID;
+        const restoreSubPathRaw = sanitizeRelativeSubPath(
+          rawFolder?.restoreSubPath || "",
+        );
+        const restoreSubPath =
+          restoreSubPathRaw ||
+          getRelativePathWithinBase(normalizedSourcePath, userHomePath) ||
+          name;
+        return {
+          id: uniqueId,
+          name,
+          sourcePath: normalizedSourcePath,
+          restoreToId,
+          restoreSubPath,
+        };
+      })
+      .filter(Boolean);
+  }
+  function createTimestampTag() {
+    const now = /* @__PURE__ */ new Date();
+    return [
+      now.getFullYear().toString(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+      "-",
+      String(now.getHours()).padStart(2, "0"),
+      String(now.getMinutes()).padStart(2, "0"),
+      String(now.getSeconds()).padStart(2, "0"),
+    ].join("");
+  }
+  const USER_DATA_BACKUP_FOLDER_NAME_PREFIX = "UserDataBackup-";
+  const USER_DATA_FOLDER_ID_HINTS = [
+    "desktop",
+    "documents",
+    "downloads",
+    "pictures",
+    "music",
+    "videos",
+  ];
+  function isDataBackupRootDirectory(candidatePath) {
+    const normalizedPath = path.resolve(String(candidatePath || "").trim());
+    if (!normalizedPath || !fs.existsSync(normalizedPath)) return false;
+    let stats = null;
+    try {
+      stats = fs.statSync(normalizedPath);
+    } catch {
+      return false;
+    }
+    if (!stats.isDirectory()) return false;
+    const manifestPath = path.join(normalizedPath, "backup-manifest.json");
+    if (fs.existsSync(manifestPath)) return true;
+    return USER_DATA_FOLDER_ID_HINTS.some((folderId) =>
+      fs.existsSync(path.join(normalizedPath, folderId)),
+    );
+  }
+  function getPathMtimeMs(filePath) {
+    try {
+      const stats = fs.statSync(filePath);
+      return Number(stats?.mtimeMs) || 0;
+    } catch {
+      return 0;
+    }
+  }
+  function resolveDataBackupRootPath(inputPath) {
+    const normalizedInput = path.resolve(String(inputPath || "").trim());
+    if (!normalizedInput || !fs.existsSync(normalizedInput)) return null;
+    if (isDataBackupRootDirectory(normalizedInput)) {
+      return normalizedInput;
+    }
+    let childDirectories = [];
+    try {
+      childDirectories = fs
+        .readdirSync(normalizedInput, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => ({
+          name: entry.name,
+          fullPath: path.join(normalizedInput, entry.name),
+        }));
+    } catch {
+      return null;
+    }
+    const preferredCandidates = childDirectories
+      .filter((entry) =>
+        entry.name
+          .toLowerCase()
+          .startsWith(USER_DATA_BACKUP_FOLDER_NAME_PREFIX.toLowerCase()),
+      )
+      .map((entry) => entry.fullPath)
+      .filter((candidatePath) => isDataBackupRootDirectory(candidatePath));
+    const fallbackCandidates = childDirectories
+      .map((entry) => entry.fullPath)
+      .filter((candidatePath) => isDataBackupRootDirectory(candidatePath));
+    const candidates =
+      preferredCandidates.length > 0 ? preferredCandidates : fallbackCandidates;
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => getPathMtimeMs(b) - getPathMtimeMs(a));
+    return candidates[0];
+  }
   ipcMain.handle("save-library", async (event, data) => {
     try {
       await fs.promises.writeFile(
@@ -134,6 +358,19 @@ app.whenReady().then(() => {
       return app.getVersion();
     } catch (e) {
       return "";
+    }
+  });
+  ipcMain.handle("get-user-default-folders", async () => {
+    try {
+      return {
+        success: true,
+        folders: getUserDefaultFoldersList(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to load default folders: ${error.message}`,
+      };
     }
   });
   const runPowerShellJson = (script) =>
@@ -179,6 +416,105 @@ app.whenReady().then(() => {
         });
       });
     });
+  ipcMain.handle("get-user-data-size", async (event, payload = {}) => {
+    if (process.platform !== "win32") {
+      return {
+        success: false,
+        error: "User data size scan is only supported on Windows.",
+      };
+    }
+    const selectedFolderIds = parseSelectedFolderIds(payload.selectedFolderIds);
+    const folderMap = new Map(
+      getUserDefaultFoldersList().map((folder) => [folder.id, folder]),
+    );
+    const selectedFolders = selectedFolderIds
+      .map((id) => folderMap.get(id))
+      .filter(Boolean);
+    const customFolders = parseCustomUserDataFolders(payload.customFolders);
+    if (selectedFolders.length === 0 && customFolders.length === 0) {
+      return {
+        success: true,
+        totalBytes: 0,
+        totalFiles: 0,
+        folders: [],
+      };
+    }
+    const plan = [
+      ...selectedFolders.map((folder) => ({
+        id: folder.id,
+        sourcePath: folder.path,
+      })),
+      ...customFolders.map((folder) => ({
+        id: folder.id,
+        sourcePath: folder.sourcePath,
+      })),
+    ];
+    const planBase64 = Buffer.from(JSON.stringify(plan), "utf8").toString(
+      "base64",
+    );
+    const script = `
+      $ErrorActionPreference = "Stop"
+      try {
+        $planBase64 = ${JSON.stringify(planBase64)}
+        $planJson = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($planBase64))
+        $planRaw = $planJson | ConvertFrom-Json
+        if ($null -eq $planRaw) {
+          $plan = @()
+        } elseif ($planRaw -is [System.Array]) {
+          $plan = @($planRaw)
+        } else {
+          $plan = @($planRaw)
+        }
+        $stats = @()
+        [int64]$totalBytes = 0
+        [int64]$totalFiles = 0
+
+        foreach ($item in $plan) {
+          $itemId = [string]$item.id
+          $sourcePath = [string]$item.sourcePath
+          if ([string]::IsNullOrWhiteSpace($sourcePath) -or -not (Test-Path -LiteralPath $sourcePath)) {
+            $stats += [PSCustomObject]@{
+              id = $itemId
+              exists = $false
+              bytes = [int64]0
+              files = [int64]0
+            }
+            continue
+          }
+
+          $measure = Get-ChildItem -LiteralPath $sourcePath -File -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum
+          $sumValue = $measure.Sum
+          if ($null -eq $sumValue) { $sumValue = 0 }
+          $countValue = $measure.Count
+          if ($null -eq $countValue) { $countValue = 0 }
+          [int64]$folderBytes = $sumValue
+          [int64]$folderFiles = $countValue
+          $totalBytes += $folderBytes
+          $totalFiles += $folderFiles
+          $stats += [PSCustomObject]@{
+            id = $itemId
+            exists = $true
+            bytes = $folderBytes
+            files = $folderFiles
+          }
+        }
+
+        $payload = [PSCustomObject]@{
+          success = $true
+          totalBytes = $totalBytes
+          totalFiles = $totalFiles
+          folders = $stats
+        }
+      } catch {
+        $payload = [PSCustomObject]@{
+          success = $false
+          error = [string]$_.Exception.Message
+        }
+      }
+      $payload | ConvertTo-Json -Depth 8 -Compress
+    `;
+    return runPowerShellJson(script);
+  });
   ipcMain.handle("get-windows-update-state", async () => {
     if (process.platform !== "win32") {
       return {
@@ -3752,6 +4088,585 @@ $removeNodeXml
           success: false,
           taskKey,
           error: `Failed to start Office cleanup: ${err.message}`,
+        });
+      });
+    });
+  });
+  ipcMain.handle("backup-user-data", async (event, payload = {}, rawTaskKey) => {
+    console.log("Main process: backup-user-data triggered", payload);
+    if (process.platform !== "win32") {
+      return {
+        success: false,
+        error: "User data backup is only supported on Windows.",
+      };
+    }
+
+    const targetPath =
+      typeof payload === "string"
+        ? payload.trim()
+        : String(payload.targetPath || "").trim();
+    if (!targetPath) {
+      return {
+        success: false,
+        error: "Please select a backup destination folder.",
+      };
+    }
+
+    const selectedFolderIds = parseSelectedFolderIds(payload.selectedFolderIds);
+    const createSubfolder = !(
+      payload &&
+      typeof payload === "object" &&
+      payload.createSubfolder === false
+    );
+    const normalizedTargetPath = path.resolve(targetPath);
+    const outputPath = createSubfolder
+      ? path.join(normalizedTargetPath, `UserDataBackup-${createTimestampTag()}`)
+      : normalizedTargetPath;
+
+    const folderMap = new Map(
+      getUserDefaultFoldersList().map((folder) => [folder.id, folder]),
+    );
+    const selectedDefaultFolders = selectedFolderIds
+      .map((id) => folderMap.get(id))
+      .filter(Boolean);
+    const selectedCustomFolders = parseCustomUserDataFolders(
+      payload.customFolders,
+    );
+    if (selectedDefaultFolders.length === 0 && selectedCustomFolders.length === 0) {
+      return {
+        success: false,
+        error: "Please select at least one folder to back up.",
+      };
+    }
+
+    const copyPlan = [
+      ...selectedDefaultFolders.map((folder) => ({
+        id: folder.id,
+        name: folder.name,
+        type: "default",
+        sourcePath: folder.path,
+        targetPath: path.join(outputPath, folder.id),
+        relativePath: folder.id,
+        restoreToId: folder.id,
+        restoreSubPath: "",
+      })),
+      ...selectedCustomFolders.map((folder, index) => {
+        const safeId = sanitizePathSegment(folder.id) || `custom-${index + 1}`;
+        const safeSubPath =
+          sanitizeRelativeSubPath(folder.restoreSubPath) ||
+          sanitizePathSegment(folder.name) ||
+          safeId;
+        const relativePath = path.join("custom", safeId);
+        return {
+          id: folder.id,
+          name: folder.name,
+          type: "custom",
+          sourcePath: folder.sourcePath,
+          targetPath: path.join(outputPath, relativePath),
+          relativePath,
+          restoreToId: folder.restoreToId,
+          restoreSubPath: safeSubPath,
+        };
+      }),
+    ];
+    const planBase64 = Buffer.from(JSON.stringify(copyPlan), "utf8").toString(
+      "base64",
+    );
+    const manifestPath = path.join(outputPath, "backup-manifest.json");
+
+    const taskKey =
+      typeof rawTaskKey === "string" && rawTaskKey.trim().length > 0
+        ? rawTaskKey.trim()
+        : `data-backup-${Date.now()}`;
+
+    const psScript = `
+      $ErrorActionPreference = "Stop"
+      try {
+        $outputRoot = ${JSON.stringify(outputPath)}
+        $manifestPath = ${JSON.stringify(manifestPath)}
+        $planBase64 = ${JSON.stringify(planBase64)}
+        $planJson = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($planBase64))
+        $planRaw = $planJson | ConvertFrom-Json
+        if ($null -eq $planRaw) {
+          $plan = @()
+        } elseif ($planRaw -is [System.Array]) {
+          $plan = @($planRaw)
+        } else {
+          $plan = @($planRaw)
+        }
+        if ($plan.Count -le 0) {
+          throw "Backup plan is empty."
+        }
+
+        New-Item -Path $outputRoot -ItemType Directory -Force | Out-Null
+        $copiedCount = 0
+        $missingCount = 0
+
+        foreach ($item in $plan) {
+          $itemId = [string]$item.id
+          $sourcePath = [string]$item.sourcePath
+          $targetPath = [string]$item.targetPath
+
+          if ([string]::IsNullOrWhiteSpace($sourcePath) -or -not (Test-Path -LiteralPath $sourcePath)) {
+            Write-Host "DATA_BACKUP_SKIP_MISSING:$itemId"
+            $missingCount++
+            continue
+          }
+
+          New-Item -Path $targetPath -ItemType Directory -Force | Out-Null
+          & robocopy "$sourcePath" "$targetPath" /E /R:1 /W:1 /MT:32 /J /XJ /FFT /NFL /NDL /NJH /NJS /NP | Out-Host
+          $robocopyCode = $LASTEXITCODE
+          Write-Host ("DATA_BACKUP_ROBOCOPY_CODE:{0}:{1}" -f $itemId, $robocopyCode)
+          if ($robocopyCode -gt 7) {
+            throw "Failed to copy folder '$itemId' (robocopy code $robocopyCode)."
+          }
+          $copiedCount++
+        }
+
+        $manifestObj = [PSCustomObject]@{
+          version = 1
+          createdAtUtc = [DateTime]::UtcNow.ToString("o")
+          sourceUser = [Environment]::UserName
+          folders = @($plan | ForEach-Object {
+            [PSCustomObject]@{
+              id = [string]$_.id
+              name = [string]$_.name
+              type = [string]$_.type
+              sourcePath = [string]$_.sourcePath
+              relativePath = [string]$_.relativePath
+              restoreToId = [string]$_.restoreToId
+              restoreSubPath = [string]$_.restoreSubPath
+            }
+          })
+        }
+        $manifestJson = $manifestObj | ConvertTo-Json -Depth 8
+        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText($manifestPath, $manifestJson, $utf8NoBom)
+
+        Write-Host "DATA_BACKUP_OUTPUT_PATH:$outputRoot"
+        Write-Host "DATA_BACKUP_COPIED_COUNT:$copiedCount"
+        Write-Host "DATA_BACKUP_MISSING_COUNT:$missingCount"
+        exit 0
+      } catch {
+        Write-Host "Critical Error: $($_.Exception.Message)"
+        exit 1
+      }
+    `;
+
+    return new Promise((resolve) => {
+      const child = spawn("powershell.exe", [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        psScript,
+      ]);
+      runningProcesses.set(taskKey, child);
+      let output = "";
+      child.stdout.on("data", (data) => {
+        const text = data.toString();
+        output += text;
+        console.log(`[Data Backup Out]: ${text.trim()}`);
+      });
+      child.stderr.on("data", (data) => {
+        const text = data.toString();
+        output += text;
+        console.error(`[Data Backup Err]: ${text.trim()}`);
+      });
+      child.on("close", (code) => {
+        runningProcesses.delete(taskKey);
+        const copiedCountMatch = output.match(/DATA_BACKUP_COPIED_COUNT:(\d+)/i);
+        const missingCountMatch = output.match(
+          /DATA_BACKUP_MISSING_COUNT:(\d+)/i,
+        );
+        const copiedFolderCount = copiedCountMatch
+          ? Number(copiedCountMatch[1])
+          : 0;
+        const missingFolderCount = missingCountMatch
+          ? Number(missingCountMatch[1])
+          : 0;
+        const missingFolderIds = Array.from(
+          output.matchAll(/DATA_BACKUP_SKIP_MISSING:([^\r\n]+)/gi),
+        )
+          .map((match) => String(match[1] || "").trim())
+          .filter(Boolean);
+        const isSuccess = code === 0;
+        let error = null;
+        if (!isSuccess) {
+          const criticalMatch = output.match(/Critical Error:\s*([^\r\n]+)/i);
+          if (criticalMatch && criticalMatch[1]) {
+            error = String(criticalMatch[1]).trim();
+          } else if (output.toLowerCase().includes("access is denied")) {
+            error = "Access is denied while copying files.";
+          } else {
+            error = `User data backup failed with code ${code}.`;
+          }
+        }
+
+        resolve({
+          success: isSuccess,
+          code,
+          taskKey,
+          outputPath,
+          copiedFolderCount,
+          missingFolderCount,
+          missingFolderIds,
+          selectedFolderCount: copyPlan.length,
+          output,
+          error,
+        });
+      });
+      child.on("error", (err) => {
+        runningProcesses.delete(taskKey);
+        resolve({
+          success: false,
+          taskKey,
+          error: `Failed to start data backup: ${err.message}`,
+        });
+      });
+    });
+  });
+  ipcMain.handle("restore-user-data", async (event, payload = {}, rawTaskKey) => {
+    console.log("Main process: restore-user-data triggered", payload);
+    if (process.platform !== "win32") {
+      return {
+        success: false,
+        error: "User data restore is only supported on Windows.",
+      };
+    }
+
+    const sourcePath =
+      typeof payload === "string"
+        ? payload.trim()
+        : String(payload.sourcePath || "").trim();
+    if (!sourcePath) {
+      return {
+        success: false,
+        error: "Please select a data backup folder.",
+      };
+    }
+    const normalizedSourcePath = path.resolve(sourcePath);
+    if (!fs.existsSync(normalizedSourcePath)) {
+      return {
+        success: false,
+        error: "Selected data backup folder does not exist.",
+      };
+    }
+    const resolvedSourcePath = resolveDataBackupRootPath(normalizedSourcePath);
+    if (!resolvedSourcePath) {
+      return {
+        success: false,
+        error:
+          "No valid data backup was found in selected folder. Please choose a UserDataBackup-* folder or its parent folder.",
+      };
+    }
+    if (resolvedSourcePath !== normalizedSourcePath) {
+      console.log(
+        "Main process: restore-user-data auto-resolved sourcePath",
+        resolvedSourcePath,
+      );
+    }
+
+    const selectedFolderIds = parseSelectedFolderIds(payload.selectedFolderIds);
+    const folderMap = new Map(
+      getUserDefaultFoldersList().map((folder) => [folder.id, folder]),
+    );
+    const defaultFolderIds = Array.from(folderMap.keys());
+    let manifestFolderById = new Map();
+    const manifestPath = path.join(resolvedSourcePath, "backup-manifest.json");
+    if (fs.existsSync(manifestPath)) {
+      try {
+        const manifestText = fs
+          .readFileSync(manifestPath, "utf8")
+          .replace(/^\uFEFF/, "");
+        const manifestRaw = JSON.parse(manifestText);
+        if (manifestRaw && Array.isArray(manifestRaw.folders)) {
+          manifestFolderById = new Map(
+            manifestRaw.folders
+              .map((folder) => {
+                const id = String(folder?.id || "").trim().toLowerCase();
+                const relativePath = sanitizeRelativeSubPath(
+                  folder?.relativePath || folder?.id || "",
+                );
+                if (!id || !relativePath) return null;
+                const manifestType = String(folder?.type || "")
+                  .trim()
+                  .toLowerCase();
+                const fallbackType = folderMap.has(id) ? "default" : "custom";
+                const type = manifestType === "custom" ? "custom" : fallbackType;
+                const restoreToIdRaw = String(folder?.restoreToId || "")
+                  .trim()
+                  .toLowerCase();
+                const restoreToId =
+                  type === "custom"
+                    ? USER_PROFILE_RESTORE_ID
+                    : folderMap.has(restoreToIdRaw)
+                      ? restoreToIdRaw
+                      : "documents";
+                const restoreSubPath =
+                  sanitizeRelativeSubPath(folder?.restoreSubPath || "") || id;
+                const name =
+                  sanitizePathSegment(folder?.name || "") ||
+                  sanitizePathSegment(path.basename(relativePath)) ||
+                  id;
+                return [
+                  id,
+                  { id, type, name, relativePath, restoreToId, restoreSubPath },
+                ];
+              })
+              .filter(Boolean),
+          );
+        }
+      } catch (error) {
+        console.warn("Failed to parse data backup manifest:", error.message);
+      }
+    }
+    let effectiveFolderIds = selectedFolderIds.filter(
+      (id) => folderMap.has(id) || manifestFolderById.has(id),
+    );
+    if (effectiveFolderIds.length === 0) {
+      const autoDetected = [];
+      if (manifestFolderById.size > 0) {
+        manifestFolderById.forEach((manifestFolder, id) => {
+          const canResolveTarget =
+            manifestFolder?.restoreToId === USER_PROFILE_RESTORE_ID ||
+            folderMap.has(manifestFolder?.restoreToId || "");
+          if (
+            !folderMap.has(id) &&
+            !canResolveTarget
+          ) {
+            return;
+          }
+          const relativePath =
+            sanitizeRelativeSubPath(manifestFolder?.relativePath || "") || id;
+          const safeRelativePath = String(relativePath || "").trim() || id;
+          const sourceCandidatePath = path.join(
+            resolvedSourcePath,
+            safeRelativePath,
+          );
+          if (fs.existsSync(sourceCandidatePath)) {
+            autoDetected.push(id);
+          }
+        });
+      }
+      if (autoDetected.length === 0) {
+        defaultFolderIds.forEach((id) => {
+          const sourceCandidatePath = path.join(resolvedSourcePath, id);
+          if (fs.existsSync(sourceCandidatePath)) {
+            autoDetected.push(id);
+          }
+        });
+      }
+      effectiveFolderIds = Array.from(new Set(autoDetected));
+      if (effectiveFolderIds.length > 0) {
+        console.log(
+          "Main process: restore-user-data auto-detected folders",
+          effectiveFolderIds,
+        );
+      }
+    }
+    if (effectiveFolderIds.length === 0) {
+      return {
+        success: false,
+        error:
+          "No restorable default folders were found in selected backup. Please verify backup contents.",
+      };
+    }
+
+    const restorePlan = effectiveFolderIds
+      .map((id) => {
+        const manifestFolder = manifestFolderById.get(id) || null;
+        let targetPath = "";
+        let targetName = "";
+        if (folderMap.has(id)) {
+          const destination = folderMap.get(id);
+          targetPath = destination.path;
+          targetName = destination.name;
+        } else if (
+          manifestFolder &&
+          manifestFolder.restoreToId === USER_PROFILE_RESTORE_ID
+        ) {
+          const homePath = getCurrentUserHomePath();
+          if (!homePath) return null;
+          const restoreSubPath = sanitizeRelativeSubPath(
+            manifestFolder.restoreSubPath,
+          );
+          targetPath = restoreSubPath
+            ? path.join(homePath, restoreSubPath)
+            : homePath;
+          targetName = "User Profile";
+        } else if (manifestFolder && folderMap.has(manifestFolder.restoreToId)) {
+          const destination = folderMap.get(manifestFolder.restoreToId);
+          const restoreSubPath = sanitizeRelativeSubPath(
+            manifestFolder.restoreSubPath,
+          );
+          targetPath = restoreSubPath
+            ? path.join(destination.path, restoreSubPath)
+            : destination.path;
+          targetName = destination.name;
+        } else {
+          return null;
+        }
+        const relativePath =
+          sanitizeRelativeSubPath(manifestFolder?.relativePath || "") || id;
+        return {
+          id,
+          name:
+            manifestFolder?.name ||
+            targetName ||
+            sanitizePathSegment(path.basename(relativePath)) ||
+            id,
+          sourcePath: path.join(resolvedSourcePath, relativePath),
+          targetPath,
+        };
+      })
+      .filter(Boolean);
+    if (restorePlan.length === 0) {
+      return {
+        success: false,
+        error: "No matching default folders found to restore.",
+      };
+    }
+    const availableRestoreCount = restorePlan.filter((item) =>
+      fs.existsSync(item.sourcePath),
+    ).length;
+    if (availableRestoreCount === 0) {
+      return {
+        success: false,
+        error:
+          "Selected backup does not contain any chosen folders. Please select the correct backup folder.",
+      };
+    }
+
+    const planBase64 = Buffer.from(JSON.stringify(restorePlan), "utf8").toString(
+      "base64",
+    );
+    const taskKey =
+      typeof rawTaskKey === "string" && rawTaskKey.trim().length > 0
+        ? rawTaskKey.trim()
+        : `data-restore-${Date.now()}`;
+
+    const psScript = `
+      $ErrorActionPreference = "Stop"
+      try {
+        $planBase64 = ${JSON.stringify(planBase64)}
+        $planJson = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($planBase64))
+        $planRaw = $planJson | ConvertFrom-Json
+        if ($null -eq $planRaw) {
+          $plan = @()
+        } elseif ($planRaw -is [System.Array]) {
+          $plan = @($planRaw)
+        } else {
+          $plan = @($planRaw)
+        }
+        if ($plan.Count -le 0) {
+          throw "Restore plan is empty."
+        }
+
+        $restoredCount = 0
+        $missingCount = 0
+
+        foreach ($item in $plan) {
+          $itemId = [string]$item.id
+          $sourcePath = [string]$item.sourcePath
+          $targetPath = [string]$item.targetPath
+
+          if ([string]::IsNullOrWhiteSpace($sourcePath) -or -not (Test-Path -LiteralPath $sourcePath)) {
+            Write-Host "DATA_RESTORE_SKIP_MISSING:$itemId"
+            $missingCount++
+            continue
+          }
+
+          New-Item -Path $targetPath -ItemType Directory -Force | Out-Null
+          & robocopy "$sourcePath" "$targetPath" /E /R:1 /W:1 /MT:32 /J /XJ /FFT /NFL /NDL /NJH /NJS /NP | Out-Host
+          $robocopyCode = $LASTEXITCODE
+          Write-Host ("DATA_RESTORE_ROBOCOPY_CODE:{0}:{1}" -f $itemId, $robocopyCode)
+          if ($robocopyCode -gt 7) {
+            throw "Failed to restore folder '$itemId' (robocopy code $robocopyCode)."
+          }
+          $restoredCount++
+        }
+
+        Write-Host "DATA_RESTORE_RESTORED_COUNT:$restoredCount"
+        Write-Host "DATA_RESTORE_MISSING_COUNT:$missingCount"
+        exit 0
+      } catch {
+        Write-Host "Critical Error: $($_.Exception.Message)"
+        exit 1
+      }
+    `;
+
+    return new Promise((resolve) => {
+      const child = spawn("powershell.exe", [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        psScript,
+      ]);
+      runningProcesses.set(taskKey, child);
+      let output = "";
+      child.stdout.on("data", (data) => {
+        const text = data.toString();
+        output += text;
+        console.log(`[Data Restore Out]: ${text.trim()}`);
+      });
+      child.stderr.on("data", (data) => {
+        const text = data.toString();
+        output += text;
+        console.error(`[Data Restore Err]: ${text.trim()}`);
+      });
+      child.on("close", (code) => {
+        runningProcesses.delete(taskKey);
+        const restoredCountMatch = output.match(
+          /DATA_RESTORE_RESTORED_COUNT:(\d+)/i,
+        );
+        const missingCountMatch = output.match(
+          /DATA_RESTORE_MISSING_COUNT:(\d+)/i,
+        );
+        const restoredFolderCount = restoredCountMatch
+          ? Number(restoredCountMatch[1])
+          : 0;
+        const missingFolderCount = missingCountMatch
+          ? Number(missingCountMatch[1])
+          : 0;
+        const missingFolderIds = Array.from(
+          output.matchAll(/DATA_RESTORE_SKIP_MISSING:([^\r\n]+)/gi),
+        )
+          .map((match) => String(match[1] || "").trim())
+          .filter(Boolean);
+        const isSuccess = code === 0;
+        let error = null;
+        if (!isSuccess) {
+          const criticalMatch = output.match(/Critical Error:\s*([^\r\n]+)/i);
+          if (criticalMatch && criticalMatch[1]) {
+            error = String(criticalMatch[1]).trim();
+          } else if (output.toLowerCase().includes("access is denied")) {
+            error = "Access is denied while restoring files.";
+          } else {
+            error = `User data restore failed with code ${code}.`;
+          }
+        }
+
+        resolve({
+          success: isSuccess,
+          code,
+          taskKey,
+          sourcePath: resolvedSourcePath,
+          restoredFolderCount,
+          missingFolderCount,
+          missingFolderIds,
+          selectedFolderCount: restorePlan.length,
+          output,
+          error,
+        });
+      });
+      child.on("error", (err) => {
+        runningProcesses.delete(taskKey);
+        resolve({
+          success: false,
+          taskKey,
+          error: `Failed to start data restore: ${err.message}`,
         });
       });
     });

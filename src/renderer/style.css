@@ -1510,6 +1510,151 @@ main {
   gap: 0.75rem;
 }
 
+.data-folder-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.data-folder-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.data-folder-toolbar .driver-tool-actions .btn {
+  width: auto;
+}
+
+.data-folder-list {
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(var(--accent) / 0.07);
+  padding: 0.5rem;
+  max-height: 260px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.data-folder-item {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: start;
+  gap: 0.55rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: calc(var(--radius) - 4px);
+  border: 1px solid transparent;
+  background: hsl(var(--background) / 0.6);
+  cursor: pointer;
+}
+
+.data-folder-item:hover {
+  border-color: hsl(var(--border));
+  background: hsl(var(--background) / 0.9);
+}
+
+.data-folder-item input[type="checkbox"] {
+  margin-top: 0.15rem;
+}
+
+.data-folder-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.data-folder-path {
+  font-size: 0.72rem;
+  color: hsl(var(--muted-foreground));
+  word-break: break-all;
+}
+
+.data-folder-restore-hint {
+  margin-top: 0.15rem;
+  font-size: 0.69rem;
+  color: hsl(var(--muted-foreground));
+  word-break: break-word;
+}
+
+.data-folder-custom-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--background) / 0.9);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.data-folder-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  padding: 0.14rem 0.44rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #166534;
+  background: rgba(34, 197, 94, 0.15);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.data-folder-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.data-folder-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.data-folder-remove-btn:hover {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+}
+
+.data-folder-state.missing {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.data-folder-empty {
+  border: 1px dashed hsl(var(--border));
+  border-radius: calc(var(--radius) - 4px);
+  padding: 0.8rem;
+  text-align: center;
+  font-size: 0.76rem;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--background) / 0.5);
+}
+
 @media (max-width: 1100px) {
   .driver-tools-layout {
     grid-template-columns: 1fr;
@@ -1522,6 +1667,24 @@ main {
 
   .driver-tool-actions .btn {
     width: 100%;
+  }
+
+  .data-folder-item {
+    grid-template-columns: 16px 1fr;
+  }
+
+  .data-folder-meta {
+    grid-column: 2;
+    width: fit-content;
+  }
+
+  .data-folder-state {
+    width: fit-content;
+  }
+
+  .data-folder-toolbar .driver-tool-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 

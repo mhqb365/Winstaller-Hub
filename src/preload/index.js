@@ -13,6 +13,12 @@ const api = {
     ipcRenderer.invoke("backup-drivers", payload, taskKey),
   restoreDrivers: (payload, taskKey) =>
     ipcRenderer.invoke("restore-drivers", payload, taskKey),
+  getUserDefaultFolders: () => ipcRenderer.invoke("get-user-default-folders"),
+  getUserDataSize: (payload) => ipcRenderer.invoke("get-user-data-size", payload),
+  backupUserData: (payload, taskKey) =>
+    ipcRenderer.invoke("backup-user-data", payload, taskKey),
+  restoreUserData: (payload, taskKey) =>
+    ipcRenderer.invoke("restore-user-data", payload, taskKey),
   cleanSystemRam: (taskKey) => ipcRenderer.invoke("clean-system-ram", taskKey),
   cleanSystemDisk: (taskKey) =>
     ipcRenderer.invoke("clean-system-disk", taskKey),

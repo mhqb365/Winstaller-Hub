@@ -5870,7 +5870,6 @@ function hideSystemLoader() {
     systemLoader.classList.remove("active");
   }
 }
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function initAboutVersion() {
   if (!aboutVersionValue || !window.api || !window.api.getAppVersion) return;
@@ -5883,99 +5882,133 @@ async function initAboutVersion() {
   }
 }
 
-async function checkAndInstallWinget() {
-  if (!window.api || !window.api.checkWingetStatus || !window.api.installWinget)
-    return;
+async function warmupDashboardDataInBackground() {
+  await Promise.allSettled([
+    typeof refreshPerformanceBoard === "function"
+      ? refreshPerformanceBoard()
+      : Promise.resolve(),
+    typeof initSysInfo === "function" ? initSysInfo() : Promise.resolve(),
+  ]);
+}
 
-  showSystemLoader(tr("systemChecking"));
-  await delay(800);
+async function ensureSmartMonToolsInBackground(wingetReady) {
+  if (!window.api || !window.api.runInstaller) return;
+
+  const canCheckSmartctl = typeof window.api.checkSmartctlStatus === "function";
+  const isSmartctlReady = async () => {
+    if (!canCheckSmartctl) return false;
+    try {
+      const status = await window.api.checkSmartctlStatus();
+      return Boolean(status && status.available);
+    } catch {
+      return false;
+    }
+  };
 
   try {
-    // 1. Ensure Winget is ready
-    showSystemLoader(tr("wingetCheck"));
-    await delay(500);
-    const status = await window.api.checkWingetStatus();
+    let smartctlReady = await isSmartctlReady();
+    if (smartctlReady) return;
 
-    if (status.status === "missing" || status.status === "outdated") {
-      const msg =
-        currentLanguage === "vi"
-          ? "Đang cấu hình gói cài đặt hệ thống"
-          : "Configuring system package manager";
-      showSystemLoader(msg);
-      await delay(1000);
-      const result = await window.api.installWinget();
-      if (!result.success) {
+    const localRes = await window.api.runInstaller("smartmontools.exe");
+    if (localRes && localRes.success) {
+      smartctlReady = canCheckSmartctl ? await isSmartctlReady() : true;
+      if (smartctlReady) {
         showNotification(
           currentLanguage === "vi"
-            ? `Cài đặt Winget thất bại: ${result.error}`
-            : `Winget installation failed: ${result.error}`,
-          "error",
+            ? "Đã cài đặt SmartMonTools thành công"
+            : "SmartMonTools installed successfully",
+          "success",
         );
         return;
       }
     }
 
-    // 2. Once Winget is ready, Check/Install SmartMonTools
-    if (window.api.getInstalledApps && window.api.runInstaller) {
-      showSystemLoader(tr("installingSmartMon"));
-      await delay(800);
-      // Force refreshing the list to get latest state
-      const apps = await window.api.getInstalledApps({
-        force: true,
-        waitForFresh: true,
-      });
+    if (!wingetReady) return;
 
-      const hasSmartMon = apps.some(
-        (app) =>
-          app.id === "smartmontools.smartmontools" ||
-          String(app.name).toLowerCase().includes("smartmontools"),
-      );
-
-      if (!hasSmartMon) {
-        const installMsg =
+    const wingetRes = await window.api.runInstaller("smartmontools.smartmontools");
+    if (wingetRes && wingetRes.success) {
+      smartctlReady = canCheckSmartctl ? await isSmartctlReady() : true;
+      if (smartctlReady) {
+        showNotification(
           currentLanguage === "vi"
-            ? "Đang cài đặt thành phần chẩn đoán"
-            : "Installing diagnostic components";
-        showSystemLoader(installMsg);
-        await delay(1000);
-        // Run silent installer via Winget
-        const res = await window.api.runInstaller(
-          "smartmontools.smartmontools",
+            ? "Đã cài đặt SmartMonTools thành công"
+            : "SmartMonTools installed successfully",
+          "success",
         );
-        if (res.success) {
+      }
+    }
+  } catch (error) {
+    console.warn("SmartMonTools background setup failed:", error);
+  }
+}
+
+function runPostStartupBackgroundTasks(wingetReady) {
+  setTimeout(() => {
+    Promise.allSettled([
+      warmupDashboardDataInBackground(),
+      ensureSmartMonToolsInBackground(Boolean(wingetReady)),
+    ]);
+  }, 0);
+}
+
+async function checkAndInstallWinget() {
+  showSystemLoader(tr("systemChecking"));
+  let wingetReady = false;
+
+  if (!window.api || !window.api.checkWingetStatus || !window.api.installWinget) {
+    hideSystemLoader();
+    runPostStartupBackgroundTasks(false);
+    return;
+  }
+
+  try {
+    showSystemLoader(tr("wingetCheck"));
+    const status = await window.api.checkWingetStatus();
+    const statusCode = String(status?.status || "").toLowerCase();
+    wingetReady = statusCode === "ready" || statusCode === "outdated";
+
+    if (statusCode === "missing") {
+      hideSystemLoader();
+      const shouldInstallWinget = confirm(
+        currentLanguage === "vi"
+          ? "Không tìm thấy Winget. Bạn có muốn cài Winget ngay bây giờ không?"
+          : "Winget was not found. Do you want to install Winget now?",
+      );
+      if (!shouldInstallWinget) {
+        wingetReady = false;
+        showNotification(
+          currentLanguage === "vi"
+            ? "Đã bỏ qua cài Winget theo lựa chọn của bạn"
+            : "Skipped Winget installation as requested",
+          "info",
+        );
+      } else {
+        const msg =
+          currentLanguage === "vi"
+            ? "Đang cấu hình gói cài đặt hệ thống"
+            : "Configuring system package manager";
+        showSystemLoader(msg);
+        const result = await window.api.installWinget();
+        if (!result.success) {
+          wingetReady = false;
           showNotification(
             currentLanguage === "vi"
-              ? "Đã cài đặt SmartMonTools thành công"
-              : "SmartMonTools installed successfully",
-            "success",
+              ? `Cài đặt Winget thất bại: ${result.error}`
+              : `Winget installation failed: ${result.error}`,
+            "error",
           );
+        } else {
+          wingetReady = true;
         }
       }
     }
-
-    // 3. Prepare performance metrics & System info
-    const perfMsg =
-      currentLanguage === "vi"
-        ? "Đang lấy thông tin hệ thống"
-        : "Collecting system info";
-    showSystemLoader(perfMsg);
-
-    // Run both in parallel to save time
-    await Promise.all([
-      typeof refreshPerformanceBoard === "function"
-        ? refreshPerformanceBoard()
-        : Promise.resolve(),
-      typeof initSysInfo === "function" ? initSysInfo() : Promise.resolve(),
-    ]);
-
-    const finalMsg = currentLanguage === "vi" ? "Đang hoàn tất" : "Finalizing";
-    showSystemLoader(finalMsg);
-    await delay(600);
   } catch (error) {
     console.error("Error during system check:", error);
   } finally {
     hideSystemLoader();
   }
+
+  runPostStartupBackgroundTasks(wingetReady);
 }
 async function initApp() {
   clearStoredPathHistory();
@@ -5992,13 +6025,11 @@ async function initApp() {
   if (window.api && window.api.loadLibrary) {
     installers = await window.api.loadLibrary();
   }
-  renderOfficeOnlineCatalog();
-  await loadUserDefaultFolders({ resetSelection: false, notifyError: false });
-  refreshWindowsUpdateState(false);
-  updateOfficeOnlineSubmitButtonLabel();
-  initSysInfo();
   switchTab("dashboard");
-  applyLanguage(currentLanguage, { persist: false, rerender: true });
-  if (window.lucide) window.lucide.createIcons();
+  applyLanguage(currentLanguage, { persist: false, rerender: false });
+  setTimeout(() => {
+    updateOfficeOnlineSubmitButtonLabel();
+    if (window.lucide) window.lucide.createIcons();
+  }, 0);
 }
 initApp();

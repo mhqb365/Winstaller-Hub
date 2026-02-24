@@ -647,7 +647,24 @@ app.whenReady().then(() => {
     });
   }
   ipcMain.handle("run-installer", async (event, inputPath) => {
-    let installerPath = inputPath;
+    let installerPath = String(inputPath || "").trim();
+    if (!installerPath) {
+      return { success: false, error: "Installer path is empty." };
+    }
+    if (
+      !path.isAbsolute(installerPath) &&
+      !installerPath.includes("\\") &&
+      !installerPath.includes("/") &&
+      /\.[a-z0-9]+$/i.test(installerPath)
+    ) {
+      const bundledPath = path.join(getAppsPath(), installerPath);
+      if (fs.existsSync(bundledPath)) {
+        console.log(
+          `Bundled installer resolved: ${installerPath} -> ${bundledPath}`,
+        );
+        installerPath = bundledPath;
+      }
+    }
     if (path.isAbsolute(installerPath) && !fs.existsSync(installerPath)) {
       const fileName = path.basename(installerPath);
       const bundledPath = path.join(getAppsPath(), fileName);
@@ -1014,6 +1031,44 @@ app.whenReady().then(() => {
     }
     return 0;
   }
+  ipcMain.handle("check-smartctl-status", async () => {
+    console.log("Main process: checking smartctl status");
+    try {
+      const smartctlPath = resolveSmartctlPath();
+      if (!smartctlPath) {
+        return {
+          success: true,
+          available: false,
+          source: "missing",
+          path: null,
+        };
+      }
+
+      const appsRoot = path.resolve(getAppsPath());
+      const resolvedSmartctlPath = path.resolve(smartctlPath);
+      const normalizedAppsRoot = appsRoot.toLowerCase();
+      const normalizedSmartctlPath = resolvedSmartctlPath.toLowerCase();
+      const bundledPrefix = `${normalizedAppsRoot}${path.sep}`;
+      const isBundled =
+        normalizedSmartctlPath === normalizedAppsRoot ||
+        normalizedSmartctlPath.startsWith(bundledPrefix);
+
+      return {
+        success: true,
+        available: true,
+        source: isBundled ? "bundled" : "system",
+        path: smartctlPath,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        available: false,
+        source: "error",
+        path: null,
+        error: error?.message || String(error),
+      };
+    }
+  });
   ipcMain.handle("check-winget-status", async () => {
     console.log("Main process: checking winget status");
     const bundledVersion = "v1.9.2514";
@@ -1079,32 +1134,7 @@ app.whenReady().then(() => {
   ipcMain.handle("install-winget", async () => {
     console.log("Main process: install-winget triggered");
     return new Promise((resolve) => {
-      const appsPath = getAppsPath();
-      const directBundlePath = path.join(appsPath, "Winget.msixbundle");
-      const fallbackBundlePath = fs.existsSync(appsPath)
-        ? fs
-            .readdirSync(appsPath)
-            .map((fileName) => path.join(appsPath, fileName))
-            .find((fullPath) => {
-              const lower = path.basename(fullPath).toLowerCase();
-              return (
-                lower.endsWith(".msixbundle") &&
-                (lower.includes("winget") || lower.includes("appinstaller"))
-              );
-            })
-        : null;
-      const bundlePath = fs.existsSync(directBundlePath)
-        ? directBundlePath
-        : fallbackBundlePath;
-      console.log("Main process: winget bundle candidate:", bundlePath);
-      if (!bundlePath || !fs.existsSync(bundlePath)) {
-        resolve({
-          success: false,
-          error:
-            "Winget.msixbundle was not found in the apps folder. Add the file and try again.",
-        });
-        return;
-      }
+      const downloadUrl = "https://aka.ms/getwinget";
 
       const tempDir = app.getPath("temp");
       const uniqueId = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
@@ -1112,11 +1142,16 @@ app.whenReady().then(() => {
         tempDir,
         `winstaller-winget-${uniqueId}.ps1`,
       );
+      const downloadPath = path.join(
+        tempDir,
+        `winstaller-winget-${uniqueId}.msixbundle`,
+      );
       const statusPath = path.join(
         tempDir,
         `winstaller-winget-${uniqueId}.json`,
       );
-      const escapedBundlePath = bundlePath.replace(/'/g, "''");
+      const escapedDownloadUrl = downloadUrl.replace(/'/g, "''");
+      const escapedDownloadPath = downloadPath.replace(/'/g, "''");
       const escapedRunnerPath = runnerPath.replace(/'/g, "''");
       const escapedStatusPath = statusPath.replace(/'/g, "''");
       const runWithAdmin = !isRunningAsAdmin();
@@ -1128,11 +1163,15 @@ app.whenReady().then(() => {
         try {
           if (fs.existsSync(statusPath)) fs.unlinkSync(statusPath);
         } catch {}
+        try {
+          if (fs.existsSync(downloadPath)) fs.unlinkSync(downloadPath);
+        } catch {}
       };
 
       const runnerScript = `
 param(
-  [Parameter(Mandatory=$true)][string]$BundlePath,
+  [Parameter(Mandatory=$true)][string]$DownloadUrl,
+  [Parameter(Mandatory=$true)][string]$DownloadPath,
   [Parameter(Mandatory=$true)][string]$StatusPath
 )
 $ErrorActionPreference = 'Stop'
@@ -1152,13 +1191,35 @@ function Finish-Result([int]$ExitCode) {
 }
 
 try {
-  if (-not (Test-Path -LiteralPath $BundlePath)) {
-    throw "Bundle file not found: $BundlePath"
+  if ([string]::IsNullOrWhiteSpace($DownloadUrl)) {
+    throw "Winget download URL is empty."
   }
 
-  $result.output += "Installing App Installer from: $BundlePath\`n"
+  $downloadDir = Split-Path -Path $DownloadPath -Parent
+  if (-not [string]::IsNullOrWhiteSpace($downloadDir) -and -not (Test-Path -LiteralPath $downloadDir)) {
+    New-Item -Path $downloadDir -ItemType Directory -Force | Out-Null
+  }
+
+  $result.output += "Downloading App Installer from: $DownloadUrl\`n"
   try {
-    Add-AppxPackage -Path $BundlePath -ForceApplicationShutdown -ErrorAction Stop | Out-Null
+    Invoke-WebRequest -Uri $DownloadUrl -OutFile $DownloadPath -UseBasicParsing -ErrorAction Stop
+  } catch {
+    $result.output += "Invoke-WebRequest failed, trying Start-BitsTransfer...\`n"
+    Start-BitsTransfer -Source $DownloadUrl -Destination $DownloadPath -ErrorAction Stop
+  }
+
+  if (-not (Test-Path -LiteralPath $DownloadPath)) {
+    throw "Downloaded package not found: $DownloadPath"
+  }
+
+  $pkgFile = Get-Item -LiteralPath $DownloadPath -ErrorAction Stop
+  if (-not $pkgFile -or $pkgFile.Length -le 0) {
+    throw "Downloaded package is empty."
+  }
+
+  $result.output += "Installing App Installer package...\`n"
+  try {
+    Add-AppxPackage -Path $DownloadPath -ForceApplicationShutdown -ErrorAction Stop | Out-Null
     $result.output += "Add-AppxPackage completed.\`n"
   } catch {
     $msg = [string]$_.Exception.Message
@@ -1205,7 +1266,8 @@ try {
               '-NoProfile',
               '-ExecutionPolicy', 'Bypass',
               '-File', '${escapedRunnerPath}',
-              '-BundlePath', '${escapedBundlePath}',
+              '-DownloadUrl', '${escapedDownloadUrl}',
+              '-DownloadPath', '${escapedDownloadPath}',
               '-StatusPath', '${escapedStatusPath}'
             )
             exit $proc.ExitCode
@@ -1215,7 +1277,7 @@ try {
           }
         `
         : `
-          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '${escapedRunnerPath}' -BundlePath '${escapedBundlePath}' -StatusPath '${escapedStatusPath}'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '${escapedRunnerPath}' -DownloadUrl '${escapedDownloadUrl}' -DownloadPath '${escapedDownloadPath}' -StatusPath '${escapedStatusPath}'
           exit $LASTEXITCODE
         `;
 
@@ -2615,6 +2677,8 @@ try {
   }
   function resolveSmartctlPath() {
     const candidatePaths = [
+      path.join(getAppsPath(), "tools", "smartctl", "smartctl.exe"),
+      path.join(getAppsPath(), "smartctl.exe"),
       "smartctl.exe",
       "smartctl",
       path.join("C:", "Program Files", "smartmontools", "bin", "smartctl.exe"),
@@ -2625,8 +2689,6 @@ try {
         "bin64",
         "smartctl.exe",
       ),
-      path.join(getAppsPath(), "tools", "smartctl", "smartctl.exe"),
-      path.join(getAppsPath(), "smartctl.exe"),
     ];
     for (const candidate of candidatePaths) {
       try {

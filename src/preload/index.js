@@ -8,6 +8,7 @@ const api = {
   selectFolder: (options) => ipcRenderer.invoke("select-folder", options),
   searchWinget: (query) => ipcRenderer.invoke("search-winget", query),
   checkWingetStatus: () => ipcRenderer.invoke("check-winget-status"),
+  checkSmartctlStatus: () => ipcRenderer.invoke("check-smartctl-status"),
   installWinget: () => ipcRenderer.invoke("install-winget"),
   backupDrivers: (payload, taskKey) =>
     ipcRenderer.invoke("backup-drivers", payload, taskKey),

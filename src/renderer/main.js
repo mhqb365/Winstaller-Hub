@@ -67,7 +67,9 @@ let dataSizeRefreshTimer = null;
 let dataSizeRequestId = 0;
 let dataSizeRefreshQueued = false;
 let dataSizeSelectionVersion = 0;
-const DATA_SIZE_REFRESH_IDLE_MS = 900;
+const DATA_SIZE_REFRESH_IDLE_MS = 1400;
+const DATA_SIZE_CACHE_TTL_MS = 2 * 60 * 1000;
+const dataFolderSizeCache = /* @__PURE__ */ new Map();
 const DATA_DEFAULT_SELECTED_IDS = ["desktop", "documents", "downloads"];
 const DATA_CUSTOM_RESTORE_PROFILE_ID = "userprofile";
 let cleanupRamBusy = false;
@@ -1356,6 +1358,8 @@ function renderPerformanceDiskItems(disks) {
     .join("");
 }
 async function refreshPerformanceBoard() {
+  // TEMP: Performance logic disabled
+  /*
   if (performancePollingBusy) return;
   if (!window.api || !window.api.getPerformanceMetrics) return;
   if (!document.getElementById("perf-cpu-arc")) return;
@@ -1388,8 +1392,11 @@ async function refreshPerformanceBoard() {
   } finally {
     performancePollingBusy = false;
   }
+  */
 }
 function startPerformancePolling() {
+  // TEMP: Performance logic disabled
+  /*
   if (performancePollingTimer) return;
   refreshPerformanceBoard();
   performancePollingTimer = setInterval(() => {
@@ -1399,11 +1406,15 @@ function startPerformancePolling() {
       refreshPerformanceBoard();
     }
   }, PERFORMANCE_REFRESH_MS);
+  */
 }
 function stopPerformancePolling() {
+  // TEMP: Performance logic disabled
+  /*
   if (!performancePollingTimer) return;
   clearInterval(performancePollingTimer);
   performancePollingTimer = null;
+  */
 }
 const wingetModal = document.getElementById("winget-modal");
 const wingetSearchInput = document.getElementById("winget-search-input");
@@ -1491,10 +1502,12 @@ function switchTab(tabName) {
     }
   });
   if (tabName === "dashboard") {
-    startPerformancePolling();
+    // TEMP: Performance logic disabled
+    // startPerformancePolling();
     refreshBenchmarkHealth(true);
   } else {
-    stopPerformancePolling();
+    // TEMP: Performance logic disabled
+    // stopPerformancePolling();
   }
 }
 if (navItems.dashboard)
@@ -3069,6 +3082,61 @@ function getSelectedCustomFolders() {
       restoreSubPath: String(folder.restoreSubPath || "").trim(),
     }));
 }
+function normalizeDataFolderPathKey(pathValue) {
+  return String(pathValue || "")
+    .trim()
+    .replace(/[\\/]+$/, "")
+    .toLowerCase();
+}
+function getSelectedDataSizePlan() {
+  const selected = dataDefaultFolders.filter((folder) =>
+    dataSelectedFolderIds.has(folder.id),
+  );
+  const dedupMap = new Map();
+  selected.forEach((folder) => {
+    const pathKey = normalizeDataFolderPathKey(folder.path);
+    if (!pathKey) return;
+    if (dedupMap.has(pathKey)) return;
+    dedupMap.set(pathKey, {
+      id: String(folder.id || "").trim().toLowerCase(),
+      sourcePath: String(folder.path || "").trim(),
+    });
+  });
+  return Array.from(dedupMap.values()).filter((item) => item.sourcePath);
+}
+function getCachedDataSizeEntry(pathKey, nowMs = Date.now()) {
+  const cached = dataFolderSizeCache.get(pathKey);
+  if (!cached) return null;
+  if (nowMs - Number(cached.updatedAt || 0) > DATA_SIZE_CACHE_TTL_MS) {
+    dataFolderSizeCache.delete(pathKey);
+    return null;
+  }
+  return cached;
+}
+function setCachedDataSizeEntry(pathKey, value = {}) {
+  if (!pathKey) return;
+  const bytes = Number(value.bytes);
+  const files = Number(value.files);
+  dataFolderSizeCache.set(pathKey, {
+    updatedAt: Date.now(),
+    exists: value.exists !== false,
+    bytes: Number.isFinite(bytes) ? Math.max(0, bytes) : 0,
+    files: Number.isFinite(files) ? Math.max(0, files) : 0,
+  });
+}
+function computeTotalsFromCachedPlan(plan, nowMs = Date.now()) {
+  return plan.reduce(
+    (acc, item) => {
+      const pathKey = normalizeDataFolderPathKey(item.sourcePath);
+      const cached = getCachedDataSizeEntry(pathKey, nowMs);
+      if (!cached) return acc;
+      acc.totalBytes += Number(cached.bytes) || 0;
+      acc.totalFiles += Number(cached.files) || 0;
+      return acc;
+    },
+    { totalBytes: 0, totalFiles: 0 },
+  );
+}
 function normalizeDataFolderList(rawFolders) {
   if (!Array.isArray(rawFolders)) return [];
   return rawFolders
@@ -3256,12 +3324,8 @@ async function refreshSelectedDataSize() {
   }
   const requestId = ++dataSizeRequestId;
   const selectionVersion = dataSizeSelectionVersion;
-  const selectedDefaultFolderIds = getSelectedDefaultFolderIds();
-  const selectedCustomFolders = getSelectedCustomFolders();
-  if (
-    selectedDefaultFolderIds.length === 0 &&
-    selectedCustomFolders.length === 0
-  ) {
+  const selectedPlan = getSelectedDataSizePlan();
+  if (selectedPlan.length === 0) {
     dataSelectedTotalBytes = 0;
     dataSelectedTotalFiles = 0;
     dataSizeBusy = false;
@@ -3277,35 +3341,77 @@ async function refreshSelectedDataSize() {
     updateDataBackupStatsUI();
     return;
   }
+  const nowMs = Date.now();
+  const missingPlan = [];
+  selectedPlan.forEach((item) => {
+    const pathKey = normalizeDataFolderPathKey(item.sourcePath);
+    if (!pathKey) return;
+    if (!getCachedDataSizeEntry(pathKey, nowMs)) {
+      missingPlan.push(item);
+    }
+  });
+  if (missingPlan.length === 0) {
+    const totals = computeTotalsFromCachedPlan(selectedPlan, nowMs);
+    dataSelectedTotalBytes = totals.totalBytes;
+    dataSelectedTotalFiles = totals.totalFiles;
+    dataSizeBusy = false;
+    dataSizeRefreshQueued = false;
+    updateDataBackupStatsUI();
+    return;
+  }
   dataSizeBusy = true;
   updateDataBackupStatsUI();
   try {
     const result = await window.api.getUserDataSize({
-      selectedFolderIds: selectedDefaultFolderIds,
-      customFolders: selectedCustomFolders,
+      selectedFolderIds: [],
+      customFolders: missingPlan.map((item) => ({
+        id: item.id,
+        name: item.id,
+        sourcePath: item.sourcePath,
+        restoreToId: DATA_CUSTOM_RESTORE_PROFILE_ID,
+        restoreSubPath: "",
+      })),
     });
     if (
       requestId !== dataSizeRequestId ||
       selectionVersion !== dataSizeSelectionVersion
     )
       return;
-    if (result && result.success) {
-      const totalBytes = Number(result.totalBytes);
-      const totalFiles = Number(result.totalFiles);
-      dataSelectedTotalBytes = Number.isFinite(totalBytes) ? totalBytes : 0;
-      dataSelectedTotalFiles = Number.isFinite(totalFiles) ? totalFiles : 0;
-    } else {
-      dataSelectedTotalBytes = 0;
-      dataSelectedTotalFiles = 0;
+
+    const statsById = new Map();
+    if (result && result.success && Array.isArray(result.folders)) {
+      result.folders.forEach((folderStat) => {
+        const id = String(folderStat?.id || "")
+          .trim()
+          .toLowerCase();
+        if (!id) return;
+        statsById.set(id, folderStat);
+      });
     }
+
+    missingPlan.forEach((item) => {
+      const pathKey = normalizeDataFolderPathKey(item.sourcePath);
+      if (!pathKey) return;
+      const stat = statsById.get(item.id);
+      setCachedDataSizeEntry(pathKey, {
+        exists: stat ? stat.exists !== false : false,
+        bytes: stat ? stat.bytes : 0,
+        files: stat ? stat.files : 0,
+      });
+    });
+
+    const totals = computeTotalsFromCachedPlan(selectedPlan);
+    dataSelectedTotalBytes = totals.totalBytes;
+    dataSelectedTotalFiles = totals.totalFiles;
   } catch {
     if (
       requestId !== dataSizeRequestId ||
       selectionVersion !== dataSizeSelectionVersion
     )
       return;
-    dataSelectedTotalBytes = 0;
-    dataSelectedTotalFiles = 0;
+    const totals = computeTotalsFromCachedPlan(selectedPlan);
+    dataSelectedTotalBytes = totals.totalBytes;
+    dataSelectedTotalFiles = totals.totalFiles;
   } finally {
     if (requestId === dataSizeRequestId) {
       dataSizeBusy = false;
@@ -5841,7 +5947,8 @@ if (githubLink && window.api && window.api.openExternal) {
   };
 }
 window.addEventListener("beforeunload", () => {
-  stopPerformancePolling();
+  // TEMP: Performance logic disabled
+  // stopPerformancePolling();
   if (pendingInstalledRenderTimer) {
     clearTimeout(pendingInstalledRenderTimer);
     pendingInstalledRenderTimer = null;
@@ -5884,9 +5991,10 @@ async function initAboutVersion() {
 
 async function warmupDashboardDataInBackground() {
   await Promise.allSettled([
-    typeof refreshPerformanceBoard === "function"
-      ? refreshPerformanceBoard()
-      : Promise.resolve(),
+    // TEMP: Performance logic disabled
+    // typeof refreshPerformanceBoard === "function"
+    //   ? refreshPerformanceBoard()
+    //   : Promise.resolve(),
     typeof initSysInfo === "function" ? initSysInfo() : Promise.resolve(),
   ]);
 }

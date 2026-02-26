@@ -15,6 +15,15 @@ module.exports = async function afterPack(context) {
     fs.copyFileSync(sourceSmartMonExe, targetSmartMonExe);
   }
 
+  const sourceSmartMonDir = path.join(projectDir, "src", "apps", "smartmontools");
+  const targetSmartMonDir = path.join(context.appOutDir, "apps", "smartmontools");
+  if (fs.existsSync(sourceSmartMonDir)) {
+    fs.cpSync(sourceSmartMonDir, targetSmartMonDir, {
+      recursive: true,
+      force: true,
+    });
+  }
+
   const bundledSmartctlDir = path.join(
     context.appOutDir,
     "apps",

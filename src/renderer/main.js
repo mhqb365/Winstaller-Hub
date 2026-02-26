@@ -38,6 +38,7 @@ let sysInfo = {
   ram: "--",
   arch: "--",
 };
+let sysInfoLoading = true;
 let viewMode = localStorage.getItem("viewMode") || "list";
 let officeViewMode = localStorage.getItem("officeViewMode") || "grid";
 let universalFilter = true;
@@ -64,12 +65,15 @@ let dataSizeBusy = false;
 let dataSelectedTotalBytes = 0;
 let dataSelectedTotalFiles = 0;
 let dataSizeRefreshTimer = null;
+let dataSizeIdleHandle = null;
 let dataSizeRequestId = 0;
 let dataSizeRefreshQueued = false;
 let dataSizeSelectionVersion = 0;
 const DATA_SIZE_REFRESH_IDLE_MS = 1400;
 const DATA_SIZE_CACHE_TTL_MS = 2 * 60 * 1000;
 const dataFolderSizeCache = /* @__PURE__ */ new Map();
+let dataFoldersLoadedOnce = false;
+let dataFolderLoadPromise = null;
 const DATA_DEFAULT_SELECTED_IDS = ["desktop", "documents", "downloads"];
 const DATA_CUSTOM_RESTORE_PROFILE_ID = "userprofile";
 let cleanupRamBusy = false;
@@ -1493,7 +1497,9 @@ function switchTab(tabName) {
           refreshWindowsUpdateState(false);
         }
         if (key === "dataBackup") {
-          loadUserDefaultFolders();
+          void ensureDataBackupFoldersLoaded({
+            notifyError: !dataFoldersLoadedOnce,
+          });
         }
       } else {
         tabs[key].style.display = "none";
@@ -1508,6 +1514,9 @@ function switchTab(tabName) {
   } else {
     // TEMP: Performance logic disabled
     // stopPerformancePolling();
+  }
+  if (tabName !== "dataBackup") {
+    clearDataSizeRefreshSchedule();
   }
 }
 if (navItems.dashboard)
@@ -1745,14 +1754,52 @@ window.cancelTask = async (path) => {
   }
 };
 async function initSysInfo() {
-  if (window.api && window.api.getSysInfo) {
-    sysInfo = await window.api.getSysInfo();
+  if (!window.api || !window.api.getSysInfo) {
+    sysInfoLoading = false;
+    updateDashboardInfo();
+    return;
+  }
+  sysInfoLoading = true;
+  updateDashboardInfo();
+  try {
+    const nextSysInfo = await window.api.getSysInfo();
+    if (nextSysInfo && typeof nextSysInfo === "object") {
+      sysInfo = nextSysInfo;
+    }
+  } catch (error) {
+    console.warn("Failed to load system information:", error);
+  } finally {
+    sysInfoLoading = false;
     updateDashboardInfo();
   }
 }
 function renderBatteryDetailCards() {
   const container = document.getElementById("detail-battery-cards");
   if (!container) return;
+  if (sysInfoLoading) {
+    container.innerHTML = `
+      <div class="card detail-card battery-matrix-card battery-loading-card">
+        <div class="detail-card-title detail-card-title-spread">
+          <div class="detail-card-title-main">
+            <i data-lucide="battery-charging" style="width: 15px; height: 15px"></i>
+            ${tr("batteryTitle")}
+          </div>
+          <button class="btn btn-outline h-8 px-3 text-xs" disabled>
+            <i data-lucide="loader-2" class="animate-spin" style="width: 14px; height: 14px"></i>
+            ${tr("processing")}
+          </button>
+        </div>
+        <div class="battery-loading-list">
+          <div class="detail-row"><span>${tr("batteryMetric")}</span><strong>--</strong></div>
+          <div class="detail-row"><span>${tr("batteryStatus")}</span><strong>--</strong></div>
+          <div class="detail-row"><span>${tr("batteryLevel")}</span><strong>--</strong></div>
+          <div class="detail-row"><span>${tr("batteryWearLevel")}</span><strong>--</strong></div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
 
   const rawItems = Array.isArray(sysInfo.batteryItems)
     ? sysInfo.batteryItems
@@ -1946,6 +1993,7 @@ function renderBatteryDetailCards() {
       </div>
     </div>
   `;
+  if (window.lucide) window.lucide.createIcons();
 }
 function updateDashboardInfo() {
   const setDetailValue = (id, value) => {
@@ -3301,23 +3349,50 @@ function updateDataBackupStatsUI() {
     count: Number(dataSelectedTotalFiles || 0).toLocaleString(getUiLocale()),
   });
 }
-function scheduleDataSizeRefresh(delayMs = DATA_SIZE_REFRESH_IDLE_MS) {
+function isDataBackupTabActive() {
+  return Boolean(tabs.dataBackup && tabs.dataBackup.classList.contains("active"));
+}
+function clearDataSizeRefreshSchedule() {
   if (dataSizeRefreshTimer) {
     clearTimeout(dataSizeRefreshTimer);
     dataSizeRefreshTimer = null;
   }
+  if (
+    dataSizeIdleHandle !== null &&
+    typeof window !== "undefined" &&
+    typeof window.cancelIdleCallback === "function"
+  ) {
+    window.cancelIdleCallback(dataSizeIdleHandle);
+  }
+  dataSizeIdleHandle = null;
+}
+function scheduleDataSizeRefresh(delayMs = DATA_SIZE_REFRESH_IDLE_MS) {
+  clearDataSizeRefreshSchedule();
   dataSizeRefreshTimer = setTimeout(
     () => {
-      refreshSelectedDataSize();
+      dataSizeRefreshTimer = null;
+      const runRefresh = () => {
+        dataSizeIdleHandle = null;
+        if (!isDataBackupTabActive()) return;
+        refreshSelectedDataSize();
+      };
+      if (
+        typeof window !== "undefined" &&
+        typeof window.requestIdleCallback === "function"
+      ) {
+        dataSizeIdleHandle = window.requestIdleCallback(runRefresh, {
+          timeout: 2500,
+        });
+      } else {
+        runRefresh();
+      }
     },
     Math.max(0, Number(delayMs) || 0),
   );
 }
 async function refreshSelectedDataSize() {
-  if (dataSizeRefreshTimer) {
-    clearTimeout(dataSizeRefreshTimer);
-    dataSizeRefreshTimer = null;
-  }
+  clearDataSizeRefreshSchedule();
+  if (!isDataBackupTabActive()) return;
   if (dataSizeBusy) {
     dataSizeRefreshQueued = true;
     return;
@@ -3478,7 +3553,7 @@ function renderDataBackupFolderList() {
           </div>
           <div class="data-folder-meta">
             <span class="${stateClass}">${escapeHtml(stateLabel)}</span>
-            ${isCustom ? `<button type="button" class="data-folder-remove-btn" data-folder-id="${escapeHtml(folder.id)}" title="${escapeHtml(removeTitle)}" aria-label="${escapeHtml(removeTitle)}"><i data-lucide="x" style="width: 12px"></i></button>` : ""}
+            ${isCustom ? `<button type="button" class="data-folder-remove-btn" data-folder-id="${escapeHtml(folder.id)}" title="${escapeHtml(removeTitle)}" aria-label="${escapeHtml(removeTitle)}"><span aria-hidden="true">&times;</span></button>` : ""}
           </div>
         </label>
       `;
@@ -3519,7 +3594,6 @@ function renderDataBackupFolderList() {
         await removeCustomDataFolderById(folderId);
       };
     });
-  if (window.lucide) window.lucide.createIcons();
   setDataBackupButtonState(false);
 }
 function setDataBackupButtonState(refreshIcons = true) {
@@ -3558,9 +3632,31 @@ function setDataBackupButtonState(refreshIcons = true) {
   }
   if (refreshIcons && window.lucide) window.lucide.createIcons();
 }
+function ensureDataBackupFoldersLoaded(options = {}) {
+  const { force = false, notifyError = false } = options;
+  if (!force && dataFoldersLoadedOnce) {
+    return Promise.resolve(true);
+  }
+  if (dataFolderLoadPromise) {
+    return dataFolderLoadPromise;
+  }
+  dataFolderLoadPromise = loadUserDefaultFolders({
+    notifyError,
+  })
+    .then((success) => {
+      if (success) {
+        dataFoldersLoadedOnce = true;
+      }
+      return success;
+    })
+    .finally(() => {
+      dataFolderLoadPromise = null;
+    });
+  return dataFolderLoadPromise;
+}
 async function loadUserDefaultFolders(options = {}) {
   const { resetSelection = false, notifyError = false } = options;
-  if (!window.api || !window.api.getUserDefaultFolders) return;
+  if (!window.api || !window.api.getUserDefaultFolders) return false;
   try {
     const result = await window.api.getUserDefaultFolders();
     if (!result || !result.success) {
@@ -3583,7 +3679,7 @@ async function loadUserDefaultFolders(options = {}) {
           "error",
         );
       }
-      return;
+      return false;
     }
     const builtInFolders = normalizeDataFolderList(result.folders);
     const builtInPathSet = new Set(
@@ -3620,6 +3716,7 @@ async function loadUserDefaultFolders(options = {}) {
     persistDataFolderSelection();
     renderDataBackupFolderList();
     scheduleDataSizeRefresh(DATA_SIZE_REFRESH_IDLE_MS);
+    return true;
   } catch (error) {
     dataDefaultFolders = [];
     dataSelectedFolderIds = /* @__PURE__ */ new Set();
@@ -3633,6 +3730,7 @@ async function loadUserDefaultFolders(options = {}) {
     if (notifyError) {
       showNotification(tr("errorPrefix", { message: error.message }), "error");
     }
+    return false;
   }
 }
 async function pickDataFolder(type) {
@@ -5400,10 +5498,7 @@ if (dataBackupClearAllBtn) {
     dataSelectedTotalFiles = 0;
     dataSizeBusy = false;
     dataSizeRefreshQueued = false;
-    if (dataSizeRefreshTimer) {
-      clearTimeout(dataSizeRefreshTimer);
-      dataSizeRefreshTimer = null;
-    }
+    clearDataSizeRefreshSchedule();
     persistDataFolderSelection();
     renderDataBackupFolderList();
   };
@@ -5953,10 +6048,7 @@ window.addEventListener("beforeunload", () => {
     clearTimeout(pendingInstalledRenderTimer);
     pendingInstalledRenderTimer = null;
   }
-  if (dataSizeRefreshTimer) {
-    clearTimeout(dataSizeRefreshTimer);
-    dataSizeRefreshTimer = null;
-  }
+  clearDataSizeRefreshSchedule();
   if (typeof disposeInstalledAppsUpdatedListener === "function") {
     disposeInstalledAppsUpdatedListener();
     disposeInstalledAppsUpdatedListener = null;
@@ -5999,73 +6091,36 @@ async function warmupDashboardDataInBackground() {
   ]);
 }
 
-async function ensureSmartMonToolsInBackground(wingetReady) {
-  if (!window.api || !window.api.runInstaller) return;
-
-  const canCheckSmartctl = typeof window.api.checkSmartctlStatus === "function";
-  const isSmartctlReady = async () => {
-    if (!canCheckSmartctl) return false;
-    try {
-      const status = await window.api.checkSmartctlStatus();
-      return Boolean(status && status.available);
-    } catch {
-      return false;
-    }
-  };
+async function ensureSmartMonToolsInBackground() {
+  if (!window.api || typeof window.api.checkSmartctlStatus !== "function") return;
 
   try {
-    let smartctlReady = await isSmartctlReady();
-    if (smartctlReady) return;
-
-    const localRes = await window.api.runInstaller("smartmontools.exe");
-    if (localRes && localRes.success) {
-      smartctlReady = canCheckSmartctl ? await isSmartctlReady() : true;
-      if (smartctlReady) {
-        showNotification(
-          currentLanguage === "vi"
-            ? "Đã cài đặt SmartMonTools thành công"
-            : "SmartMonTools installed successfully",
-          "success",
-        );
-        return;
-      }
-    }
-
-    if (!wingetReady) return;
-
-    const wingetRes = await window.api.runInstaller("smartmontools.smartmontools");
-    if (wingetRes && wingetRes.success) {
-      smartctlReady = canCheckSmartctl ? await isSmartctlReady() : true;
-      if (smartctlReady) {
-        showNotification(
-          currentLanguage === "vi"
-            ? "Đã cài đặt SmartMonTools thành công"
-            : "SmartMonTools installed successfully",
-          "success",
-        );
-      }
+    const status = await window.api.checkSmartctlStatus();
+    if (!status || !status.success || !status.available) {
+      console.warn(
+        "Smartctl is not available from bundled smartmontools folder.",
+      );
     }
   } catch (error) {
-    console.warn("SmartMonTools background setup failed:", error);
+    console.warn("SmartMonTools availability check failed:", error);
   }
 }
 
-function runPostStartupBackgroundTasks(wingetReady) {
+function runPostStartupBackgroundTasks() {
   setTimeout(() => {
     Promise.allSettled([
       warmupDashboardDataInBackground(),
-      ensureSmartMonToolsInBackground(Boolean(wingetReady)),
+      ensureSmartMonToolsInBackground(),
     ]);
   }, 0);
 }
 
 async function checkAndInstallWinget() {
   showSystemLoader(tr("systemChecking"));
-  let wingetReady = false;
 
   if (!window.api || !window.api.checkWingetStatus || !window.api.installWinget) {
     hideSystemLoader();
-    runPostStartupBackgroundTasks(false);
+    runPostStartupBackgroundTasks();
     return;
   }
 
@@ -6073,7 +6128,6 @@ async function checkAndInstallWinget() {
     showSystemLoader(tr("wingetCheck"));
     const status = await window.api.checkWingetStatus();
     const statusCode = String(status?.status || "").toLowerCase();
-    wingetReady = statusCode === "ready" || statusCode === "outdated";
 
     if (statusCode === "missing") {
       hideSystemLoader();
@@ -6083,7 +6137,6 @@ async function checkAndInstallWinget() {
           : "Winget was not found. Do you want to install Winget now?",
       );
       if (!shouldInstallWinget) {
-        wingetReady = false;
         showNotification(
           currentLanguage === "vi"
             ? "Đã bỏ qua cài Winget theo lựa chọn của bạn"
@@ -6098,15 +6151,12 @@ async function checkAndInstallWinget() {
         showSystemLoader(msg);
         const result = await window.api.installWinget();
         if (!result.success) {
-          wingetReady = false;
           showNotification(
             currentLanguage === "vi"
               ? `Cài đặt Winget thất bại: ${result.error}`
               : `Winget installation failed: ${result.error}`,
             "error",
           );
-        } else {
-          wingetReady = true;
         }
       }
     }
@@ -6116,7 +6166,7 @@ async function checkAndInstallWinget() {
     hideSystemLoader();
   }
 
-  runPostStartupBackgroundTasks(wingetReady);
+  runPostStartupBackgroundTasks();
 }
 async function initApp() {
   clearStoredPathHistory();
@@ -6134,6 +6184,7 @@ async function initApp() {
     installers = await window.api.loadLibrary();
   }
   switchTab("dashboard");
+  renderBatteryDetailCards();
   applyLanguage(currentLanguage, { persist: false, rerender: false });
   setTimeout(() => {
     updateOfficeOnlineSubmitButtonLabel();

@@ -676,6 +676,18 @@ main {
   overflow-x: auto;
 }
 
+.battery-loading-card .btn[disabled] {
+  opacity: 1;
+  cursor: default;
+}
+
+.battery-loading-list {
+  border: 1px dashed hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.55rem 0.7rem;
+  background: hsl(var(--accent) / 0.08);
+}
+
 .battery-matrix-table {
   width: 100%;
   border-collapse: collapse;

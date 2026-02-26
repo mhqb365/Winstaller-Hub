@@ -2677,47 +2677,17 @@ try {
   }
   function resolveSmartctlPath() {
     const candidatePaths = [
+      path.join(getAppsPath(), "smartmontools", "smartctl.exe"),
+      // Legacy fallback path from older builds.
       path.join(getAppsPath(), "tools", "smartctl", "smartctl.exe"),
+      // Legacy fallback for single-file placement.
       path.join(getAppsPath(), "smartctl.exe"),
-      "smartctl.exe",
-      "smartctl",
-      path.join("C:", "Program Files", "smartmontools", "bin", "smartctl.exe"),
-      path.join(
-        "C:",
-        "Program Files",
-        "smartmontools",
-        "bin64",
-        "smartctl.exe",
-      ),
     ];
     for (const candidate of candidatePaths) {
       try {
-        if (candidate.toLowerCase().endsWith(".exe")) {
-          if (fs.existsSync(candidate)) return candidate;
-          continue;
-        }
-        const probe = spawnSync(candidate, ["--version"], {
-          encoding: "utf8",
-          windowsHide: true,
-          timeout: 4000,
-        });
-        if (!probe.error) return candidate;
+        if (fs.existsSync(candidate)) return candidate;
       } catch {}
     }
-    try {
-      const whereResult = spawnSync("where", ["smartctl.exe"], {
-        encoding: "utf8",
-        windowsHide: true,
-        timeout: 4000,
-      });
-      if (whereResult.status === 0 && whereResult.stdout) {
-        const firstPath = whereResult.stdout
-          .split(/\r?\n/)
-          .map((line) => line.trim())
-          .find((line) => line.length > 0 && fs.existsSync(line));
-        if (firstPath) return firstPath;
-      }
-    } catch {}
     return null;
   }
   function extractSmartctlHealth(report) {

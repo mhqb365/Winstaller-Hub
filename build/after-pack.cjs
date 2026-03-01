@@ -24,6 +24,27 @@ module.exports = async function afterPack(context) {
     });
   }
 
+  const sourceWingetDepsCandidates = [
+    path.join(projectDir, "src", "winget-frameworks"),
+    path.join(projectDir, "src", "apps", "winget-frameworks"),
+  ];
+  const wingetBundleName = "Microsoft.DesktopAppInstaller.msixbundle";
+  const sourceWingetDepsDir =
+    sourceWingetDepsCandidates.find((candidate) =>
+      fs.existsSync(path.join(candidate, wingetBundleName)),
+    ) || sourceWingetDepsCandidates.find((candidate) => fs.existsSync(candidate));
+  const targetWingetDepsDir = path.join(
+    context.appOutDir,
+    "apps",
+    "winget-frameworks",
+  );
+  if (sourceWingetDepsDir) {
+    fs.cpSync(sourceWingetDepsDir, targetWingetDepsDir, {
+      recursive: true,
+      force: true,
+    });
+  }
+
   const bundledSmartctlDir = path.join(
     context.appOutDir,
     "apps",

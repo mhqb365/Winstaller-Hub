@@ -40,7 +40,7 @@ let sysInfo = {
 };
 let sysInfoLoading = true;
 let viewMode = localStorage.getItem("viewMode") || "list";
-let officeViewMode = localStorage.getItem("officeViewMode") || "grid";
+let officeViewMode = localStorage.getItem("officeViewMode") || "list";
 let universalFilter = true;
 let x64Filter = true;
 let x86Filter = true;
@@ -74,7 +74,6 @@ const DATA_SIZE_CACHE_TTL_MS = 2 * 60 * 1000;
 const dataFolderSizeCache = /* @__PURE__ */ new Map();
 let dataFoldersLoadedOnce = false;
 let dataFolderLoadPromise = null;
-const DATA_DEFAULT_SELECTED_IDS = ["desktop", "documents", "downloads"];
 const DATA_CUSTOM_RESTORE_PROFILE_ID = "userprofile";
 let cleanupRamBusy = false;
 let cleanupDiskBusy = false;
@@ -3102,11 +3101,7 @@ function getDataFolderDisplayName(folderId) {
 }
 function getDefaultDataFolderSelection(availableIds) {
   if (!(availableIds instanceof Set) || availableIds.size === 0) return [];
-  const preferred = DATA_DEFAULT_SELECTED_IDS.filter((id) =>
-    availableIds.has(id),
-  );
-  if (preferred.length > 0) return preferred;
-  return Array.from(availableIds);
+  return [];
 }
 function getSelectedDefaultFolderIds() {
   return dataDefaultFolders
@@ -6117,6 +6112,7 @@ function runPostStartupBackgroundTasks() {
 
 async function checkAndInstallWinget() {
   showSystemLoader(tr("systemChecking"));
+  let pendingStoreFallback = null;
 
   if (!window.api || !window.api.checkWingetStatus || !window.api.installWinget) {
     hideSystemLoader();
@@ -6157,6 +6153,9 @@ async function checkAndInstallWinget() {
               : `Winget installation failed: ${result.error}`,
             "error",
           );
+          if (result.requiresStore && result.storeUrl) {
+            pendingStoreFallback = String(result.storeUrl);
+          }
         }
       }
     }
@@ -6164,6 +6163,27 @@ async function checkAndInstallWinget() {
     console.error("Error during system check:", error);
   } finally {
     hideSystemLoader();
+  }
+
+  if (
+    pendingStoreFallback &&
+    window.api &&
+    typeof window.api.openExternal === "function"
+  ) {
+    const shouldOpenStore = confirm(
+      currentLanguage === "vi"
+        ? "Máy mới cài Windows có thể thiếu dependency của Winget. Mở Microsoft Store để cài App Installer ngay bây giờ?"
+        : "Fresh Windows installs may miss Winget dependencies. Open Microsoft Store to install App Installer now?",
+    );
+    if (shouldOpenStore) {
+      await window.api.openExternal(pendingStoreFallback);
+      showNotification(
+        currentLanguage === "vi"
+          ? "Cài App Installer trong Microsoft Store, sau đó mở lại ứng dụng."
+          : "Install App Installer in Microsoft Store, then reopen the app.",
+        "info",
+      );
+    }
   }
 
   runPostStartupBackgroundTasks();

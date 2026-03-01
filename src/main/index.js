@@ -1134,26 +1134,52 @@ app.whenReady().then(() => {
   ipcMain.handle("install-winget", async () => {
     console.log("Main process: install-winget triggered");
     return new Promise((resolve) => {
-      const downloadUrl = "https://aka.ms/getwinget";
-
       const tempDir = app.getPath("temp");
       const uniqueId = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+      const appPath = app.getAppPath();
+      const localBundleCandidates = [
+        path.join(
+          appPath,
+          "src",
+          "winget-frameworks",
+          "Microsoft.DesktopAppInstaller.msixbundle",
+        ),
+        path.join(
+          getAppsPath(),
+          "winget-frameworks",
+          "Microsoft.DesktopAppInstaller.msixbundle",
+        ),
+        path.join(
+          appPath,
+          "src",
+          "apps",
+          "winget-frameworks",
+          "Microsoft.DesktopAppInstaller.msixbundle",
+        ),
+      ];
+      const localBundlePath =
+        localBundleCandidates.find((candidate) => fs.existsSync(candidate)) || "";
+      if (!localBundlePath) {
+        resolve({
+          success: false,
+          error:
+            "Microsoft.DesktopAppInstaller.msixbundle was not found in winget-frameworks folder.",
+        });
+        return;
+      }
       const runnerPath = path.join(
         tempDir,
         `winstaller-winget-${uniqueId}.ps1`,
-      );
-      const downloadPath = path.join(
-        tempDir,
-        `winstaller-winget-${uniqueId}.msixbundle`,
       );
       const statusPath = path.join(
         tempDir,
         `winstaller-winget-${uniqueId}.json`,
       );
-      const escapedDownloadUrl = downloadUrl.replace(/'/g, "''");
-      const escapedDownloadPath = downloadPath.replace(/'/g, "''");
+      const dependencyRoot = path.dirname(localBundlePath);
+      const escapedLocalBundlePath = localBundlePath.replace(/'/g, "''");
       const escapedRunnerPath = runnerPath.replace(/'/g, "''");
       const escapedStatusPath = statusPath.replace(/'/g, "''");
+      const escapedDependencyRoot = dependencyRoot.replace(/'/g, "''");
       const runWithAdmin = !isRunningAsAdmin();
 
       const cleanupTempFiles = () => {
@@ -1163,16 +1189,13 @@ app.whenReady().then(() => {
         try {
           if (fs.existsSync(statusPath)) fs.unlinkSync(statusPath);
         } catch {}
-        try {
-          if (fs.existsSync(downloadPath)) fs.unlinkSync(downloadPath);
-        } catch {}
       };
 
       const runnerScript = `
 param(
-  [Parameter(Mandatory=$true)][string]$DownloadUrl,
-  [Parameter(Mandatory=$true)][string]$DownloadPath,
-  [Parameter(Mandatory=$true)][string]$StatusPath
+  [Parameter(Mandatory=$true)][string]$LocalBundlePath,
+  [Parameter(Mandatory=$true)][string]$StatusPath,
+  [Parameter(Mandatory=$false)][string]$DependencyRoot = ''
 )
 $ErrorActionPreference = 'Stop'
 $result = [ordered]@{
@@ -1190,41 +1213,104 @@ function Finish-Result([int]$ExitCode) {
   exit $ExitCode
 }
 
+function Is-AlreadyInstalledMessage([string]$Message) {
+  if ([string]::IsNullOrWhiteSpace($Message)) { return $false }
+  return $Message -match '0x80073D06|already installed|already exists'
+}
+
+function Is-DependencyFailure([string]$Message) {
+  if ([string]::IsNullOrWhiteSpace($Message)) { return $false }
+  return $Message -match '0x80073CF3|dependency|framework|microsoft\.ui\.xaml|vclibs|net\.native'
+}
+
+function Get-DependencyPackages([string]$RootPath) {
+  if ([string]::IsNullOrWhiteSpace($RootPath)) { return @() }
+  if (-not (Test-Path -LiteralPath $RootPath)) { return @() }
+
+  $exts = @('.appx', '.msix', '.msixbundle')
+  $candidates = Get-ChildItem -LiteralPath $RootPath -Recurse -File -ErrorAction SilentlyContinue |
+    Where-Object { $exts -contains $_.Extension.ToLowerInvariant() } |
+    ForEach-Object {
+      $name = $_.Name.ToLowerInvariant()
+      if ($name -match 'vclibs|ui\.xaml|net\.native') {
+        $rank = 100
+        if ($name -match 'vclibs') { $rank = 10 }
+        elseif ($name -match 'ui\.xaml') { $rank = 20 }
+        elseif ($name -match 'net\.native\.framework') { $rank = 30 }
+        elseif ($name -match 'net\.native\.runtime') { $rank = 40 }
+        [PSCustomObject]@{
+          Rank = $rank
+          Name = $name
+          File = $_
+        }
+      }
+    } |
+    Where-Object { $_ -ne $null } |
+    Sort-Object -Property Rank, Name
+
+  if ($null -eq $candidates) { return @() }
+  return @($candidates | Select-Object -ExpandProperty File)
+}
+
+function Install-DependencyPackages([array]$Packages) {
+  [int]$installedCount = 0
+  foreach ($pkg in $Packages) {
+    $pkgPath = [string]$pkg.FullName
+    if ([string]::IsNullOrWhiteSpace($pkgPath)) { continue }
+    try {
+      Add-AppxPackage -Path $pkgPath -ForceApplicationShutdown -ErrorAction Stop | Out-Null
+      $result.output += "Installed dependency: $($pkg.Name)\`n"
+      $installedCount += 1
+    } catch {
+      $depMsg = [string]$_.Exception.Message
+      if (Is-AlreadyInstalledMessage $depMsg) {
+        $result.output += "Dependency already installed: $($pkg.Name)\`n"
+        continue
+      }
+      throw "Dependency install failed for '$($pkg.Name)': $depMsg"
+    }
+  }
+  return $installedCount
+}
+
+function Install-AppInstallerPackage([string]$PackagePath) {
+  Add-AppxPackage -Path $PackagePath -ForceApplicationShutdown -ErrorAction Stop | Out-Null
+}
+
 try {
-  if ([string]::IsNullOrWhiteSpace($DownloadUrl)) {
-    throw "Winget download URL is empty."
+  if ([string]::IsNullOrWhiteSpace($LocalBundlePath)) {
+    throw "Local App Installer bundle path is empty."
   }
 
-  $downloadDir = Split-Path -Path $DownloadPath -Parent
-  if (-not [string]::IsNullOrWhiteSpace($downloadDir) -and -not (Test-Path -LiteralPath $downloadDir)) {
-    New-Item -Path $downloadDir -ItemType Directory -Force | Out-Null
+  if (-not (Test-Path -LiteralPath $LocalBundlePath)) {
+    throw "Local App Installer bundle not found: $LocalBundlePath"
   }
 
-  $result.output += "Downloading App Installer from: $DownloadUrl\`n"
-  try {
-    Invoke-WebRequest -Uri $DownloadUrl -OutFile $DownloadPath -UseBasicParsing -ErrorAction Stop
-  } catch {
-    $result.output += "Invoke-WebRequest failed, trying Start-BitsTransfer...\`n"
-    Start-BitsTransfer -Source $DownloadUrl -Destination $DownloadPath -ErrorAction Stop
-  }
-
-  if (-not (Test-Path -LiteralPath $DownloadPath)) {
-    throw "Downloaded package not found: $DownloadPath"
-  }
-
-  $pkgFile = Get-Item -LiteralPath $DownloadPath -ErrorAction Stop
+  $pkgFile = Get-Item -LiteralPath $LocalBundlePath -ErrorAction Stop
   if (-not $pkgFile -or $pkgFile.Length -le 0) {
-    throw "Downloaded package is empty."
+    throw "Local App Installer bundle is empty."
   }
+  $result.output += "Using local App Installer bundle: $LocalBundlePath\`n"
 
   $result.output += "Installing App Installer package...\`n"
   try {
-    Add-AppxPackage -Path $DownloadPath -ForceApplicationShutdown -ErrorAction Stop | Out-Null
+    Install-AppInstallerPackage -PackagePath $LocalBundlePath
     $result.output += "Add-AppxPackage completed.\`n"
   } catch {
     $msg = [string]$_.Exception.Message
-    if ($msg -match '0x80073D06|already installed|already exists') {
+    if (Is-AlreadyInstalledMessage $msg) {
       $result.output += "App Installer already installed, skip package add.\`n"
+    } elseif (Is-DependencyFailure $msg) {
+      $result.output += "Dependency issue detected while installing App Installer.\`n"
+      $deps = Get-DependencyPackages -RootPath $DependencyRoot
+      if ($deps.Count -eq 0) {
+        throw "Missing dependency frameworks. Put Microsoft.VCLibs and Microsoft.UI.Xaml packages into '$DependencyRoot'. Original error: $msg"
+      }
+      $result.output += "Found $($deps.Count) local dependency package(s) in '$DependencyRoot'.\`n"
+      $installedCount = Install-DependencyPackages -Packages $deps
+      $result.output += "Dependency install phase completed ($installedCount action(s)). Retrying App Installer...\`n"
+      Install-AppInstallerPackage -PackagePath $LocalBundlePath
+      $result.output += "Add-AppxPackage completed after dependency install.\`n"
     } else {
       throw
     }
@@ -1266,9 +1352,9 @@ try {
               '-NoProfile',
               '-ExecutionPolicy', 'Bypass',
               '-File', '${escapedRunnerPath}',
-              '-DownloadUrl', '${escapedDownloadUrl}',
-              '-DownloadPath', '${escapedDownloadPath}',
-              '-StatusPath', '${escapedStatusPath}'
+              '-LocalBundlePath', '${escapedLocalBundlePath}',
+              '-StatusPath', '${escapedStatusPath}',
+              '-DependencyRoot', '${escapedDependencyRoot}'
             )
             exit $proc.ExitCode
           } catch {
@@ -1277,7 +1363,7 @@ try {
           }
         `
         : `
-          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '${escapedRunnerPath}' -DownloadUrl '${escapedDownloadUrl}' -DownloadPath '${escapedDownloadPath}' -StatusPath '${escapedStatusPath}'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '${escapedRunnerPath}' -LocalBundlePath '${escapedLocalBundlePath}' -StatusPath '${escapedStatusPath}' -DependencyRoot '${escapedDependencyRoot}'
           exit $LASTEXITCODE
         `;
 
@@ -1334,6 +1420,17 @@ try {
             output,
           });
         } else {
+          const failureText = [
+            statusPayload && statusPayload.error
+              ? String(statusPayload.error)
+              : "",
+            output,
+          ]
+            .filter(Boolean)
+            .join("\n");
+          const requiresStore = /0x80073cf3|dependency|framework|microsoft\.ui\.xaml|vclibs/i.test(
+            failureText,
+          );
           resolve({
             success: false,
             error:
@@ -1341,6 +1438,8 @@ try {
                 ? String(statusPayload.error)
                 : "Winget installation failed. Please try again and click Yes when the UAC prompt appears.",
             output,
+            requiresStore,
+            storeUrl: "ms-windows-store://pdp/?ProductId=9NBLGGH4NNS1",
           });
         }
       });

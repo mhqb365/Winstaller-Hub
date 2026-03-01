@@ -1578,10 +1578,10 @@ main {
   border-radius: calc(var(--radius) - 2px);
   background: hsl(var(--accent) / 0.07);
   padding: 0.5rem;
-  max-height: 260px;
+  height: auto;
   overflow: auto;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  align-content: start;
   gap: 0.45rem;
 }
 
@@ -1788,6 +1788,13 @@ main {
   color: #b91c1c;
   border-color: rgba(239, 68, 68, 0.35);
   background: rgba(239, 68, 68, 0.15);
+}
+
+.utility-status-badge[data-state="loading"] {
+  gap: 0.35rem;
+  min-width: 112px;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 @media (max-width: 1100px) {

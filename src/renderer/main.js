@@ -79,6 +79,7 @@ let cleanupRamBusy = false;
 let cleanupDiskBusy = false;
 let windowsUpdateBusy = false;
 let windowsUpdateState = null;
+let windowsUpdateStateLoading = true;
 let benchmarkBusy = false;
 let benchmarkHealthBusy = false;
 let benchmarkLastMeta = null;
@@ -3493,6 +3494,42 @@ async function refreshSelectedDataSize() {
     }
   }
 }
+function adjustDataBackupFolderListHeight(visibleRows = 3) {
+  if (!dataBackupFolderListEl || typeof window === "undefined") return;
+  const items = Array.from(
+    dataBackupFolderListEl.querySelectorAll(".data-folder-item"),
+  );
+  if (!items.length) {
+    dataBackupFolderListEl.style.removeProperty("height");
+    return;
+  }
+
+  const rows = Math.max(1, Math.min(Number(visibleRows) || 3, items.length));
+  const listStyle = window.getComputedStyle(dataBackupFolderListEl);
+  const gap =
+    parseFloat(listStyle.rowGap || listStyle.gap || "0") ||
+    parseFloat(listStyle.columnGap || "0") ||
+    0;
+  const paddingTop = parseFloat(listStyle.paddingTop || "0") || 0;
+  const paddingBottom = parseFloat(listStyle.paddingBottom || "0") || 0;
+  const borderTop = parseFloat(listStyle.borderTopWidth || "0") || 0;
+  const borderBottom = parseFloat(listStyle.borderBottomWidth || "0") || 0;
+
+  let itemsHeight = 0;
+  for (let index = 0; index < rows; index += 1) {
+    itemsHeight += items[index].offsetHeight;
+  }
+
+  const totalHeight =
+    itemsHeight +
+    gap * Math.max(0, rows - 1) +
+    paddingTop +
+    paddingBottom +
+    borderTop +
+    borderBottom;
+
+  dataBackupFolderListEl.style.height = `${Math.ceil(totalHeight)}px`;
+}
 function renderDataBackupFolderList() {
   if (!dataBackupFolderListEl) return;
   pruneDataFolderSelection();
@@ -3506,6 +3543,7 @@ function renderDataBackupFolderList() {
         ? "Không tìm thấy thư mục mặc định cho người dùng hiện tại"
         : "No default folders found for current user"
     }</div>`;
+    adjustDataBackupFolderListHeight(3);
     updateDataBackupStatsUI();
     setDataBackupButtonState(false);
     return;
@@ -3589,6 +3627,7 @@ function renderDataBackupFolderList() {
         await removeCustomDataFolderById(folderId);
       };
     });
+  adjustDataBackupFolderListHeight(3);
   setDataBackupButtonState(false);
 }
 function setDataBackupButtonState(refreshIcons = true) {
@@ -4070,42 +4109,55 @@ function normalizeWindowsUpdateState(raw) {
 }
 function renderWindowsUpdateCard() {
   if (!utilitiesWuToggleBtn || !utilitiesWuStatusValueEl) return;
+  const hasKnownState =
+    windowsUpdateState && typeof windowsUpdateState.isDisabled === "boolean";
+  const isStatusLoading = windowsUpdateStateLoading && !hasKnownState;
   const isDisabled =
-    windowsUpdateState && typeof windowsUpdateState.isDisabled === "boolean"
+    hasKnownState
       ? windowsUpdateState.isDisabled
       : null;
   const stateKey =
-    isDisabled === true
+    isStatusLoading
+      ? "loading"
+      : isDisabled === true
       ? "disabled"
       : isDisabled === false
         ? "enabled"
         : "unknown";
   utilitiesWuStatusValueEl.dataset.state = stateKey;
-  utilitiesWuStatusValueEl.innerText =
-    stateKey === "disabled"
-      ? tr("windowsUpdateDisabled")
-      : stateKey === "enabled"
-        ? tr("windowsUpdateEnabled")
-        : tr("windowsUpdateUnknown");
+  if (isStatusLoading) {
+    utilitiesWuStatusValueEl.innerHTML = `<i data-lucide="loader-2" class="animate-spin" style="width: 12px; height: 12px"></i> ${escapeHtml(tr("processing"))}`;
+  } else {
+    utilitiesWuStatusValueEl.innerText =
+      stateKey === "disabled"
+        ? tr("windowsUpdateDisabled")
+        : stateKey === "enabled"
+          ? tr("windowsUpdateEnabled")
+          : tr("windowsUpdateUnknown");
+  }
 
-  const buttonIcon = windowsUpdateBusy
+  const buttonIcon = windowsUpdateBusy || isStatusLoading
     ? "loader-2"
     : isDisabled === true
       ? "shield-check"
       : "shield-off";
-  const buttonLabel = windowsUpdateBusy
+  const buttonLabel = windowsUpdateBusy || isStatusLoading
     ? tr("processing")
     : isDisabled === true
       ? tr("windowsUpdateEnableBtn")
       : tr("windowsUpdateDisableBtn");
-  utilitiesWuToggleBtn.disabled = windowsUpdateBusy;
+  utilitiesWuToggleBtn.disabled = windowsUpdateBusy || isStatusLoading;
   utilitiesWuToggleBtn.className =
     isDisabled === false ? "btn btn-primary w-full" : "btn btn-outline w-full";
-  utilitiesWuToggleBtn.innerHTML = `<i data-lucide="${buttonIcon}" ${windowsUpdateBusy ? 'class="animate-spin"' : ""} style="width: 16px"></i> ${buttonLabel}`;
+  utilitiesWuToggleBtn.innerHTML = `<i data-lucide="${buttonIcon}" ${(windowsUpdateBusy || isStatusLoading) ? 'class="animate-spin"' : ""} style="width: 16px"></i> ${buttonLabel}`;
   if (window.lucide) window.lucide.createIcons();
 }
 async function refreshWindowsUpdateState(showError = false) {
+  windowsUpdateStateLoading = true;
+  renderWindowsUpdateCard();
   if (!window.api || !window.api.getWindowsUpdateState) {
+    windowsUpdateStateLoading = false;
+    renderWindowsUpdateCard();
     if (showError) showNotification(tr("windowsUpdateApiUnavailable"), "error");
     return null;
   }
@@ -4122,13 +4174,15 @@ async function refreshWindowsUpdateState(showError = false) {
       return null;
     }
     windowsUpdateState = normalized;
-    renderWindowsUpdateCard();
     return normalized;
   } catch (error) {
     if (showError) {
       showNotification(tr("errorPrefix", { message: error.message }), "error");
     }
     return null;
+  } finally {
+    windowsUpdateStateLoading = false;
+    renderWindowsUpdateCard();
   }
 }
 async function toggleWindowsUpdateState() {

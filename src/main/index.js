@@ -5148,16 +5148,52 @@ public static class MemoryTools {
     int systemInformationLength
   );
 
+  [DllImport("ntdll.dll")]
+  public static extern int RtlAdjustPrivilege(
+    int privilege,
+    bool enable,
+    bool currentThread,
+    out bool enabled
+  );
+
   public static int PurgeStandbyList(int commandValue) {
     SYSTEM_MEMORY_LIST_COMMAND command = new SYSTEM_MEMORY_LIST_COMMAND();
     command.Command = commandValue;
     return NtSetSystemInformation(80, ref command, Marshal.SizeOf(typeof(SYSTEM_MEMORY_LIST_COMMAND)));
   }
+
+  public static int EnableProfilePrivilege() {
+    bool previousValue;
+    return RtlAdjustPrivilege(13, true, false, out previousValue);
+  }
 }
 "@ -ErrorAction SilentlyContinue
 
+        function Format-StatValue([object]$value) {
+          if ($null -eq $value) { return "NA" }
+          return [string]$value
+        }
+
+        function Get-StandbyCacheMB {
+          try {
+            $perf = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory -ErrorAction Stop
+            $reserve = [double]$perf.StandbyCacheReserveBytes
+            $normal = [double]$perf.StandbyCacheNormalPriorityBytes
+            $core = [double]$perf.StandbyCacheCoreBytes
+            if ([double]::IsNaN($reserve)) { $reserve = 0 }
+            if ([double]::IsNaN($normal)) { $normal = 0 }
+            if ([double]::IsNaN($core)) { $core = 0 }
+            $totalBytes = $reserve + $normal + $core
+            if ($totalBytes -lt 0) { $totalBytes = 0 }
+            return [int][math]::Round($totalBytes / 1MB)
+          } catch {
+            return $null
+          }
+        }
+
         $osBefore = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
         $beforeFreeMB = [int][math]::Round(([double]$osBefore.FreePhysicalMemory) / 1024.0)
+        $standbyBeforeMB = Get-StandbyCacheMB
 
         $trimmedCount = 0
         $processes = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $PID }
@@ -5169,32 +5205,49 @@ public static class MemoryTools {
           } catch {}
         }
 
-        $standbyStatus = "NA"
+        $privilegeStatus = "NA"
+        $standbyStatusPrimary = "NA"
+        $standbyStatusSecondary = "NA"
         try {
-          $status = [MemoryTools]::PurgeStandbyList(4)
-          if ($status -eq 0) {
-            [MemoryTools]::PurgeStandbyList(5) | Out-Null
-          }
-          $standbyStatus = "$status"
+          $privCode = [MemoryTools]::EnableProfilePrivilege()
+          $privilegeStatus = "$privCode"
+          $primary = [MemoryTools]::PurgeStandbyList(4)
+          Start-Sleep -Milliseconds 120
+          $secondary = [MemoryTools]::PurgeStandbyList(5)
+          Start-Sleep -Milliseconds 120
+          [MemoryTools]::PurgeStandbyList(4) | Out-Null
+          $standbyStatusPrimary = "$primary"
+          $standbyStatusSecondary = "$secondary"
         } catch {
-          $standbyStatus = "NA"
+          $standbyStatusPrimary = "NA"
+          $standbyStatusSecondary = "NA"
         }
 
         [System.GC]::Collect()
         [System.GC]::WaitForPendingFinalizers()
         [System.GC]::Collect()
 
-        Start-Sleep -Milliseconds 500
+        Start-Sleep -Milliseconds 700
 
         $osAfter = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
         $afterFreeMB = [int][math]::Round(([double]$osAfter.FreePhysicalMemory) / 1024.0)
         $freedMB = [int][math]::Round($afterFreeMB - $beforeFreeMB)
+        $standbyAfterMB = Get-StandbyCacheMB
+        $standbyReducedMB = $null
+        if ($null -ne $standbyBeforeMB -and $null -ne $standbyAfterMB) {
+          $standbyReducedMB = [int][math]::Round(([double]$standbyBeforeMB - [double]$standbyAfterMB))
+        }
 
         Write-Host "RAM_CLEAN_BEFORE_MB:$beforeFreeMB"
         Write-Host "RAM_CLEAN_AFTER_MB:$afterFreeMB"
         Write-Host "RAM_CLEAN_FREED_MB:$freedMB"
         Write-Host "RAM_CLEAN_TRIMMED_PROCESSES:$trimmedCount"
-        Write-Host "RAM_CLEAN_STANDBY_STATUS:$standbyStatus"
+        Write-Host "RAM_CLEAN_STANDBY_STATUS_PRIMARY:$standbyStatusPrimary"
+        Write-Host "RAM_CLEAN_STANDBY_STATUS_SECONDARY:$standbyStatusSecondary"
+        Write-Host "RAM_CLEAN_PRIVILEGE_STATUS:$privilegeStatus"
+        Write-Host "RAM_CLEAN_STANDBY_BEFORE_MB:$(Format-StatValue $standbyBeforeMB)"
+        Write-Host "RAM_CLEAN_STANDBY_AFTER_MB:$(Format-StatValue $standbyAfterMB)"
+        Write-Host "RAM_CLEAN_STANDBY_REDUCED_MB:$(Format-StatValue $standbyReducedMB)"
         exit 0
       } catch {
         Write-Host "Critical Error: $($_.Exception.Message)"
@@ -5229,19 +5282,64 @@ public static class MemoryTools {
         const afterMatch = output.match(/RAM_CLEAN_AFTER_MB:(-?\d+)/i);
         const freedMatch = output.match(/RAM_CLEAN_FREED_MB:(-?\d+)/i);
         const trimmedMatch = output.match(/RAM_CLEAN_TRIMMED_PROCESSES:(\d+)/i);
-        const standbyMatch = output.match(
-          /RAM_CLEAN_STANDBY_STATUS:([A-Za-z0-9-]+)/i,
+        const standbyPrimaryMatch = output.match(
+          /RAM_CLEAN_STANDBY_STATUS_PRIMARY:([A-Za-z0-9-]+)/i,
+        );
+        const standbySecondaryMatch = output.match(
+          /RAM_CLEAN_STANDBY_STATUS_SECONDARY:([A-Za-z0-9-]+)/i,
+        );
+        const privilegeMatch = output.match(
+          /RAM_CLEAN_PRIVILEGE_STATUS:([A-Za-z0-9-]+)/i,
+        );
+        const standbyBeforeMatch = output.match(
+          /RAM_CLEAN_STANDBY_BEFORE_MB:(-?\d+|NA)/i,
+        );
+        const standbyAfterMatch = output.match(
+          /RAM_CLEAN_STANDBY_AFTER_MB:(-?\d+|NA)/i,
+        );
+        const standbyReducedMatch = output.match(
+          /RAM_CLEAN_STANDBY_REDUCED_MB:(-?\d+|NA)/i,
         );
 
         const beforeFreeMB = beforeMatch ? Number(beforeMatch[1]) : null;
         const afterFreeMB = afterMatch ? Number(afterMatch[1]) : null;
         const freedMB = freedMatch ? Number(freedMatch[1]) : null;
         const trimmedProcesses = trimmedMatch ? Number(trimmedMatch[1]) : null;
-        const standbyStatusRaw = standbyMatch ? String(standbyMatch[1]) : null;
-        const standbyPurged =
-          standbyStatusRaw && standbyStatusRaw !== "NA"
-            ? Number(standbyStatusRaw) === 0
-            : null;
+        const parseStat = (value) => {
+          if (value === null || value === undefined) return null;
+          const normalized = String(value).trim();
+          if (!normalized || normalized.toUpperCase() === "NA") return null;
+          const parsed = Number(normalized);
+          return Number.isFinite(parsed) ? parsed : null;
+        };
+        const standbyStatusPrimary = parseStat(
+          standbyPrimaryMatch ? standbyPrimaryMatch[1] : null,
+        );
+        const standbyStatusSecondary = parseStat(
+          standbySecondaryMatch ? standbySecondaryMatch[1] : null,
+        );
+        const privilegeStatus = parseStat(
+          privilegeMatch ? privilegeMatch[1] : null,
+        );
+        const standbyBeforeMB = parseStat(
+          standbyBeforeMatch ? standbyBeforeMatch[1] : null,
+        );
+        const standbyAfterMB = parseStat(
+          standbyAfterMatch ? standbyAfterMatch[1] : null,
+        );
+        const standbyReducedMB = parseStat(
+          standbyReducedMatch ? standbyReducedMatch[1] : null,
+        );
+        let standbyPurged = null;
+        if (standbyReducedMB !== null) {
+          standbyPurged = standbyReducedMB > 0;
+        } else if (
+          standbyStatusPrimary !== null ||
+          standbyStatusSecondary !== null
+        ) {
+          standbyPurged =
+            standbyStatusPrimary === 0 || standbyStatusSecondary === 0;
+        }
 
         const isSuccess = code === 0;
         let error = null;
@@ -5267,6 +5365,12 @@ public static class MemoryTools {
           freedMB,
           trimmedProcesses,
           standbyPurged,
+          standbyStatusPrimary,
+          standbyStatusSecondary,
+          privilegeStatus,
+          standbyBeforeMB,
+          standbyAfterMB,
+          standbyReducedMB,
           output,
           error,
         });

@@ -4216,12 +4216,34 @@ async function runSystemRamCleanup() {
       const trimmedProcesses = Number.isFinite(Number(result.trimmedProcesses))
         ? Number(result.trimmedProcesses)
         : null;
-      const standbyText =
-        result && result.standbyPurged === false
-          ? currentLanguage === "vi"
+      const standbyReducedMB = Number.isFinite(Number(result.standbyReducedMB))
+        ? Number(result.standbyReducedMB)
+        : null;
+      const privilegeStatus = Number.isFinite(Number(result.privilegeStatus))
+        ? Number(result.privilegeStatus)
+        : null;
+      let standbyText = "";
+      if (standbyReducedMB !== null) {
+        standbyText =
+          currentLanguage === "vi"
+            ? standbyReducedMB > 0
+              ? ` | standby giảm ${standbyReducedMB.toLocaleString(getUiLocale())} MB`
+              : " | standby chưa giảm"
+            : standbyReducedMB > 0
+              ? ` | standby reduced ${standbyReducedMB.toLocaleString(getUiLocale())} MB`
+              : " | standby unchanged";
+      } else if (result && result.standbyPurged === false) {
+        standbyText =
+          currentLanguage === "vi"
             ? " | standby chưa dọn hết"
-            : " | standby list not fully purged"
-          : "";
+            : " | standby list not fully purged";
+      }
+      if (result && result.standbyPurged === false && privilegeStatus !== null) {
+        standbyText +=
+          currentLanguage === "vi"
+            ? ` (privilege code ${privilegeStatus})`
+            : ` (privilege code ${privilegeStatus})`;
+      }
       const summary =
         currentLanguage === "vi"
           ? `RAM trống tăng ${

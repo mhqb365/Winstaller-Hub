@@ -1,25 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Threading;
 using WinstallerHubApp.Services;
 
 namespace WinstallerHubApp.Views;
 
 public partial class DashboardPage : Page
 {
-    private readonly DispatcherTimer _refreshTimer = new()
-    {
-        Interval = TimeSpan.FromSeconds(2)
-    };
     private static readonly Duration LoadingFadeDuration = new(TimeSpan.FromMilliseconds(150));
-
-    private bool _isRefreshing;
     private bool _initialLoadCompleted;
 
     public DashboardPage()
@@ -32,17 +24,29 @@ public partial class DashboardPage : Page
     private async void DashboardPage_Loaded(object sender, RoutedEventArgs e)
     {
         AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
+        DashboardSnapshotCacheService.SnapshotUpdated += DashboardSnapshotCacheService_SnapshotUpdated;
+        DashboardSnapshotCacheService.SnapshotRefreshFailed += DashboardSnapshotCacheService_SnapshotRefreshFailed;
         UpdateLocalizedStaticText();
-        _refreshTimer.Tick += RefreshTimer_Tick;
-        _refreshTimer.Start();
-        await RefreshDashboardAsync();
+
+        if (DashboardSnapshotCacheService.TryGetLatestSnapshot(out var cachedSnapshot))
+        {
+            ApplySnapshot(cachedSnapshot);
+            _initialLoadCompleted = true;
+            SetInitialLoadingState(false);
+        }
+        else
+        {
+            SetInitialLoadingState(true);
+        }
+
+        await DashboardSnapshotCacheService.RefreshNowAsync();
     }
 
     private void DashboardPage_Unloaded(object sender, RoutedEventArgs e)
     {
         AppLanguageService.LanguageChanged -= AppLanguageService_LanguageChanged;
-        _refreshTimer.Stop();
-        _refreshTimer.Tick -= RefreshTimer_Tick;
+        DashboardSnapshotCacheService.SnapshotUpdated -= DashboardSnapshotCacheService_SnapshotUpdated;
+        DashboardSnapshotCacheService.SnapshotRefreshFailed -= DashboardSnapshotCacheService_SnapshotRefreshFailed;
     }
 
     private void AppLanguageService_LanguageChanged(string _)
@@ -50,7 +54,7 @@ public partial class DashboardPage : Page
         Dispatcher.InvokeAsync(async () =>
         {
             UpdateLocalizedStaticText();
-            await RefreshDashboardAsync();
+            await DashboardSnapshotCacheService.RefreshNowAsync();
         });
     }
 
@@ -60,43 +64,34 @@ public partial class DashboardPage : Page
         LoadingStatusTextBlock.Text = AppLanguageService.GetString("Dashboard.Loading.Hardware");
     }
 
-    private async void RefreshTimer_Tick(object? sender, EventArgs e)
+    private void DashboardSnapshotCacheService_SnapshotUpdated(DashboardSnapshot snapshot)
     {
-        await RefreshDashboardAsync();
+        Dispatcher.Invoke(() =>
+        {
+            ApplySnapshot(snapshot);
+            if (_initialLoadCompleted)
+            {
+                return;
+            }
+
+            _initialLoadCompleted = true;
+            SetInitialLoadingState(false);
+        });
     }
 
-    private async Task RefreshDashboardAsync()
+    private void DashboardSnapshotCacheService_SnapshotRefreshFailed(string message)
     {
-        if (_isRefreshing)
+        Dispatcher.Invoke(() =>
         {
-            return;
-        }
-
-        var isInitialLoad = !_initialLoadCompleted;
-        if (isInitialLoad)
-        {
-            SetInitialLoadingState(true);
-        }
-
-        _isRefreshing = true;
-        try
-        {
-            var snapshot = await Task.Run(HardwareService.GetDashboardSnapshot);
-            ApplySnapshot(snapshot);
-        }
-        catch (Exception ex)
-        {
-            ApplyErrorState(ex.Message);
-        }
-        finally
-        {
-            _isRefreshing = false;
-            if (isInitialLoad)
+            if (_initialLoadCompleted)
             {
-                _initialLoadCompleted = true;
-                SetInitialLoadingState(false);
+                return;
             }
-        }
+
+            ApplyErrorState(message);
+            _initialLoadCompleted = true;
+            SetInitialLoadingState(false);
+        });
     }
 
     private void SetInitialLoadingState(bool isLoading)

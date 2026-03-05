@@ -22,6 +22,7 @@ public partial class App : Application
         var settings = AppSettingsService.GetSettings();
         AppLanguageService.ApplyLanguage(settings.LanguageCode);
         ThemeService.ApplyTheme(settings.UseDarkTheme);
+        DashboardSnapshotCacheService.Start();
 
         base.OnStartup(e);
     }

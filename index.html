@@ -137,6 +137,18 @@
               </div>
             </div>
           </div>
+          <div class="nav-item-group" id="nav-group-test-tools">
+            <div class="nav-item" id="nav-test-tools-parent">
+              <i data-lucide="flask-conical"></i>
+              <span id="i18n-nav-test-tools">Test Tool</span>
+              <i data-lucide="chevron-down" class="chevron"></i>
+            </div>
+            <div class="sub-menu">
+              <div class="sub-item" id="nav-keyboard-test">
+                <span id="i18n-nav-keyboard-test">Keyboard</span>
+              </div>
+            </div>
+          </div>
           <div class="nav-item" id="nav-settings">
             <i data-lucide="settings"></i>
             <span id="i18n-nav-settings">Settings</span>
@@ -1027,6 +1039,52 @@
                 Requires Administrator privileges to apply changes
               </p>
             </div>
+          </div>
+        </div>
+
+        <!-- Keyboard Test Section -->
+        <div id="tab-keyboard-test" class="tab-content">
+          <div class="section-header">
+            <h1 id="i18n-keyboard-test-title">Keyboard Test</h1>
+            <p id="i18n-keyboard-test-subtitle">
+              Press each key to verify it works
+            </p>
+          </div>
+
+          <div class="card keyboard-test-card">
+            <div class="keyboard-test-toolbar">
+              <div class="keyboard-test-legend">
+                <span class="keyboard-legend-item">
+                  <span
+                    class="keyboard-legend-chip keyboard-legend-chip-active"
+                  ></span>
+                  <span id="i18n-keyboard-test-legend-active">Pressing</span>
+                </span>
+                <span class="keyboard-legend-item">
+                  <span
+                    class="keyboard-legend-chip keyboard-legend-chip-tested"
+                  ></span>
+                  <span id="i18n-keyboard-test-legend-tested">Tested</span>
+                </span>
+              </div>
+              <div class="keyboard-test-actions">
+                <span id="keyboard-test-summary" class="text-xs text-muted"
+                  >0/0</span
+                >
+                <button
+                  id="keyboard-test-clear-btn"
+                  class="btn btn-outline h-8 text-xs"
+                >
+                  <i data-lucide="rotate-ccw" style="width: 14px"></i>
+                  <span id="i18n-keyboard-test-clear-btn">Clear tested</span>
+                </button>
+              </div>
+            </div>
+            <div
+              id="keyboard-test-layout"
+              class="keyboard-test-layout"
+              aria-label="Keyboard test layout"
+            ></div>
           </div>
         </div>
 

@@ -32,6 +32,10 @@
 
   --radius: 0.75rem;
   --dock-safe-bottom: 3.5rem;
+
+  --keyboard-press-bg: rgba(34, 197, 94, 0.24);
+  --keyboard-press-border: rgba(21, 128, 61, 0.65);
+  --keyboard-press-text: #166534;
 }
 
 html[data-theme="light"] {
@@ -62,6 +66,10 @@ html[data-theme="light"] {
   --border: 220 16% 84%;
   --input: 220 16% 84%;
   --ring: 221 83% 53%;
+
+  --keyboard-press-bg: #dcfce7;
+  --keyboard-press-border: #22c55e;
+  --keyboard-press-text: #166534;
 }
 
 * {
@@ -296,7 +304,7 @@ nav {
 }
 
 .nav-item-group.open .sub-menu {
-  max-height: 200px;
+  max-height: 260px;
   opacity: 1;
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
@@ -1797,9 +1805,209 @@ main {
   letter-spacing: 0;
 }
 
+/* Keyboard Test */
+.keyboard-test-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+
+.keyboard-test-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.keyboard-test-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.keyboard-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.keyboard-legend-chip {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background) / 0.92);
+}
+
+.keyboard-legend-chip-active {
+  border-color: var(--keyboard-press-border);
+  background: var(--keyboard-press-bg);
+}
+
+.keyboard-legend-chip-tested {
+  border-color: rgba(148, 163, 184, 0.55);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+
+html[data-theme="light"] .keyboard-legend-chip-tested {
+  background: #e8f0ff;
+  border-color: #9db5ec;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.16);
+}
+
+.keyboard-test-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.keyboard-test-layout {
+  --kbd-unit: 44px;
+  --kbd-key-height: 42px;
+  --kbd-gap: 0.42rem;
+  --kbd-section-gap: 0.62rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--kbd-gap);
+  padding: 0.72rem;
+  border-radius: calc(var(--radius) - 2px);
+  border: 1px solid hsl(var(--border));
+  background:
+    linear-gradient(
+      120deg,
+      hsl(var(--accent) / 0.08),
+      hsl(var(--background) / 0.9)
+    ),
+    hsl(var(--background));
+  overflow-x: auto;
+}
+
+.keyboard-test-layout-inner {
+  width: max-content;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--kbd-section-gap);
+}
+
+.keyboard-test-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kbd-gap);
+}
+
+.keyboard-test-main-row {
+  display: flex;
+  align-items: center;
+  gap: var(--kbd-gap);
+  min-width: max-content;
+}
+
+.keyboard-test-side {
+  display: flex;
+  align-items: center;
+  gap: var(--kbd-section-gap);
+  min-height: calc(var(--kbd-key-height) * 6 + var(--kbd-gap) * 5);
+}
+
+.keyboard-test-nav-grid {
+  width: calc(var(--kbd-unit) * 3 + var(--kbd-gap) * 2);
+  height: calc(var(--kbd-key-height) * 6 + var(--kbd-gap) * 5);
+  display: grid;
+  grid-template-columns: repeat(3, var(--kbd-unit));
+  grid-template-rows: repeat(6, var(--kbd-key-height));
+  gap: var(--kbd-gap);
+  align-content: stretch;
+}
+
+.keyboard-test-numpad-grid {
+  width: calc(var(--kbd-unit) * 4 + var(--kbd-gap) * 3);
+  height: calc(var(--kbd-key-height) * 6 + var(--kbd-gap) * 5);
+  display: grid;
+  grid-template-columns: repeat(4, var(--kbd-unit));
+  grid-template-rows: repeat(6, var(--kbd-key-height));
+  gap: var(--kbd-gap);
+  align-content: stretch;
+}
+
+.keyboard-test-key {
+  --key-units: 1;
+  width: calc(var(--kbd-unit) * var(--key-units));
+  height: var(--kbd-key-height);
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background) / 0.92);
+  color: hsl(var(--foreground));
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  cursor: default;
+  transition:
+    background-color 0.1s ease,
+    border-color 0.1s ease,
+    color 0.1s ease,
+    transform 0.05s ease;
+}
+
+.keyboard-test-key-grid {
+  width: 100%;
+  height: 100%;
+}
+
+.keyboard-test-key.is-tested {
+  background: #fff;
+  border-color: rgba(148, 163, 184, 0.55);
+  color: #111827;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+
+html[data-theme="light"] .keyboard-test-key.is-tested {
+  background: #e8f0ff;
+  border-color: #9db5ec;
+  color: #0f172a;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.16);
+}
+
+.keyboard-test-key.is-active {
+  background: var(--keyboard-press-bg);
+  border-color: var(--keyboard-press-border);
+  color: var(--keyboard-press-text);
+  transform: translateY(1px);
+}
+
+.keyboard-test-gap {
+  --key-units: 1;
+  width: calc(var(--kbd-unit) * var(--key-units));
+  height: var(--kbd-key-height);
+  flex: 0 0 auto;
+  visibility: hidden;
+}
+
 @media (max-width: 1100px) {
   .utilities-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1280px) {
+  .keyboard-test-layout {
+    --kbd-unit: 39px;
+    --kbd-key-height: 40px;
+    --kbd-gap: 0.38rem;
+    --kbd-section-gap: 0.55rem;
+  }
+
+  .keyboard-test-key {
+    font-size: 0.74rem;
+    height: var(--kbd-key-height);
   }
 }
 

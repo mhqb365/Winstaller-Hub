@@ -1,4 +1,4 @@
-﻿import { app, ipcMain, BrowserWindow, dialog, shell } from "electron";
+﻿import { app, ipcMain, BrowserWindow, dialog, shell, Menu } from "electron";
 import path, { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { spawn, spawnSync, execSync } from "child_process";
@@ -59,6 +59,11 @@ function createWindow() {
       sandbox: false,
     },
   });
+  // Disable native menubar completely so Alt key does not reveal it.
+  mainWindow.setMenuBarVisibility(false);
+  if (typeof mainWindow.removeMenu === "function") {
+    mainWindow.removeMenu();
+  }
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
     if (process.platform === "win32" && !isRunningAsAdmin()) {
@@ -86,8 +91,13 @@ function createWindow() {
 }
 app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.electron");
+  Menu.setApplicationMenu(null);
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
+    window.setMenuBarVisibility(false);
+    if (typeof window.removeMenu === "function") {
+      window.removeMenu();
+    }
   });
   function getAppsPath() {
     const exeDir = path.dirname(app.getPath("exe"));
@@ -5867,3 +5877,6 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
+
+

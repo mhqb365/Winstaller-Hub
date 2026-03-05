@@ -80,6 +80,10 @@ let cleanupDiskBusy = false;
 let windowsUpdateBusy = false;
 let windowsUpdateState = null;
 let windowsUpdateStateLoading = true;
+let keyboardTestInitialized = false;
+const keyboardTestActiveCodes = /* @__PURE__ */ new Set();
+const keyboardTestTestedCodes = /* @__PURE__ */ new Set();
+const keyboardTestKeyElements = /* @__PURE__ */ new Map();
 let benchmarkBusy = false;
 let benchmarkHealthBusy = false;
 let benchmarkLastMeta = null;
@@ -133,6 +137,8 @@ const UI_TEXT = {
     "i18n-nav-office-images": "Images Setup",
     "i18n-nav-driver": "Drivers",
     "i18n-nav-data-backup": "Data",
+    "i18n-nav-test-tools": "Test Tool",
+    "i18n-nav-keyboard-test": "Keyboard",
     "i18n-nav-cleanup": "Cleanup",
     "i18n-nav-utilities": "Utilities",
     "i18n-nav-utilities-home": "System",
@@ -254,6 +260,11 @@ const UI_TEXT = {
     "i18n-utilities-wu-status-label": "Current status",
     "i18n-utilities-wu-hint":
       "Requires Administrator privileges to apply changes",
+    "i18n-keyboard-test-title": "Keyboard Test",
+    "i18n-keyboard-test-subtitle": "Press each key to verify it works",
+    "i18n-keyboard-test-legend-active": "Pressing",
+    "i18n-keyboard-test-legend-tested": "Tested",
+    "i18n-keyboard-test-clear-btn": "Clear tested",
     "i18n-activation-title": "Microsoft Activation",
     "i18n-activation-subtitle":
       "Official active methods for Windows and Office",
@@ -307,6 +318,8 @@ const UI_TEXT = {
     "i18n-nav-office-images": "Cài từ file",
     "i18n-nav-driver": "Driver",
     "i18n-nav-data-backup": "Dữ liệu",
+    "i18n-nav-test-tools": "Test Tool",
+    "i18n-nav-keyboard-test": "Bàn phím",
     "i18n-nav-cleanup": "Dọn dẹp",
     "i18n-nav-utilities": "Tiện ích",
     "i18n-nav-utilities-home": "Hệ thống",
@@ -430,6 +443,11 @@ const UI_TEXT = {
     "i18n-utilities-wu-desc": "Bật tắt nhanh dịch vụ Windows Update",
     "i18n-utilities-wu-status-label": "Trạng thái hiện tại",
     "i18n-utilities-wu-hint": "Cần quyền Administrator để áp dụng thay đổi",
+    "i18n-keyboard-test-title": "Test bàn phím",
+    "i18n-keyboard-test-subtitle": "Nhấn từng phím để kiểm tra hoạt động",
+    "i18n-keyboard-test-legend-active": "Đang nhấn",
+    "i18n-keyboard-test-legend-tested": "Đã nhấn",
+    "i18n-keyboard-test-clear-btn": "Xóa đã nhấn",
     "i18n-activation-title": "Kích hoạt Microsoft",
     "i18n-activation-subtitle":
       "Công cụ kích hoạt chính thức cho Windows và Office",
@@ -611,6 +629,7 @@ const MSG = {
     windowsUpdateDisableSuccess: "Windows Update has been disabled",
     windowsUpdateEnableSuccess: "Windows Update has been enabled",
     windowsUpdateToggleFailed: "Failed to change Windows Update state",
+    keyboardTestSummary: "{tested}/{total} keys tested",
     invalidProductKey:
       "Invalid product key format. Use 25 characters (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX).",
     windowsKeyActivationStarting: "Activating Windows using product key",
@@ -724,6 +743,7 @@ const MSG = {
     windowsUpdateDisableSuccess: "Đã tắt Windows Update",
     windowsUpdateEnableSuccess: "Đã bật Windows Update",
     windowsUpdateToggleFailed: "Không thể đổi trạng thái Windows Update",
+    keyboardTestSummary: "Đã test {tested}/{total} phím",
     invalidProductKey:
       "Định dạng key không hợp lệ. Dùng 25 ký tự (XXXXX-XXXXX-XXXXX-XXXXX-XXXXX).",
     windowsKeyActivationStarting: "Bắt đầu kích hoạt Windows bằng product key",
@@ -813,6 +833,7 @@ function applyLanguage(language, options = {}) {
   renderDataBackupFolderList();
   setCleanupButtonState();
   renderWindowsUpdateCard();
+  updateKeyboardTestSummary();
   updateBenchmarkHealthUI();
   setBenchmarkButtonState();
   updateBenchmarkDisplayMeta();
@@ -1430,6 +1451,8 @@ const officeNavGroup = document.getElementById("nav-group-office");
 const officeNavParent = document.getElementById("nav-office-parent");
 const utilitiesNavGroup = document.getElementById("nav-group-utilities");
 const utilitiesNavParent = document.getElementById("nav-utilities-parent");
+const testToolsNavGroup = document.getElementById("nav-group-test-tools");
+const testToolsNavParent = document.getElementById("nav-test-tools-parent");
 const navItems = {
   dashboard: document.getElementById("nav-dashboard"),
   library: document.getElementById("nav-library"),
@@ -1437,6 +1460,7 @@ const navItems = {
   officeOnline: document.getElementById("nav-office-online"),
   driver: document.getElementById("nav-driver"),
   dataBackup: document.getElementById("nav-data-backup"),
+  keyboardTest: document.getElementById("nav-keyboard-test"),
   cleanup: document.getElementById("nav-cleanup"),
   utilities: document.getElementById("nav-utilities"),
   activation: document.getElementById("nav-activation"),
@@ -1450,6 +1474,7 @@ const tabs = {
   officeOnline: document.getElementById("tab-office-online"),
   driver: document.getElementById("tab-driver"),
   dataBackup: document.getElementById("tab-data-backup"),
+  keyboardTest: document.getElementById("tab-keyboard-test"),
   cleanup: document.getElementById("tab-cleanup"),
   utilities: document.getElementById("tab-utilities"),
   activation: document.getElementById("tab-activation"),
@@ -1464,11 +1489,15 @@ function switchTab(tabName) {
     tabName === "cleanup" ||
     tabName === "driver" ||
     tabName === "dataBackup";
+  const isTestToolsTab = tabName === "keyboardTest";
   if (officeNavParent) {
     officeNavParent.classList.toggle("active", isOfficeTab);
   }
   if (utilitiesNavParent) {
     utilitiesNavParent.classList.toggle("active", isUtilitiesTab);
+  }
+  if (testToolsNavParent) {
+    testToolsNavParent.classList.toggle("active", isTestToolsTab);
   }
   Object.keys(navItems).forEach((key) => {
     if (navItems[key]) {
@@ -1501,6 +1530,9 @@ function switchTab(tabName) {
             notifyError: !dataFoldersLoadedOnce,
           });
         }
+        if (key === "keyboardTest") {
+          initKeyboardTest();
+        }
       } else {
         tabs[key].style.display = "none";
         tabs[key].classList.remove("active");
@@ -1518,6 +1550,9 @@ function switchTab(tabName) {
   if (tabName !== "dataBackup") {
     clearDataSizeRefreshSchedule();
   }
+  if (tabName !== "keyboardTest") {
+    clearKeyboardTestActiveStates();
+  }
 }
 if (navItems.dashboard)
   navItems.dashboard.onclick = () => switchTab("dashboard");
@@ -1528,6 +1563,8 @@ if (navItems.officeOnline)
 if (navItems.driver) navItems.driver.onclick = () => switchTab("driver");
 if (navItems.dataBackup)
   navItems.dataBackup.onclick = () => switchTab("dataBackup");
+if (navItems.keyboardTest)
+  navItems.keyboardTest.onclick = () => switchTab("keyboardTest");
 if (navItems.cleanup) navItems.cleanup.onclick = () => switchTab("cleanup");
 if (navItems.utilities)
   navItems.utilities.onclick = () => switchTab("utilities");
@@ -1539,6 +1576,11 @@ if (officeNavParent && officeNavGroup) {
 if (utilitiesNavParent && utilitiesNavGroup) {
   utilitiesNavParent.onclick = () => {
     utilitiesNavGroup.classList.toggle("open");
+  };
+}
+if (testToolsNavParent && testToolsNavGroup) {
+  testToolsNavParent.onclick = () => {
+    testToolsNavGroup.classList.toggle("open");
   };
 }
 if (navItems.activation)
@@ -2615,6 +2657,9 @@ const utilitiesWuStatusValueEl = document.getElementById(
   "utilities-wu-status-value",
 );
 const utilitiesWuToggleBtn = document.getElementById("utilities-wu-toggle-btn");
+const keyboardTestLayoutEl = document.getElementById("keyboard-test-layout");
+const keyboardTestSummaryEl = document.getElementById("keyboard-test-summary");
+const keyboardTestClearBtn = document.getElementById("keyboard-test-clear-btn");
 const benchmarkDriveInput = document.getElementById("benchmark-drive-input");
 const benchmarkRunDiskBtn = document.getElementById("benchmark-run-disk-btn");
 const benchmarkOutputEl = document.getElementById("benchmark-output");
@@ -2629,6 +2674,278 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+const KEYBOARD_TEST_MAIN_ROWS = [
+  [
+    { code: "Escape", label: "Esc" },
+    { gap: true, units: 0.9 },
+    { code: "F1", label: "F1" },
+    { code: "F2", label: "F2" },
+    { code: "F3", label: "F3" },
+    { code: "F4", label: "F4" },
+    { gap: true, units: 0.6 },
+    { code: "F5", label: "F5" },
+    { code: "F6", label: "F6" },
+    { code: "F7", label: "F7" },
+    { code: "F8", label: "F8" },
+    { gap: true, units: 0.6 },
+    { code: "F9", label: "F9" },
+    { code: "F10", label: "F10" },
+    { code: "F11", label: "F11" },
+    { code: "F12", label: "F12" },
+    { gap: true, units: 0.75 },
+    { code: "PrintScreen", label: "PrtSc" },
+    { code: "ScrollLock", label: "ScrLk" },
+    { code: "Pause", label: "Pause" },
+  ],
+  [
+    { code: "Backquote", label: "`" },
+    { code: "Digit1", label: "1" },
+    { code: "Digit2", label: "2" },
+    { code: "Digit3", label: "3" },
+    { code: "Digit4", label: "4" },
+    { code: "Digit5", label: "5" },
+    { code: "Digit6", label: "6" },
+    { code: "Digit7", label: "7" },
+    { code: "Digit8", label: "8" },
+    { code: "Digit9", label: "9" },
+    { code: "Digit0", label: "0" },
+    { code: "Minus", label: "-" },
+    { code: "Equal", label: "=" },
+    { code: "Backspace", label: "Backspace", units: 2 },
+  ],
+  [
+    { code: "Tab", label: "Tab", units: 1.5 },
+    { code: "KeyQ", label: "Q" },
+    { code: "KeyW", label: "W" },
+    { code: "KeyE", label: "E" },
+    { code: "KeyR", label: "R" },
+    { code: "KeyT", label: "T" },
+    { code: "KeyY", label: "Y" },
+    { code: "KeyU", label: "U" },
+    { code: "KeyI", label: "I" },
+    { code: "KeyO", label: "O" },
+    { code: "KeyP", label: "P" },
+    { code: "BracketLeft", label: "[" },
+    { code: "BracketRight", label: "]" },
+    { code: "Backslash", label: "\\", units: 1.5 },
+  ],
+  [
+    { code: "CapsLock", label: "Caps", units: 1.8 },
+    { code: "KeyA", label: "A" },
+    { code: "KeyS", label: "S" },
+    { code: "KeyD", label: "D" },
+    { code: "KeyF", label: "F" },
+    { code: "KeyG", label: "G" },
+    { code: "KeyH", label: "H" },
+    { code: "KeyJ", label: "J" },
+    { code: "KeyK", label: "K" },
+    { code: "KeyL", label: "L" },
+    { code: "Semicolon", label: ";" },
+    { code: "Quote", label: "'" },
+    { code: "Enter", label: "Enter", units: 2.3 },
+  ],
+  [
+    { code: "ShiftLeft", label: "Shift", units: 2.25 },
+    { code: "KeyZ", label: "Z" },
+    { code: "KeyX", label: "X" },
+    { code: "KeyC", label: "C" },
+    { code: "KeyV", label: "V" },
+    { code: "KeyB", label: "B" },
+    { code: "KeyN", label: "N" },
+    { code: "KeyM", label: "M" },
+    { code: "Comma", label: "," },
+    { code: "Period", label: "." },
+    { code: "Slash", label: "/" },
+    { code: "ShiftRight", label: "Shift", units: 2.75 },
+  ],
+  [
+    { code: "ControlLeft", label: "Ctrl", units: 1.4 },
+    { code: "MetaLeft", label: "Win", units: 1.3 },
+    { code: "AltLeft", label: "Alt", units: 1.3 },
+    { code: "Space", label: "Space", units: 6.2 },
+    { code: "AltRight", label: "Alt", units: 1.3 },
+    { code: "MetaRight", label: "Win", units: 1.3 },
+    { code: "ContextMenu", label: "Menu", units: 1.3 },
+    { code: "ControlRight", label: "Ctrl", units: 1.4 },
+  ],
+];
+const KEYBOARD_TEST_NAV_KEYS = [
+  { code: "Insert", label: "Ins", col: 1, row: 2 },
+  { code: "Home", label: "Home", col: 2, row: 2 },
+  { code: "PageUp", label: "PgUp", col: 3, row: 2 },
+  { code: "Delete", label: "Del", col: 1, row: 3 },
+  { code: "End", label: "End", col: 2, row: 3 },
+  { code: "PageDown", label: "PgDn", col: 3, row: 3 },
+  { code: "ArrowUp", label: "Up", col: 2, row: 5 },
+  { code: "ArrowLeft", label: "Left", col: 1, row: 6 },
+  { code: "ArrowDown", label: "Down", col: 2, row: 6 },
+  { code: "ArrowRight", label: "Right", col: 3, row: 6 },
+];
+const KEYBOARD_TEST_NUMPAD_KEYS = [
+  { code: "NumLock", label: "Num", col: 1, row: 2 },
+  { code: "NumpadDivide", label: "/", col: 2, row: 2 },
+  { code: "NumpadMultiply", label: "*", col: 3, row: 2 },
+  { code: "NumpadSubtract", label: "-", col: 4, row: 2 },
+  { code: "Numpad7", label: "7", col: 1, row: 3 },
+  { code: "Numpad8", label: "8", col: 2, row: 3 },
+  { code: "Numpad9", label: "9", col: 3, row: 3 },
+  { code: "NumpadAdd", label: "+", col: 4, row: 3, rowSpan: 2 },
+  { code: "Numpad4", label: "4", col: 1, row: 4 },
+  { code: "Numpad5", label: "5", col: 2, row: 4 },
+  { code: "Numpad6", label: "6", col: 3, row: 4 },
+  { code: "Numpad1", label: "1", col: 1, row: 5 },
+  { code: "Numpad2", label: "2", col: 2, row: 5 },
+  { code: "Numpad3", label: "3", col: 3, row: 5 },
+  { code: "NumpadEnter", label: "Enter", col: 4, row: 5, rowSpan: 2 },
+  { code: "Numpad0", label: "0", col: 1, row: 6, colSpan: 2 },
+  { code: "NumpadDecimal", label: ".", col: 3, row: 6 },
+];
+function isKeyboardTestTabActive() {
+  return Boolean(
+    tabs.keyboardTest && tabs.keyboardTest.classList.contains("active"),
+  );
+}
+function resolveKeyboardTestCode(event) {
+  const rawCode = String(event?.code || "").trim();
+  if (!rawCode || rawCode.toLowerCase() === "unidentified") return "";
+  if (rawCode === "OSLeft") return "MetaLeft";
+  if (rawCode === "OSRight") return "MetaRight";
+  return rawCode;
+}
+function updateKeyboardTestSummary() {
+  if (!keyboardTestSummaryEl) return;
+  keyboardTestSummaryEl.innerText = tr("keyboardTestSummary", {
+    tested: Number(keyboardTestTestedCodes.size).toLocaleString(getUiLocale()),
+    total: Number(keyboardTestKeyElements.size).toLocaleString(getUiLocale()),
+  });
+}
+function clearKeyboardTestActiveStates() {
+  if (keyboardTestActiveCodes.size === 0) return;
+  keyboardTestActiveCodes.forEach((code) => {
+    const keyEl = keyboardTestKeyElements.get(code);
+    if (keyEl) keyEl.classList.remove("is-active");
+  });
+  keyboardTestActiveCodes.clear();
+}
+function markKeyboardTestKeyDown(code) {
+  const keyEl = keyboardTestKeyElements.get(code);
+  if (!keyEl) return;
+  keyboardTestActiveCodes.add(code);
+  keyboardTestTestedCodes.add(code);
+  keyEl.classList.add("is-tested");
+  keyEl.classList.add("is-active");
+}
+function markKeyboardTestKeyUp(code) {
+  const keyEl = keyboardTestKeyElements.get(code);
+  if (!keyEl) return;
+  keyboardTestActiveCodes.delete(code);
+  keyEl.classList.remove("is-active");
+}
+function resetKeyboardTest() {
+  keyboardTestTestedCodes.clear();
+  clearKeyboardTestActiveStates();
+  keyboardTestKeyElements.forEach((keyEl) => {
+    keyEl.classList.remove("is-tested");
+  });
+  updateKeyboardTestSummary();
+}
+function handleKeyboardTestKeyDown(event) {
+  if (!isKeyboardTestTabActive()) return;
+  const code = resolveKeyboardTestCode(event);
+  if (!code || !keyboardTestKeyElements.has(code)) return;
+  markKeyboardTestKeyDown(code);
+  updateKeyboardTestSummary();
+}
+function handleKeyboardTestKeyUp(event) {
+  const code = resolveKeyboardTestCode(event);
+  if (!code || !keyboardTestKeyElements.has(code)) return;
+  markKeyboardTestKeyUp(code);
+}
+function renderKeyboardTestMainRow(rowItems) {
+  if (!Array.isArray(rowItems)) return "";
+  return rowItems
+    .map((item) => {
+      if (!item) return "";
+      if (item.gap) {
+        return `<span class="keyboard-test-gap" style="--key-units:${Number(item.units) || 1};"></span>`;
+      }
+      const keyCode = String(item.code || "").trim();
+      if (!keyCode) return "";
+      const keyLabel = String(item.label || keyCode).trim();
+      const keyUnits = Number(item.units) > 0 ? Number(item.units) : 1;
+      return `<button type="button" class="keyboard-test-key" data-key-code="${escapeHtml(keyCode)}" style="--key-units:${keyUnits};">${escapeHtml(keyLabel)}</button>`;
+    })
+    .join("");
+}
+function renderKeyboardTestGridKeys(gridItems) {
+  if (!Array.isArray(gridItems)) return "";
+  return gridItems
+    .map((item) => {
+      const keyCode = String(item?.code || "").trim();
+      if (!keyCode) return "";
+      const keyLabel = String(item?.label || keyCode).trim();
+      const col = Number(item?.col) > 0 ? Number(item.col) : 1;
+      const row = Number(item?.row) > 0 ? Number(item.row) : 1;
+      const colSpan = Number(item?.colSpan) > 1 ? Number(item.colSpan) : 1;
+      const rowSpan = Number(item?.rowSpan) > 1 ? Number(item.rowSpan) : 1;
+      return `<button type="button" class="keyboard-test-key keyboard-test-key-grid" data-key-code="${escapeHtml(keyCode)}" style="grid-column:${col} / span ${colSpan}; grid-row:${row} / span ${rowSpan};">${escapeHtml(keyLabel)}</button>`;
+    })
+    .join("");
+}
+function renderKeyboardTestLayout() {
+  if (!keyboardTestLayoutEl) return;
+  const mainHtml = KEYBOARD_TEST_MAIN_ROWS.map(
+    (rowItems) =>
+      `<div class="keyboard-test-main-row">${renderKeyboardTestMainRow(rowItems)}</div>`,
+  ).join("");
+  const navHtml = renderKeyboardTestGridKeys(KEYBOARD_TEST_NAV_KEYS);
+  const numHtml = renderKeyboardTestGridKeys(KEYBOARD_TEST_NUMPAD_KEYS);
+  const layoutHtml = `
+    <div class="keyboard-test-layout-inner">
+      <div class="keyboard-test-main">${mainHtml}</div>
+      <div class="keyboard-test-side">
+        <div class="keyboard-test-nav-grid">${navHtml}</div>
+        <div class="keyboard-test-numpad-wrap">
+          <div class="keyboard-test-numpad-grid">${numHtml}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  keyboardTestLayoutEl.innerHTML = layoutHtml;
+  keyboardTestLayoutEl.scrollLeft = 0;
+  keyboardTestKeyElements.clear();
+  keyboardTestLayoutEl.querySelectorAll(".keyboard-test-key").forEach((keyEl) => {
+    const code = String(keyEl.dataset.keyCode || "").trim();
+    if (!code) return;
+    keyboardTestKeyElements.set(code, keyEl);
+    keyEl.onmousedown = (event) => {
+      event.preventDefault();
+      markKeyboardTestKeyDown(code);
+      updateKeyboardTestSummary();
+    };
+    keyEl.onmouseup = () => markKeyboardTestKeyUp(code);
+    keyEl.onmouseleave = () => markKeyboardTestKeyUp(code);
+  });
+  updateKeyboardTestSummary();
+}
+function initKeyboardTest() {
+  if (!keyboardTestLayoutEl) return;
+  if (!keyboardTestInitialized) {
+    window.addEventListener("keydown", handleKeyboardTestKeyDown);
+    window.addEventListener("keyup", handleKeyboardTestKeyUp);
+    window.addEventListener("blur", clearKeyboardTestActiveStates);
+    if (keyboardTestClearBtn) {
+      keyboardTestClearBtn.onclick = () => resetKeyboardTest();
+    }
+    keyboardTestInitialized = true;
+  }
+  if (keyboardTestKeyElements.size === 0) {
+    renderKeyboardTestLayout();
+  } else {
+    updateKeyboardTestSummary();
+  }
 }
 function getOfficeOnlineChannel(productId) {
   if (productId === "AccessRuntimeRetail") return "SemiAnnual";
@@ -5587,6 +5904,7 @@ setDriverButtonState();
 setDataBackupButtonState();
 setCleanupButtonState();
 renderWindowsUpdateCard();
+initKeyboardTest();
 if (benchmarkDriveInput) {
   benchmarkDriveInput.value = normalizeBenchmarkDrive(
     benchmarkDriveInput.value,

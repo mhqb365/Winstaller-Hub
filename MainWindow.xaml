@@ -1,0 +1,97 @@
+﻿<Window x:Class="WinstallerHubApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        mc:Ignorable="d"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        Background="{DynamicResource ShellWindowBackgroundBrush}"
+        Title="Winstaller Hub" Height="700" Width="1100" WindowStartupLocation="CenterScreen">
+    
+    <Window.Resources>
+        <!-- Custom Sidebar Logo Header -->
+        <ControlTemplate x:Key="SidebarHeader">
+            <StackPanel Margin="20,30,20,30">
+                <TextBlock Text="Winstaller Hub" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource SidebarLogoBrush}" VerticalAlignment="Center" />
+                <!-- <TextBlock Text="Winstaller Hub" FontSize="12" Foreground="Gray" Opacity="0.8" /> -->
+            </StackPanel>
+        </ControlTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Immersive Gradient Background -->
+        <Border Grid.ColumnSpan="2"
+                Background="{DynamicResource ShellBackgroundBrush}" />
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Translucent Sidebar -->
+            <Border Background="{DynamicResource SidebarBackgroundBrush}" Grid.Column="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <ContentControl Template="{StaticResource SidebarHeader}" Grid.Row="0" />
+
+                    <ListBox Grid.Row="1" Background="Transparent" BorderThickness="0" SelectionChanged="Sidebar_SelectionChanged" HorizontalContentAlignment="Stretch">
+                        <ListBox.ItemContainerStyle>
+                            <StaticResource ResourceKey="SidebarItemStyle" />
+                        </ListBox.ItemContainerStyle>
+
+                        <ListBoxItem Tag="Dashboard" IsSelected="True">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Home" Foreground="{DynamicResource SidebarIconActiveBrush}" Margin="0,0,15,0" />
+                                <TextBlock x:Name="DashboardNavTextBlock" Text="" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </ListBoxItem>
+                        
+                        <ListBoxItem Tag="Software">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Download" Foreground="{DynamicResource SidebarIconInactiveBrush}" Margin="0,0,15,0" />
+                                <TextBlock x:Name="SoftwareNavTextBlock" Text="" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Tag="Optimize">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Repair" Foreground="{DynamicResource SidebarIconInactiveBrush}" Margin="0,0,15,0" />
+                                <TextBlock x:Name="OptimizeNavTextBlock" Text="" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </ListBoxItem>
+
+                        <ListBoxItem Tag="Settings">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Setting" Foreground="{DynamicResource SidebarIconInactiveBrush}" Margin="0,0,15,0" />
+                                <TextBlock x:Name="SettingsNavTextBlock" Text="" VerticalAlignment="Center" FontSize="15" />
+                            </StackPanel>
+                        </ListBoxItem>
+                    </ListBox>
+                    
+                    <StackPanel Grid.Row="2" Margin="25,0,25,25">
+                        <Border Height="1" Background="{DynamicResource SidebarDividerBrush}" Margin="0,0,0,20" />
+                        <TextBlock Text="v2.0.0" HorizontalAlignment="Left" Foreground="{DynamicResource SidebarFooterPrimaryBrush}" FontSize="11" />
+                        <TextBlock x:Name="BylineTextBlock"
+                                   Text=""
+                                   HorizontalAlignment="Left"
+                                   Foreground="{DynamicResource SidebarFooterSecondaryBrush}"
+                                   FontSize="11"
+                                   Margin="0,6,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main Content Area with semi-transparent glass frame -->
+            <Border Grid.Column="1" Background="Transparent">
+                <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" Padding="40,30,40,30" />
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

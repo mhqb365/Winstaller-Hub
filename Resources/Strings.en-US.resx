@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App.Byline" xml:space="preserve">
+    <value>Created by mhqb365.com</value>
+  </data>
+  <data name="Battery.Label.CycleCount" xml:space="preserve">
+    <value>Cycle count</value>
+  </data>
+  <data name="Battery.Label.DesignCapacity" xml:space="preserve">
+    <value>Design capacity</value>
+  </data>
+  <data name="Battery.Label.FullChargeCapacity" xml:space="preserve">
+    <value>Full charge capacity</value>
+  </data>
+  <data name="Battery.Label.Level" xml:space="preserve">
+    <value>Level</value>
+  </data>
+  <data name="Battery.Label.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Battery.Label.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Battery.Label.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Battery.Label.WearLevel" xml:space="preserve">
+    <value>Wear level</value>
+  </data>
+  <data name="Battery.Name" xml:space="preserve">
+    <value>Battery</value>
+  </data>
+  <data name="Battery.NoBatteryDetected" xml:space="preserve">
+    <value>No battery detected</value>
+  </data>
+  <data name="Battery.Panel.Title" xml:space="preserve">
+    <value>BATTERY</value>
+  </data>
+  <data name="Battery.Panel.TitleIndexed" xml:space="preserve">
+    <value>BATTERY {0}</value>
+  </data>
+  <data name="Battery.Status.Charging" xml:space="preserve">
+    <value>Charging</value>
+  </data>
+  <data name="Battery.Status.ChargingAc" xml:space="preserve">
+    <value>Charging (AC)</value>
+  </data>
+  <data name="Battery.Status.ChargingCritical" xml:space="preserve">
+    <value>Charging - critical</value>
+  </data>
+  <data name="Battery.Status.ChargingHigh" xml:space="preserve">
+    <value>Charging - high</value>
+  </data>
+  <data name="Battery.Status.ChargingLow" xml:space="preserve">
+    <value>Charging - low</value>
+  </data>
+  <data name="Battery.Status.Critical" xml:space="preserve">
+    <value>Critical battery</value>
+  </data>
+  <data name="Battery.Status.Discharging" xml:space="preserve">
+    <value>Discharging</value>
+  </data>
+  <data name="Battery.Status.FullyCharged" xml:space="preserve">
+    <value>Fully charged</value>
+  </data>
+  <data name="Battery.Status.Low" xml:space="preserve">
+    <value>Low battery</value>
+  </data>
+  <data name="Battery.Status.PartiallyCharged" xml:space="preserve">
+    <value>Partially charged</value>
+  </data>
+  <data name="Battery.Status.Undefined" xml:space="preserve">
+    <value>Undefined</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Dashboard.BuildNA" xml:space="preserve">
+    <value>Build N/A</value>
+  </data>
+  <data name="Dashboard.Disk" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="Dashboard.Error.NoCpuData" xml:space="preserve">
+    <value>No CPU data</value>
+  </data>
+  <data name="Dashboard.Error.NoDiskData" xml:space="preserve">
+    <value>No disk data</value>
+  </data>
+  <data name="Dashboard.Error.NoGpuData" xml:space="preserve">
+    <value>No GPU data</value>
+  </data>
+  <data name="Dashboard.Error.NoRamData" xml:space="preserve">
+    <value>No RAM data</value>
+  </data>
+  <data name="Dashboard.Error.UnableLoad" xml:space="preserve">
+    <value>Unable to load</value>
+  </data>
+  <data name="Dashboard.Loading.Hardware" xml:space="preserve">
+    <value>Loading hardware information</value>
+  </data>
+  <data name="Dashboard.Metric" xml:space="preserve">
+    <value>Metric</value>
+  </data>
+  <data name="Dashboard.Network" xml:space="preserve">
+    <value>Network</value>
+  </data>
+  <data name="Dashboard.NoConnectedAdapter" xml:space="preserve">
+    <value>No connected adapter</value>
+  </data>
+  <data name="Dashboard.NoIpv4" xml:space="preserve">
+    <value>No IPv4</value>
+  </data>
+  <data name="Dashboard.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Dashboard.SystemInfo.Header" xml:space="preserve">
+    <value>System information</value>
+  </data>
+  <data name="Dashboard.SystemInfo.Title" xml:space="preserve">
+    <value>SYSTEM INFORMATION</value>
+  </data>
+  <data name="Disk.DriveTitleFormat" xml:space="preserve">
+    <value>Disk {0}</value>
+  </data>
+  <data name="Disk.Health.Healthy" xml:space="preserve">
+    <value>Healthy</value>
+  </data>
+  <data name="Disk.Health.Unhealthy" xml:space="preserve">
+    <value>Unhealthy</value>
+  </data>
+  <data name="Disk.Health.Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Disk.Label.Bus" xml:space="preserve">
+    <value>Bus</value>
+  </data>
+  <data name="Disk.Label.Free" xml:space="preserve">
+    <value>Free</value>
+  </data>
+  <data name="Disk.Label.Health" xml:space="preserve">
+    <value>Health</value>
+  </data>
+  <data name="Disk.Label.Media" xml:space="preserve">
+    <value>Media</value>
+  </data>
+  <data name="Disk.Label.Model" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="Disk.Label.Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="Disk.Label.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Disk.Label.Temperature" xml:space="preserve">
+    <value>Temperature</value>
+  </data>
+  <data name="Disk.NoFixedDrive" xml:space="preserve">
+    <value>No fixed drive</value>
+  </data>
+  <data name="Disk.PanelTitleFormat" xml:space="preserve">
+    <value>DISK {0}</value>
+  </data>
+  <data name="Disk.Status.Degraded" xml:space="preserve">
+    <value>Degraded</value>
+  </data>
+  <data name="Disk.Status.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Disk.Status.OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Disk.Status.PredFail" xml:space="preserve">
+    <value>Pred Fail</value>
+  </data>
+  <data name="Disk.Title" xml:space="preserve">
+    <value>Disk</value>
+  </data>
+  <data name="Hardware.Build" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="Hardware.MemoryUsage" xml:space="preserve">
+    <value>Memory usage</value>
+  </data>
+  <data name="Hardware.Rendering" xml:space="preserve">
+    <value>Rendering</value>
+  </data>
+  <data name="Hardware.UnknownCpu" xml:space="preserve">
+    <value>Unknown CPU</value>
+  </data>
+  <data name="Hardware.UnknownGpu" xml:space="preserve">
+    <value>Unknown GPU</value>
+  </data>
+  <data name="Language.Name.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language.Name.Vietnamese" xml:space="preserve">
+    <value>Vietnamese</value>
+  </data>
+  <data name="Nav.Applications" xml:space="preserve">
+    <value>Applications</value>
+  </data>
+  <data name="Nav.Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Nav.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Nav.SystemOptimize" xml:space="preserve">
+    <value>System optimize</value>
+  </data>
+  <data name="Network.Connected" xml:space="preserve">
+    <value>Connected</value>
+  </data>
+  <data name="Network.Disconnected" xml:space="preserve">
+    <value>Disconnected</value>
+  </data>
+  <data name="Network.NoActive" xml:space="preserve">
+    <value>No active network</value>
+  </data>
+  <data name="Network.NoConnectedAdapter" xml:space="preserve">
+    <value>No connected adapter</value>
+  </data>
+  <data name="Network.NoIpv4" xml:space="preserve">
+    <value>No IPv4</value>
+  </data>
+  <data name="Network.SpeedUnknown" xml:space="preserve">
+    <value>Speed unknown</value>
+  </data>
+  <data name="Optimize.Description" xml:space="preserve">
+    <value>Feature is under development</value>
+  </data>
+  <data name="Optimize.Title" xml:space="preserve">
+    <value>System optimize</value>
+  </data>
+  <data name="Settings.Appearance.Description" xml:space="preserve">
+    <value>Switch between dark and light mode</value>
+  </data>
+  <data name="Settings.Appearance.Title" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Settings.Description" xml:space="preserve">
+    <value>Manage app appearance and display language</value>
+  </data>
+  <data name="Settings.Language.Description" xml:space="preserve">
+    <value>Choose application display language</value>
+  </data>
+  <data name="Settings.Language.Hint" xml:space="preserve">
+    <value>Some screens update after reopening that page.</value>
+  </data>
+  <data name="Settings.Language.Title" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings.ThemeMode.Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings.ThemeMode.Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Software.Description" xml:space="preserve">
+    <value>Feature is under development</value>
+  </data>
+  <data name="Software.Title" xml:space="preserve">
+    <value>Applications</value>
+  </data>
+  <data name="System.Label.Architecture" xml:space="preserve">
+    <value>Architecture</value>
+  </data>
+  <data name="System.Label.BiosSerial" xml:space="preserve">
+    <value>BIOS serial</value>
+  </data>
+  <data name="System.Label.Hostname" xml:space="preserve">
+    <value>Hostname</value>
+  </data>
+  <data name="System.Label.Manufacturer" xml:space="preserve">
+    <value>Manufacturer</value>
+  </data>
+  <data name="System.Label.Model" xml:space="preserve">
+    <value>Model</value>
+  </data>
+  <data name="System.Label.ProductId" xml:space="preserve">
+    <value>Product ID</value>
+  </data>
+  <data name="System.Label.ReleaseDate" xml:space="preserve">
+    <value>Release date</value>
+  </data>
+  <data name="System.Label.SystemFamily" xml:space="preserve">
+    <value>System family</value>
+  </data>
+  <data name="System.Label.Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="System.Panel.MachineTitle" xml:space="preserve">
+    <value>MACHINE</value>
+  </data>
+  <data name="System.Panel.MainboardTitle" xml:space="preserve">
+    <value>MAINBOARD</value>
+  </data>
+  <data name="System.Panel.ServiceTagTitle" xml:space="preserve">
+    <value>SERVICE TAG / SERIAL</value>
+  </data>
+  <data name="System.UnknownMotherboard" xml:space="preserve">
+    <value>Unknown Motherboard</value>
+  </data>
+</root>

@@ -1,0 +1,107 @@
+﻿<Page x:Class="WinstallerHubApp.Views.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.modernwpf.com/2019"
+      mc:Ignorable="d"
+      d:DesignHeight="700"
+      d:DesignWidth="850"
+      Title="Settings"
+      Background="Transparent"
+      Foreground="{DynamicResource AppTextPrimaryBrush}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="16,8,16,16">
+            <TextBlock x:Name="PageTitleTextBlock"
+                       Text=""
+                       FontSize="36"
+                       FontWeight="Bold"
+                       Margin="0,0,0,8" />
+
+            <TextBlock x:Name="PageDescriptionTextBlock"
+                       Text=""
+                       FontSize="16"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       Opacity="0.9"
+                       Margin="0,0,0,22" />
+
+            <Border Style="{StaticResource CardStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock x:Name="AppearanceTitleTextBlock"
+                                   Text=""
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,8" />
+
+                        <TextBlock x:Name="AppearanceDescriptionTextBlock"
+                                   Text=""
+                                   FontSize="15"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Opacity="0.9" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <TextBlock x:Name="ThemeModeLabelTextBlock"
+                                   Text=""
+                                   VerticalAlignment="Center"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                   Margin="0,0,12,0" />
+
+                        <ui:ToggleSwitch x:Name="ThemeToggleSwitch"
+                                         OnContent="{x:Null}"
+                                         OffContent="{x:Null}"
+                                         Toggled="ThemeToggleSwitch_Toggled" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource CardStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock x:Name="LanguageTitleTextBlock"
+                                   Text=""
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,8" />
+
+                        <TextBlock x:Name="LanguageDescriptionTextBlock"
+                                   Text=""
+                                   FontSize="15"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Opacity="0.9" />
+                    </StackPanel>
+
+                    <ComboBox x:Name="LanguageComboBox"
+                              Grid.Column="1"
+                              Width="230"
+                              Height="38"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Center"
+                              Margin="20,0,0,0"
+                              Foreground="{DynamicResource AppTextPrimaryBrush}"
+                              DisplayMemberPath="DisplayName"
+                              SelectedValuePath="Code"
+                              SelectionChanged="LanguageComboBox_SelectionChanged" />
+                </Grid>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>
+

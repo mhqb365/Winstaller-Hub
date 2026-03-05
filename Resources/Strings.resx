@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App.Byline" xml:space="preserve">
+    <value>Tạo bởi mhqb365.com</value>
+  </data>
+  <data name="Battery.Label.CycleCount" xml:space="preserve">
+    <value>Số chu kỳ</value>
+  </data>
+  <data name="Battery.Label.DesignCapacity" xml:space="preserve">
+    <value>Dung lượng thiết kế</value>
+  </data>
+  <data name="Battery.Label.FullChargeCapacity" xml:space="preserve">
+    <value>Dung lượng sạc đầy</value>
+  </data>
+  <data name="Battery.Label.Level" xml:space="preserve">
+    <value>Mức pin</value>
+  </data>
+  <data name="Battery.Label.Name" xml:space="preserve">
+    <value>Tên</value>
+  </data>
+  <data name="Battery.Label.Status" xml:space="preserve">
+    <value>Trạng thái</value>
+  </data>
+  <data name="Battery.Label.Type" xml:space="preserve">
+    <value>Loại</value>
+  </data>
+  <data name="Battery.Label.WearLevel" xml:space="preserve">
+    <value>Độ chai</value>
+  </data>
+  <data name="Battery.Name" xml:space="preserve">
+    <value>Pin</value>
+  </data>
+  <data name="Battery.NoBatteryDetected" xml:space="preserve">
+    <value>Không phát hiện pin</value>
+  </data>
+  <data name="Battery.Panel.Title" xml:space="preserve">
+    <value>PIN</value>
+  </data>
+  <data name="Battery.Panel.TitleIndexed" xml:space="preserve">
+    <value>PIN {0}</value>
+  </data>
+  <data name="Battery.Status.Charging" xml:space="preserve">
+    <value>Đang sạc</value>
+  </data>
+  <data name="Battery.Status.ChargingAc" xml:space="preserve">
+    <value>Đang sạc (AC)</value>
+  </data>
+  <data name="Battery.Status.ChargingCritical" xml:space="preserve">
+    <value>Đang sạc - nguy cấp</value>
+  </data>
+  <data name="Battery.Status.ChargingHigh" xml:space="preserve">
+    <value>Đang sạc - mức cao</value>
+  </data>
+  <data name="Battery.Status.ChargingLow" xml:space="preserve">
+    <value>Đang sạc - mức thấp</value>
+  </data>
+  <data name="Battery.Status.Critical" xml:space="preserve">
+    <value>Mức pin nguy cấp</value>
+  </data>
+  <data name="Battery.Status.Discharging" xml:space="preserve">
+    <value>Đang xả</value>
+  </data>
+  <data name="Battery.Status.FullyCharged" xml:space="preserve">
+    <value>Sạc đầy</value>
+  </data>
+  <data name="Battery.Status.Low" xml:space="preserve">
+    <value>Mức pin thấp</value>
+  </data>
+  <data name="Battery.Status.PartiallyCharged" xml:space="preserve">
+    <value>Sạc một phần</value>
+  </data>
+  <data name="Battery.Status.Undefined" xml:space="preserve">
+    <value>Không xác định</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>Không rõ</value>
+  </data>
+  <data name="Dashboard.BuildNA" xml:space="preserve">
+    <value>Bản dựng N/A</value>
+  </data>
+  <data name="Dashboard.Disk" xml:space="preserve">
+    <value>Ổ đĩa</value>
+  </data>
+  <data name="Dashboard.Error.NoCpuData" xml:space="preserve">
+    <value>Không có dữ liệu CPU</value>
+  </data>
+  <data name="Dashboard.Error.NoDiskData" xml:space="preserve">
+    <value>Không có dữ liệu ổ đĩa</value>
+  </data>
+  <data name="Dashboard.Error.NoGpuData" xml:space="preserve">
+    <value>Không có dữ liệu GPU</value>
+  </data>
+  <data name="Dashboard.Error.NoRamData" xml:space="preserve">
+    <value>Không có dữ liệu RAM</value>
+  </data>
+  <data name="Dashboard.Error.UnableLoad" xml:space="preserve">
+    <value>Không thể tải dữ liệu</value>
+  </data>
+  <data name="Dashboard.Loading.Hardware" xml:space="preserve">
+    <value>Đang lấy thông tin phần cứng</value>
+  </data>
+  <data name="Dashboard.Metric" xml:space="preserve">
+    <value>Thông số</value>
+  </data>
+  <data name="Dashboard.Network" xml:space="preserve">
+    <value>Mạng</value>
+  </data>
+  <data name="Dashboard.NoConnectedAdapter" xml:space="preserve">
+    <value>Không có bộ điều hợp đang kết nối</value>
+  </data>
+  <data name="Dashboard.NoIpv4" xml:space="preserve">
+    <value>Không có IPv4</value>
+  </data>
+  <data name="Dashboard.Status" xml:space="preserve">
+    <value>Trạng thái</value>
+  </data>
+  <data name="Dashboard.SystemInfo.Header" xml:space="preserve">
+    <value>Thông tin hệ thống</value>
+  </data>
+  <data name="Dashboard.SystemInfo.Title" xml:space="preserve">
+    <value>THÔNG TIN HỆ THỐNG</value>
+  </data>
+  <data name="Disk.DriveTitleFormat" xml:space="preserve">
+    <value>Ổ {0}</value>
+  </data>
+  <data name="Disk.Health.Healthy" xml:space="preserve">
+    <value>Tốt</value>
+  </data>
+  <data name="Disk.Health.Unhealthy" xml:space="preserve">
+    <value>Không tốt</value>
+  </data>
+  <data name="Disk.Health.Warning" xml:space="preserve">
+    <value>Cảnh báo</value>
+  </data>
+  <data name="Disk.Label.Bus" xml:space="preserve">
+    <value>Chuẩn kết nối</value>
+  </data>
+  <data name="Disk.Label.Free" xml:space="preserve">
+    <value>Còn trống</value>
+  </data>
+  <data name="Disk.Label.Health" xml:space="preserve">
+    <value>Sức khỏe</value>
+  </data>
+  <data name="Disk.Label.Media" xml:space="preserve">
+    <value>Loại ổ</value>
+  </data>
+  <data name="Disk.Label.Model" xml:space="preserve">
+    <value>Mẫu ổ</value>
+  </data>
+  <data name="Disk.Label.Size" xml:space="preserve">
+    <value>Dung lượng</value>
+  </data>
+  <data name="Disk.Label.Status" xml:space="preserve">
+    <value>Trạng thái</value>
+  </data>
+  <data name="Disk.Label.Temperature" xml:space="preserve">
+    <value>Nhiệt độ</value>
+  </data>
+  <data name="Disk.NoFixedDrive" xml:space="preserve">
+    <value>Không có ổ đĩa cố định</value>
+  </data>
+  <data name="Disk.PanelTitleFormat" xml:space="preserve">
+    <value>Ổ ĐĨA {0}</value>
+  </data>
+  <data name="Disk.Status.Degraded" xml:space="preserve">
+    <value>Suy giảm</value>
+  </data>
+  <data name="Disk.Status.Error" xml:space="preserve">
+    <value>Lỗi</value>
+  </data>
+  <data name="Disk.Status.OK" xml:space="preserve">
+    <value>Hoạt động tốt</value>
+  </data>
+  <data name="Disk.Status.PredFail" xml:space="preserve">
+    <value>Sắp hỏng</value>
+  </data>
+  <data name="Disk.Title" xml:space="preserve">
+    <value>Ổ đĩa</value>
+  </data>
+  <data name="Hardware.Build" xml:space="preserve">
+    <value>Bản dựng</value>
+  </data>
+  <data name="Hardware.MemoryUsage" xml:space="preserve">
+    <value>Mức dùng bộ nhớ</value>
+  </data>
+  <data name="Hardware.Rendering" xml:space="preserve">
+    <value>Đồ họa</value>
+  </data>
+  <data name="Hardware.UnknownCpu" xml:space="preserve">
+    <value>CPU không rõ</value>
+  </data>
+  <data name="Hardware.UnknownGpu" xml:space="preserve">
+    <value>GPU không rõ</value>
+  </data>
+  <data name="Language.Name.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language.Name.Vietnamese" xml:space="preserve">
+    <value>Tiếng Việt</value>
+  </data>
+  <data name="Nav.Applications" xml:space="preserve">
+    <value>Ứng dụng</value>
+  </data>
+  <data name="Nav.Overview" xml:space="preserve">
+    <value>Tổng quan</value>
+  </data>
+  <data name="Nav.Settings" xml:space="preserve">
+    <value>Cài đặt</value>
+  </data>
+  <data name="Nav.SystemOptimize" xml:space="preserve">
+    <value>Tối ưu hệ thống</value>
+  </data>
+  <data name="Network.Connected" xml:space="preserve">
+    <value>Đã kết nối</value>
+  </data>
+  <data name="Network.Disconnected" xml:space="preserve">
+    <value>Ngắt kết nối</value>
+  </data>
+  <data name="Network.NoActive" xml:space="preserve">
+    <value>Không có mạng đang hoạt động</value>
+  </data>
+  <data name="Network.NoConnectedAdapter" xml:space="preserve">
+    <value>Không có bộ điều hợp đang kết nối</value>
+  </data>
+  <data name="Network.NoIpv4" xml:space="preserve">
+    <value>Không có IPv4</value>
+  </data>
+  <data name="Network.SpeedUnknown" xml:space="preserve">
+    <value>Tốc độ không rõ</value>
+  </data>
+  <data name="Optimize.Description" xml:space="preserve">
+    <value>Tính năng đang được phát triển</value>
+  </data>
+  <data name="Optimize.Title" xml:space="preserve">
+    <value>Tối ưu hệ thống</value>
+  </data>
+  <data name="Settings.Appearance.Description" xml:space="preserve">
+    <value>Chuyển đổi giữa chế độ tối và sáng</value>
+  </data>
+  <data name="Settings.Appearance.Title" xml:space="preserve">
+    <value>Giao diện</value>
+  </data>
+  <data name="Settings.Description" xml:space="preserve">
+    <value>Quản lý giao diện và ngôn ngữ hiển thị</value>
+  </data>
+  <data name="Settings.Language.Description" xml:space="preserve">
+    <value>Chọn ngôn ngữ hiển thị của ứng dụng</value>
+  </data>
+  <data name="Settings.Language.Hint" xml:space="preserve">
+    <value>Một số màn hình sẽ đổi ngôn ngữ khi bạn mở lại trang.</value>
+  </data>
+  <data name="Settings.Language.Title" xml:space="preserve">
+    <value>Ngôn ngữ</value>
+  </data>
+  <data name="Settings.ThemeMode.Dark" xml:space="preserve">
+    <value>Tối</value>
+  </data>
+  <data name="Settings.ThemeMode.Light" xml:space="preserve">
+    <value>Sáng</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Cài đặt</value>
+  </data>
+  <data name="Software.Description" xml:space="preserve">
+    <value>Tính năng đang được phát triển</value>
+  </data>
+  <data name="Software.Title" xml:space="preserve">
+    <value>Ứng dụng</value>
+  </data>
+  <data name="System.Label.Architecture" xml:space="preserve">
+    <value>Kiến trúc</value>
+  </data>
+  <data name="System.Label.BiosSerial" xml:space="preserve">
+    <value>Serial BIOS</value>
+  </data>
+  <data name="System.Label.Hostname" xml:space="preserve">
+    <value>Tên máy</value>
+  </data>
+  <data name="System.Label.Manufacturer" xml:space="preserve">
+    <value>Hãng</value>
+  </data>
+  <data name="System.Label.Model" xml:space="preserve">
+    <value>Mẫu máy</value>
+  </data>
+  <data name="System.Label.ProductId" xml:space="preserve">
+    <value>Mã sản phẩm</value>
+  </data>
+  <data name="System.Label.ReleaseDate" xml:space="preserve">
+    <value>Ngày phát hành</value>
+  </data>
+  <data name="System.Label.SystemFamily" xml:space="preserve">
+    <value>Dòng máy</value>
+  </data>
+  <data name="System.Label.Version" xml:space="preserve">
+    <value>Phiên bản</value>
+  </data>
+  <data name="System.Panel.MachineTitle" xml:space="preserve">
+    <value>THIẾT BỊ</value>
+  </data>
+  <data name="System.Panel.MainboardTitle" xml:space="preserve">
+    <value>BO MẠCH CHỦ</value>
+  </data>
+  <data name="System.Panel.ServiceTagTitle" xml:space="preserve">
+    <value>MÃ THIẾT BỊ / SERIAL</value>
+  </data>
+  <data name="System.UnknownMotherboard" xml:space="preserve">
+    <value>Bo mạch chủ không rõ</value>
+  </data>
+</root>

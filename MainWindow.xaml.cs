@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using WinstallerHubApp.Services;
 using WinstallerHubApp.Views;
 
@@ -7,11 +12,20 @@ namespace WinstallerHubApp;
 
 public partial class MainWindow : Window
 {
+    private readonly Queue<AppToastMessage> _toastQueue = new();
+    private readonly DispatcherTimer _toastTimer = new()
+    {
+        Interval = TimeSpan.FromSeconds(4)
+    };
+
+    private bool _isToastVisible;
+
     public MainWindow()
     {
         InitializeComponent();
         Loaded += MainWindow_Loaded;
         Unloaded += MainWindow_Unloaded;
+        _toastTimer.Tick += ToastTimer_Tick;
         MainFrame.Navigate(new DashboardPage());
     }
 
@@ -19,16 +33,24 @@ public partial class MainWindow : Window
     {
         UpdateLocalizedText();
         AppLanguageService.LanguageChanged += AppLanguageService_LanguageChanged;
+        AppToastService.ToastRequested += AppToastService_ToastRequested;
     }
 
     private void MainWindow_Unloaded(object sender, RoutedEventArgs e)
     {
         AppLanguageService.LanguageChanged -= AppLanguageService_LanguageChanged;
+        AppToastService.ToastRequested -= AppToastService_ToastRequested;
+        _toastTimer.Stop();
     }
 
     private void AppLanguageService_LanguageChanged(string _)
     {
         Dispatcher.Invoke(UpdateLocalizedText);
+    }
+
+    private void AppToastService_ToastRequested(AppToastMessage message)
+    {
+        Dispatcher.Invoke(() => EnqueueToast(message));
     }
 
     private void UpdateLocalizedText()
@@ -38,6 +60,89 @@ public partial class MainWindow : Window
         OptimizeNavTextBlock.Text = AppLanguageService.GetString("Nav.SystemOptimize");
         SettingsNavTextBlock.Text = AppLanguageService.GetString("Nav.Settings");
         BylineTextBlock.Text = AppLanguageService.GetString("App.Byline");
+    }
+
+    private void EnqueueToast(AppToastMessage message)
+    {
+        _toastQueue.Enqueue(message);
+        if (_isToastVisible)
+        {
+            return;
+        }
+
+        ShowNextToast();
+    }
+
+    private void ShowNextToast()
+    {
+        if (_toastQueue.Count == 0)
+        {
+            _isToastVisible = false;
+            return;
+        }
+
+        var nextToast = _toastQueue.Dequeue();
+        _isToastVisible = true;
+
+        ToastTitleTextBlock.Text = string.IsNullOrWhiteSpace(nextToast.Title)
+            ? AppLanguageService.GetString("Toast.DefaultTitle")
+            : nextToast.Title;
+        ToastMessageTextBlock.Text = nextToast.Message;
+        ApplyToastStyle(nextToast.Type);
+
+        ToastHostBorder.Visibility = Visibility.Visible;
+        ToastHostBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160)));
+
+        _toastTimer.Stop();
+        _toastTimer.Start();
+    }
+
+    private void ToastTimer_Tick(object? sender, EventArgs e)
+    {
+        _toastTimer.Stop();
+        HideCurrentToast();
+    }
+
+    private void HideCurrentToast()
+    {
+        if (ToastHostBorder.Visibility != Visibility.Visible)
+        {
+            _isToastVisible = false;
+            ShowNextToast();
+            return;
+        }
+
+        var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(220));
+        fadeOut.Completed += (_, _) =>
+        {
+            ToastHostBorder.Visibility = Visibility.Collapsed;
+            _isToastVisible = false;
+            ShowNextToast();
+        };
+
+        ToastHostBorder.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
+    private void ApplyToastStyle(AppToastType type)
+    {
+        var (background, border) = type switch
+        {
+            AppToastType.Success => ("#CC113725", "#FF2FC16D"),
+            AppToastType.Warning => ("#CC4E380A", "#FFF6B73C"),
+            AppToastType.Error => ("#CC4A1D22", "#FFFF7B7B"),
+            _ => ("#CC102A4C", "#FF4DA3FF")
+        };
+
+        ToastHostBorder.Background = CreateBrush(background);
+        ToastHostBorder.BorderBrush = CreateBrush(border);
+    }
+
+    private static SolidColorBrush CreateBrush(string colorHex)
+    {
+        var converted = ColorConverter.ConvertFromString(colorHex);
+        return converted is Color color
+            ? new SolidColorBrush(color)
+            : new SolidColorBrush(Colors.Transparent);
     }
 
     private void Sidebar_SelectionChanged(object sender, SelectionChangedEventArgs e)

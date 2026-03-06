@@ -274,7 +274,7 @@
     <value>Settings</value>
   </data>
   <data name="Software.Description" xml:space="preserve">
-    <value>Feature is under development</value>
+    <value>Install and manage applications with Winget</value>
   </data>
   <data name="Software.Title" xml:space="preserve">
     <value>Applications</value>
@@ -317,5 +317,248 @@
   </data>
   <data name="System.UnknownMotherboard" xml:space="preserve">
     <value>Unknown Motherboard</value>
+  </data>
+  <data name="Software.Winget.Button.Installing" xml:space="preserve">
+    <value>Installing...</value>
+  </data>
+  <data name="Software.Common.ErrorFormat" xml:space="preserve">
+    <value>Error: {0}</value>
+  </data>
+  <data name="Software.Installed.Status.Loading" xml:space="preserve">
+    <value>Scanning installed applications...</value>
+  </data>
+  <data name="Software.Trending.Status.Ready" xml:space="preserve">
+    <value>You can quickly install from trending list below</value>
+  </data>
+  <data name="Software.Winget.Status.NotInstalled" xml:space="preserve">
+    <value>Winget is not detected on this machine</value>
+  </data>
+  <data name="Software.Installed.Title" xml:space="preserve">
+    <value>Installed applications</value>
+  </data>
+  <data name="Software.Winget.Button.Repair" xml:space="preserve">
+    <value>Repair Winget</value>
+  </data>
+  <data name="Software.Trending.Description" xml:space="preserve">
+    <value>Popular apps from the Winget ecosystem</value>
+  </data>
+  <data name="Software.Winget.Button.Install" xml:space="preserve">
+    <value>Install Winget</value>
+  </data>
+  <data name="Software.Winget.Status.RepairNeeded" xml:space="preserve">
+    <value>Desktop App Installer is present but winget command is unavailable. Click Repair.</value>
+  </data>
+  <data name="Software.Winget.Status.VersionFormat" xml:space="preserve">
+    <value>Version: {0}</value>
+  </data>
+  <data name="Software.Winget.Title" xml:space="preserve">
+    <value>Winget</value>
+  </data>
+  <data name="Software.Winget.Status.Ready" xml:space="preserve">
+    <value>Winget is ready</value>
+  </data>
+  <data name="Software.Installed.Status.CountFormat" xml:space="preserve">
+    <value>Found {0} applications</value>
+  </data>
+  <data name="Software.Trending.Status.InstallFailedFormat" xml:space="preserve">
+    <value>Failed to install {0}: {1}</value>
+  </data>
+  <data name="Software.Installed.Column.Publisher" xml:space="preserve">
+    <value>Publisher</value>
+  </data>
+  <data name="Software.Trending.Title" xml:space="preserve">
+    <value>Trending applications</value>
+  </data>
+  <data name="Software.Trending.Status.WingetRequired" xml:space="preserve">
+    <value>Winget is required to install from trending list.</value>
+  </data>
+  <data name="Software.Installed.Column.Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="Software.Installed.Description" xml:space="preserve">
+    <value>Automatically detects apps installed on this machine</value>
+  </data>
+  <data name="Software.Winget.Status.InstallFailedFormat" xml:space="preserve">
+    <value>Winget install/repair failed: {0}</value>
+  </data>
+  <data name="Software.Trending.Button.Installing" xml:space="preserve">
+    <value>Installing...</value>
+  </data>
+  <data name="Software.Trending.Button.Installed" xml:space="preserve">
+    <value>Installed</value>
+  </data>
+  <data name="Software.Trending.Status.InstallSuccessFormat" xml:space="preserve">
+    <value>Install command sent: {0}</value>
+  </data>
+  <data name="Software.Trending.Status.AlreadyInstalledFormat" xml:space="preserve">
+    <value>{0} is already installed.</value>
+  </data>
+  <data name="Software.Installed.Empty" xml:space="preserve">
+    <value>No matching applications found.</value>
+  </data>
+  <data name="Software.Trending.Button.Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Software.Winget.Status.InstallSuccess" xml:space="preserve">
+    <value>Winget install/repair completed</value>
+  </data>
+  <data name="Software.Winget.Description" xml:space="preserve">
+    <value>Check Winget status and install when missing</value>
+  </data>
+  <data name="Software.Common.Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Software.Installed.SearchLabel" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Software.Winget.Status.Checking" xml:space="preserve">
+    <value>Checking Winget...</value>
+  </data>
+  <data name="Software.Installed.Column.Name" xml:space="preserve">
+    <value>Application</value>
+  </data>
+  <data name="Software.Common.UnknownError" xml:space="preserve">
+    <value>Unknown error</value>
+  </data>
+  <data name="Software.InstallJobs.Button.Manage" xml:space="preserve">
+    <value>Manage installs</value>
+  </data>
+  <data name="Software.InstallJobs.WindowTitle" xml:space="preserve">
+    <value>Installation jobs</value>
+  </data>
+  <data name="Software.InstallJobs.Title" xml:space="preserve">
+    <value>Installation jobs</value>
+  </data>
+  <data name="Software.InstallJobs.Description" xml:space="preserve">
+    <value>Track package installation progress and results</value>
+  </data>
+  <data name="Software.InstallJobs.ClearCompleted" xml:space="preserve">
+    <value>Clear completed</value>
+  </data>
+  <data name="Software.InstallJobs.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Software.InstallJobs.Column.App" xml:space="preserve">
+    <value>Application</value>
+  </data>
+  <data name="Software.InstallJobs.Column.Package" xml:space="preserve">
+    <value>Package ID</value>
+  </data>
+  <data name="Software.InstallJobs.Column.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Software.InstallJobs.Column.StartedAt" xml:space="preserve">
+    <value>Started</value>
+  </data>
+  <data name="Software.InstallJobs.Column.CompletedAt" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="Software.InstallJobs.Column.Detail" xml:space="preserve">
+    <value>Detail</value>
+  </data>
+  <data name="Software.InstallJobs.Empty" xml:space="preserve">
+    <value>No installation jobs yet.</value>
+  </data>
+  <data name="Software.InstallJobs.SummaryFormat" xml:space="preserve">
+    <value>Total: {0} | In progress: {1} | Completed: {2}</value>
+  </data>
+  <data name="Software.InstallJobs.State.Queued" xml:space="preserve">
+    <value>Queued</value>
+  </data>
+  <data name="Software.InstallJobs.State.Running" xml:space="preserve">
+    <value>Installing</value>
+  </data>
+  <data name="Software.InstallJobs.State.Succeeded" xml:space="preserve">
+    <value>Succeeded</value>
+  </data>
+  <data name="Software.InstallJobs.State.Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="Software.InstallJobs.ClearedFormat" xml:space="preserve">
+    <value>Cleared {0} completed jobs.</value>
+  </data>
+  <data name="Software.Trending.Status.QueuedFormat" xml:space="preserve">
+    <value>Queued install: {0}</value>
+  </data>
+  <data name="Software.Trending.Status.AlreadyQueuedFormat" xml:space="preserve">
+    <value>Already in queue: {0}</value>
+  </data>
+  <data name="Toast.DefaultTitle" xml:space="preserve">
+    <value>Notification</value>
+  </data>
+  <data name="Toast.Install.Title" xml:space="preserve">
+    <value>Installer</value>
+  </data>
+  <data name="Toast.Install.QueuedFormat" xml:space="preserve">
+    <value>Queued: {0}</value>
+  </data>
+  <data name="Toast.Install.AlreadyQueuedFormat" xml:space="preserve">
+    <value>Already queued: {0}</value>
+  </data>
+  <data name="Toast.Install.StartedFormat" xml:space="preserve">
+    <value>Installing: {0}</value>
+  </data>
+  <data name="Toast.Install.SuccessFormat" xml:space="preserve">
+    <value>Install completed: {0}</value>
+  </data>
+  <data name="Toast.Install.FailedFormat" xml:space="preserve">
+    <value>Install failed: {0}. {1}</value>
+  </data>
+  <data name="Toast.Install.SuccessDetail" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="Software.Search.Title" xml:space="preserve">
+    <value>Search packages</value>
+  </data>
+  <data name="Software.Search.Description" xml:space="preserve">
+    <value>Find apps from Winget repository and install quickly</value>
+  </data>
+  <data name="Software.Search.SearchLabel" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Software.Search.Button.Search" xml:space="preserve">
+    <value>Find</value>
+  </data>
+  <data name="Software.Search.Status.WingetRequired" xml:space="preserve">
+    <value>Winget is required before searching packages.</value>
+  </data>
+  <data name="Software.Search.Status.Hint" xml:space="preserve">
+    <value>Type app name or package ID, then press Find.</value>
+  </data>
+  <data name="Software.Search.Status.Searching" xml:space="preserve">
+    <value>Searching packages from Winget...</value>
+  </data>
+  <data name="Software.Search.Status.CountFormat" xml:space="preserve">
+    <value>Found {0} packages.</value>
+  </data>
+  <data name="Software.Search.Status.NoResult" xml:space="preserve">
+    <value>No matching package found.</value>
+  </data>
+  <data name="Software.Search.Status.AlreadyInstalledFormat" xml:space="preserve">
+    <value>{0} is already installed.</value>
+  </data>
+  <data name="Software.Search.Status.QueuedFormat" xml:space="preserve">
+    <value>Queued install: {0}</value>
+  </data>
+  <data name="Software.Search.Status.AlreadyQueuedFormat" xml:space="preserve">
+    <value>Already in queue: {0}</value>
+  </data>
+  <data name="Software.Search.Empty" xml:space="preserve">
+    <value>No search results.</value>
+  </data>
+  <data name="Software.Search.Result.VersionFormat" xml:space="preserve">
+    <value>Version: {0}</value>
+  </data>
+  <data name="Software.InstallJobs.Column.Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Software.InstallJobs.Button.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Software.InstallJobs.State.Canceled" xml:space="preserve">
+    <value>Canceled</value>
+  </data>
+  <data name="Software.InstallJobs.Status.Canceled" xml:space="preserve">
+    <value>Canceled by user</value>
   </data>
 </root>

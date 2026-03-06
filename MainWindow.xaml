@@ -93,5 +93,32 @@
                 <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" Padding="40,30,40,30" />
             </Border>
         </Grid>
+
+        <Border x:Name="ToastHostBorder"
+                Panel.ZIndex="10"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,16,18,0"
+                MaxWidth="420"
+                Padding="14,12"
+                CornerRadius="12"
+                BorderThickness="1"
+                Visibility="Collapsed"
+                IsHitTestVisible="False"
+                Opacity="0">
+            <StackPanel>
+                <TextBlock x:Name="ToastTitleTextBlock"
+                           Text=""
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="#F9FBFF" />
+                <TextBlock x:Name="ToastMessageTextBlock"
+                           Text=""
+                           FontSize="13"
+                           Margin="0,4,0,0"
+                           Foreground="#EAF2FF"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

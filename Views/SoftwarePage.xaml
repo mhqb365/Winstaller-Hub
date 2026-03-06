@@ -1,16 +1,357 @@
-﻿<Page x:Class="WinstallerHubApp.Views.SoftwarePage"
+<Page x:Class="WinstallerHubApp.Views.SoftwarePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      mc:Ignorable="d" 
-      d:DesignHeight="700" d:DesignWidth="850"
-      Title="Software">
-    <Grid>
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock x:Name="PageTitleTextBlock" Text="" Style="{StaticResource HeaderStyle}" HorizontalAlignment="Center" />
-            <TextBlock x:Name="PageDescriptionTextBlock" Text="" FontSize="16" Foreground="{DynamicResource AppTextSecondaryBrush}" HorizontalAlignment="Center" />
-        </StackPanel>
-    </Grid>
-</Page>
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      mc:Ignorable="d"
+      d:DesignHeight="700"
+      d:DesignWidth="850"
+      Title="Software"
+      Background="Transparent">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="16,8,16,16">
+            <TextBlock x:Name="PageTitleTextBlock"
+                       Text=""
+                       FontSize="36"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource AppTextPrimaryBrush}"
+                       Margin="0,0,0,8" />
 
+            <TextBlock x:Name="PageDescriptionTextBlock"
+                       Text=""
+                       FontSize="16"
+                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                       Opacity="0.9"
+                       Margin="0,0,0,22" />
+
+            <Border Style="{StaticResource CardStyle}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock x:Name="WingetTitleTextBlock"
+                                   Text=""
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}" />
+
+                        <TextBlock x:Name="WingetDescriptionTextBlock"
+                                   Text=""
+                                   FontSize="14"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Margin="0,6,0,0" />
+
+                        <TextBlock x:Name="WingetStatusTextBlock"
+                                   Text=""
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                   Margin="0,12,0,0" />
+
+                        <TextBlock x:Name="WingetVersionTextBlock"
+                                   Text=""
+                                   FontSize="13"
+                                   Foreground="{DynamicResource AppTextMutedBrush}"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Top">
+                        <Button x:Name="RefreshWingetStatusButton"
+                                Content=""
+                                Height="34"
+                                Padding="14,0"
+                                Click="RefreshWingetStatusButton_Click" />
+
+                        <Button x:Name="InstallWingetButton"
+                                Content=""
+                                Height="34"
+                                Padding="14,0"
+                                Margin="10,0,0,0"
+                                Click="InstallWingetButton_Click" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock x:Name="WingetSearchTitleTextBlock"
+                                       Text=""
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
+
+                            <TextBlock x:Name="WingetSearchDescriptionTextBlock"
+                                       Text=""
+                                       FontSize="14"
+                                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                       Margin="0,6,0,0" />
+                        </StackPanel>
+
+                        <Button x:Name="ManageInstallJobsButton"
+                                Grid.Column="1"
+                                Content=""
+                                Height="34"
+                                Padding="14,0"
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Top"
+                                Click="ManageInstallJobsButton_Click" />
+                    </Grid>
+
+                    <Grid Margin="0,12,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock x:Name="WingetSearchLabelTextBlock"
+                                   Text=""
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Margin="0,0,10,0" />
+
+                        <TextBox x:Name="WingetSearchTextBox"
+                                 Grid.Column="1"
+                                 Height="34"
+                                 VerticalContentAlignment="Center"
+                                 TextChanged="WingetSearchTextBox_TextChanged"
+                                 KeyDown="WingetSearchTextBox_KeyDown" />
+
+                        <Button x:Name="WingetSearchButton"
+                                Grid.Column="2"
+                                Content=""
+                                Height="34"
+                                Padding="12,0"
+                                Margin="10,0,0,0"
+                                Click="WingetSearchButton_Click" />
+                    </Grid>
+
+                    <StackPanel x:Name="SearchResultsSectionPanel"
+                                Visibility="Collapsed">
+                        <TextBlock x:Name="WingetSearchStatusTextBlock"
+                                   Text=""
+                                   FontSize="13"
+                                   Foreground="{DynamicResource AppTextMutedBrush}"
+                                   Margin="0,2,0,8" />
+
+                        <ItemsControl x:Name="WingetSearchItemsControl">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{DynamicResource AppCardBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Background="#12000000"
+                                            Margin="0,8,0,0"
+                                            Padding="12,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="16"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+
+                                                <TextBlock Text="{Binding Id}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource AppTextMutedBrush}"
+                                                           Margin="0,4,0,0" />
+
+                                                <TextBlock Text="{Binding VersionText}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                           Margin="0,4,0,0" />
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1"
+                                                    Tag="{Binding Id}"
+                                                    Content="{Binding InstallButtonText}"
+                                                    IsEnabled="{Binding IsInstallEnabled}"
+                                                    Height="32"
+                                                    Padding="12,0"
+                                                    Margin="12,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Click="SearchInstallButton_Click" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock x:Name="WingetSearchEmptyTextBlock"
+                                   Text=""
+                                   FontSize="13"
+                                   Foreground="{DynamicResource AppTextMutedBrush}"
+                                   Margin="0,8,0,0"
+                                   Visibility="Collapsed" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="TrendingSectionPanel">
+                        <Border Height="1"
+                                Margin="0,10,0,12"
+                                Background="{DynamicResource AppCardBorderBrush}" />
+
+                            <StackPanel Visibility="Collapsed">
+                                <TextBlock x:Name="TrendingTitleTextBlock"
+                                           Text=""
+                                           FontSize="24"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+
+                                <TextBlock x:Name="TrendingDescriptionTextBlock"
+                                           Text=""
+                                           FontSize="14"
+                                           Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                           Margin="0,6,0,0" />
+                            </StackPanel>
+
+                        <TextBlock x:Name="TrendingStatusTextBlock"
+                                   Text=""
+                                   FontSize="13"
+                                   Foreground="{DynamicResource AppTextMutedBrush}"
+                                   Margin="0,10,0,4" />
+
+                        <ItemsControl x:Name="TrendingAppsItemsControl">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{DynamicResource AppCardBorderBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Background="#12000000"
+                                            Margin="0,8,0,0"
+                                            Padding="12,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="16"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+
+                                                <TextBlock Text="{Binding Description}"
+                                                           FontSize="13"
+                                                           Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                           Margin="0,4,0,0" />
+
+                                                <TextBlock Text="{Binding Id}"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource AppTextMutedBrush}"
+                                                           Margin="0,6,0,0" />
+                                            </StackPanel>
+
+                                            <Button Grid.Column="1"
+                                                    Tag="{Binding Id}"
+                                                    Content="{Binding InstallButtonText}"
+                                                    IsEnabled="{Binding IsInstallEnabled}"
+                                                    Height="32"
+                                                    Padding="12,0"
+                                                    Margin="12,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Click="TrendingInstallButton_Click" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <TextBlock x:Name="InstalledTitleTextBlock"
+                               Text=""
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource AppTextPrimaryBrush}" />
+
+                    <TextBlock x:Name="InstalledDescriptionTextBlock"
+                               Text=""
+                               FontSize="14"
+                               Foreground="{DynamicResource AppTextSecondaryBrush}"
+                               Margin="0,6,0,0" />
+
+                    <Grid Margin="0,12,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock x:Name="InstalledSearchLabelTextBlock"
+                                   Text=""
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Margin="0,0,10,0" />
+
+                        <TextBox x:Name="InstalledSearchTextBox"
+                                Grid.Column="1"
+                                Height="34"
+                                VerticalContentAlignment="Center"
+                                TextChanged="InstalledSearchTextBox_TextChanged" />
+
+                        <Button x:Name="RefreshInstalledAppsButton"
+                                Grid.Column="2"
+                                Content=""
+                                Height="34"
+                                Padding="12,0"
+                                Margin="10,0,0,0"
+                                Click="RefreshInstalledAppsButton_Click" />
+                    </Grid>
+
+                    <TextBlock x:Name="InstalledStatusTextBlock"
+                               Text=""
+                               FontSize="13"
+                               Foreground="{DynamicResource AppTextMutedBrush}"
+                               Margin="0,0,0,8" />
+
+                    <ListView x:Name="InstalledAppsListView"
+                              Height="320"
+                              BorderBrush="{DynamicResource AppCardBorderBrush}"
+                              BorderThickness="1">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn x:Name="InstalledNameColumn"
+                                                Width="260"
+                                                DisplayMemberBinding="{Binding Name}" />
+                                <GridViewColumn x:Name="InstalledPublisherColumn"
+                                                Width="220"
+                                                DisplayMemberBinding="{Binding Publisher}" />
+                                <GridViewColumn x:Name="InstalledVersionColumn"
+                                                Width="120"
+                                                DisplayMemberBinding="{Binding Version}" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <TextBlock x:Name="InstalledEmptyTextBlock"
+                               Text=""
+                               FontSize="13"
+                               Foreground="{DynamicResource AppTextMutedBrush}"
+                               Margin="0,8,0,0"
+                               Visibility="Collapsed" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

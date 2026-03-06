@@ -78,6 +78,23 @@
                           Margin="0,0,0,8">
                     <ListView.View>
                         <GridView>
+                            <GridViewColumn x:Name="JobActionColumn"
+                                             Width="70">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding CancelText}"
+                                                Tag="{Binding JobId}"
+                                                Visibility="{Binding CanCancel, Converter={StaticResource BoolToVis}}"
+                                                Click="CancelButton_Click"
+                                                Padding="8,2"
+                                                Height="26"
+                                                FontSize="11"
+                                                Background="#33FF4444"
+                                                BorderBrush="#99FF4444"
+                                                Foreground="#FFFF8888" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                             <GridViewColumn x:Name="JobAppColumn"
                                             Width="180"
                                             DisplayMemberBinding="{Binding DisplayName}" />
@@ -96,23 +113,6 @@
                             <GridViewColumn x:Name="JobDetailColumn"
                                              Width="240"
                                              DisplayMemberBinding="{Binding Detail}" />
-                            <GridViewColumn x:Name="JobActionColumn"
-                                             Width="100">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="{Binding CancelText}"
-                                                Tag="{Binding JobId}"
-                                                Visibility="{Binding CanCancel, Converter={StaticResource BoolToVis}}"
-                                                Click="CancelButton_Click"
-                                                Padding="10,2"
-                                                Height="26"
-                                                FontSize="12"
-                                                Background="#33FF4444"
-                                                BorderBrush="#99FF4444"
-                                                Foreground="#FFFF8888" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>

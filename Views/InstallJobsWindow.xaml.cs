@@ -62,7 +62,6 @@ public partial class InstallJobsWindow : Window
         JobCompletedColumn.Header = AppLanguageService.GetString("Software.InstallJobs.Column.CompletedAt");
         JobDetailColumn.Header = AppLanguageService.GetString("Software.InstallJobs.Column.Detail");
         JobActionColumn.Header = AppLanguageService.GetString("Software.InstallJobs.Column.Action");
-        EmptyTextBlock.Text = AppLanguageService.GetString("Software.InstallJobs.Empty");
     }
 
     private void RefreshJobs(IReadOnlyList<AppInstallJobSnapshot> jobs)
@@ -73,9 +72,6 @@ public partial class InstallJobsWindow : Window
             .ToList();
 
         JobsListView.ItemsSource = rows;
-        EmptyTextBlock.Visibility = rows.Count == 0
-            ? Visibility.Visible
-            : Visibility.Collapsed;
 
         var inProgress = jobs.Count(j => j.State is AppInstallJobState.Queued or AppInstallJobState.Running);
         var completed = jobs.Count(j => j.State is AppInstallJobState.Succeeded or AppInstallJobState.Failed or AppInstallJobState.Canceled);
@@ -93,7 +89,7 @@ public partial class InstallJobsWindow : Window
             job.JobId,
             job.DisplayName,
             job.PackageId,
-            GetStateText(job.State),
+            GetStateText(job.State, job.JobType),
             ToTimeText(job.StartedAt ?? job.CreatedAt),
             ToTimeText(job.CompletedAt),
             string.IsNullOrWhiteSpace(job.Detail) ? "-" : job.Detail,
@@ -101,12 +97,19 @@ public partial class InstallJobsWindow : Window
             AppLanguageService.GetString("Software.InstallJobs.Button.Cancel"));
     }
 
-    private static string GetStateText(AppInstallJobState state)
+    private static string GetStateText(AppInstallJobState state, AppInstallJobType type)
     {
+        if (state == AppInstallJobState.Running)
+        {
+            bool isInstall = type == AppInstallJobType.Install || type == AppInstallJobType.WingetInstall;
+            return isInstall
+                ? AppLanguageService.GetString("Software.InstallJobs.State.Running")
+                : AppLanguageService.GetString("Software.InstallJobs.State.Uninstalling");
+        }
+
         return state switch
         {
             AppInstallJobState.Queued => AppLanguageService.GetString("Software.InstallJobs.State.Queued"),
-            AppInstallJobState.Running => AppLanguageService.GetString("Software.InstallJobs.State.Running"),
             AppInstallJobState.Succeeded => AppLanguageService.GetString("Software.InstallJobs.State.Succeeded"),
             AppInstallJobState.Failed => AppLanguageService.GetString("Software.InstallJobs.State.Failed"),
             AppInstallJobState.Canceled => AppLanguageService.GetString("Software.InstallJobs.State.Canceled"),

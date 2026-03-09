@@ -14,6 +14,14 @@ internal enum AppInstallJobState
     Canceled
 }
 
+internal enum AppInstallJobType
+{
+    Install,
+    Uninstall,
+    WingetInstall,
+    WingetUninstall
+}
+
 internal enum AppInstallEnqueueResult
 {
     Queued,
@@ -30,6 +38,7 @@ internal sealed record AppInstallJobSnapshot(
     string PackageId,
     string DisplayName,
     AppInstallJobState State,
+    AppInstallJobType JobType,
     DateTimeOffset CreatedAt,
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
@@ -43,6 +52,7 @@ internal static class AppInstallJobService
         internal string PackageId { get; init; } = string.Empty;
         internal string DisplayName { get; init; } = string.Empty;
         internal AppInstallJobState State { get; set; } = AppInstallJobState.Queued;
+        internal AppInstallJobType JobType { get; init; } = AppInstallJobType.Install;
         internal DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.Now;
         internal DateTimeOffset? StartedAt { get; set; }
         internal DateTimeOffset? CompletedAt { get; set; }
@@ -58,7 +68,27 @@ internal static class AppInstallJobService
     internal static event Action<IReadOnlyList<AppInstallJobSnapshot>>? JobsChanged;
     internal static event Action<AppInstallJobSnapshot>? JobCompleted;
 
+    internal static AppInstallEnqueueResponse QueueWingetInstall()
+    {
+        return QueueInternal("__WINGET_INSTALL__", "Windows Package Manager", AppInstallJobType.WingetInstall);
+    }
+
+    internal static AppInstallEnqueueResponse QueueWingetUninstall()
+    {
+        return QueueInternal("__WINGET_UNINSTALL__", "Windows Package Manager", AppInstallJobType.WingetUninstall);
+    }
+
     internal static AppInstallEnqueueResponse QueueInstall(string? packageId, string? displayName = null)
+    {
+        return QueueInternal(packageId, displayName, AppInstallJobType.Install);
+    }
+
+    internal static AppInstallEnqueueResponse QueueUninstall(string? packageIdOrName, string? displayName = null)
+    {
+        return QueueInternal(packageIdOrName, displayName, AppInstallJobType.Uninstall);
+    }
+
+    private static AppInstallEnqueueResponse QueueInternal(string? packageId, string? displayName, AppInstallJobType jobType)
     {
         var normalizedPackageId = NormalizePackageId(packageId);
         if (string.IsNullOrWhiteSpace(normalizedPackageId))
@@ -89,7 +119,8 @@ internal static class AppInstallJobService
                 queuedJob = new AppInstallJobEntry
                 {
                     PackageId = normalizedPackageId,
-                    DisplayName = normalizedDisplayName
+                    DisplayName = normalizedDisplayName,
+                    JobType = jobType
                 };
 
                 BusyPackages.Add(normalizedPackageId);
@@ -100,9 +131,12 @@ internal static class AppInstallJobService
 
         if (existingJob != null)
         {
+            var titleKey = existingJob.JobType == AppInstallJobType.Install || existingJob.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.Title" : "Toast.Uninstall.Title";
+            var msgKey = existingJob.JobType == AppInstallJobType.Install || existingJob.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.AlreadyQueuedFormat" : "Toast.Uninstall.AlreadyQueuedFormat";
+
             AppToastService.Show(new AppToastMessage(
-                AppLanguageService.GetString("Toast.Install.Title"),
-                AppLanguageService.Format("Toast.Install.AlreadyQueuedFormat", existingJob.DisplayName),
+                AppLanguageService.GetString(titleKey),
+                AppLanguageService.Format(msgKey, existingJob.DisplayName),
                 AppToastType.Warning));
 
             return new AppInstallEnqueueResponse(AppInstallEnqueueResult.AlreadyQueued, existingJob);
@@ -115,9 +149,12 @@ internal static class AppInstallJobService
 
         RaiseJobsChanged(jobsSnapshot);
 
+        var queueTitleKey = queuedJob.JobType == AppInstallJobType.Install || queuedJob.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.Title" : "Toast.Uninstall.Title";
+        var queueMsgKey = queuedJob.JobType == AppInstallJobType.Install || queuedJob.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.QueuedFormat" : "Toast.Uninstall.QueuedFormat";
+
         AppToastService.Show(new AppToastMessage(
-            AppLanguageService.GetString("Toast.Install.Title"),
-            AppLanguageService.Format("Toast.Install.QueuedFormat", queuedJob.DisplayName),
+            AppLanguageService.GetString(queueTitleKey),
+            AppLanguageService.Format(queueMsgKey, queuedJob.DisplayName),
             AppToastType.Info));
 
         _ = RunInstallJobAsync(queuedJob);
@@ -217,9 +254,13 @@ internal static class AppInstallJobService
         }
 
         RaiseJobsChanged(jobsSnapshot);
+
+        var runTitleKey = job.JobType == AppInstallJobType.Install || job.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.Title" : "Toast.Uninstall.Title";
+        var runMsgKey = job.JobType == AppInstallJobType.Install || job.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.StartedFormat" : "Toast.Uninstall.StartedFormat";
+
         AppToastService.Show(new AppToastMessage(
-            AppLanguageService.GetString("Toast.Install.Title"),
-            AppLanguageService.Format("Toast.Install.StartedFormat", job.DisplayName),
+            AppLanguageService.GetString(runTitleKey),
+            AppLanguageService.Format(runMsgKey, job.DisplayName),
             AppToastType.Info));
 
         var detail = string.Empty;
@@ -227,7 +268,16 @@ internal static class AppInstallJobService
 
         try
         {
-            var result = await WingetService.InstallPackageAsync(job.PackageId, cts.Token).ConfigureAwait(false);
+            (bool Success, string Detail) result;
+            if (job.JobType == AppInstallJobType.Install)
+                result = await WingetService.InstallPackageAsync(job.PackageId, cts.Token).ConfigureAwait(false);
+            else if (job.JobType == AppInstallJobType.Uninstall)
+                result = await WingetService.UninstallPackageAsync(job.PackageId, cts.Token).ConfigureAwait(false);
+            else if (job.JobType == AppInstallJobType.WingetInstall)
+                result = await WingetService.InstallOrRepairWingetAsync().ConfigureAwait(false);
+            else
+                result = await WingetService.RemoveWingetAsync().ConfigureAwait(false);
+
             if (result.Success)
             {
                 state = AppInstallJobState.Succeeded;
@@ -271,16 +321,22 @@ internal static class AppInstallJobService
 
         if (state == AppInstallJobState.Succeeded)
         {
+            var successTitleKey = job.JobType == AppInstallJobType.Install || job.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.Title" : "Toast.Uninstall.Title";
+            var successMsgKey = job.JobType == AppInstallJobType.Install || job.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.SuccessFormat" : "Toast.Uninstall.SuccessFormat";
+
             AppToastService.Show(new AppToastMessage(
-                AppLanguageService.GetString("Toast.Install.Title"),
-                AppLanguageService.Format("Toast.Install.SuccessFormat", job.DisplayName),
+                AppLanguageService.GetString(successTitleKey),
+                AppLanguageService.Format(successMsgKey, job.DisplayName),
                 AppToastType.Success));
         }
         else
         {
+            var failTitleKey = job.JobType == AppInstallJobType.Install || job.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.Title" : "Toast.Uninstall.Title";
+            var failMsgKey = job.JobType == AppInstallJobType.Install || job.JobType == AppInstallJobType.WingetInstall ? "Toast.Install.FailedFormat" : "Toast.Uninstall.FailedFormat";
+
             AppToastService.Show(new AppToastMessage(
-                AppLanguageService.GetString("Toast.Install.Title"),
-                AppLanguageService.Format("Toast.Install.FailedFormat", job.DisplayName, detail),
+                AppLanguageService.GetString(failTitleKey),
+                AppLanguageService.Format(failMsgKey, job.DisplayName, detail),
                 AppToastType.Error));
         }
 
@@ -311,6 +367,7 @@ internal static class AppInstallJobService
             job.PackageId,
             job.DisplayName,
             job.State,
+            job.JobType,
             job.CreatedAt,
             job.StartedAt,
             job.CompletedAt,

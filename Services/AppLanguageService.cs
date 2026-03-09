@@ -13,6 +13,8 @@ internal static class AppLanguageService
     private static readonly ResourceManager ResourceManager = new(
         "WinstallerHubApp.Resources.Strings",
         typeof(AppLanguageService).Assembly);
+    
+    private static CultureInfo _currentCulture = CultureInfo.GetCultureInfo(VietnameseCode);
 
     internal static string CurrentLanguageCode { get; private set; } = VietnameseCode;
 
@@ -43,6 +45,7 @@ internal static class AppLanguageService
 
         Thread.CurrentThread.CurrentCulture = culture;
         Thread.CurrentThread.CurrentUICulture = culture;
+        _currentCulture = culture;
 
         var hasChanged = !string.Equals(CurrentLanguageCode, normalizedCode, StringComparison.OrdinalIgnoreCase);
         CurrentLanguageCode = normalizedCode;
@@ -59,7 +62,7 @@ internal static class AppLanguageService
             return string.Empty;
         }
 
-        return ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;
+        return ResourceManager.GetString(key, _currentCulture) ?? key;
     }
 
     internal static string Format(string key, params object[] args)
@@ -70,6 +73,6 @@ internal static class AppLanguageService
             return template;
         }
 
-        return string.Format(CultureInfo.CurrentCulture, template, args);
+        return string.Format(_currentCulture, template, args);
     }
 }

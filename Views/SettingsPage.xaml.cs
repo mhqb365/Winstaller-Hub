@@ -29,8 +29,6 @@ public partial class SettingsPage : Page
         ReloadLanguageOptions();
         ThemeToggleSwitch.IsOn = settings.UseDarkTheme;
         UpdateLocalizedText();
-        UpdateThemeModeLabel(settings.UseDarkTheme);
-
         _isInitializing = false;
     }
 
@@ -49,7 +47,6 @@ public partial class SettingsPage : Page
         var useDarkTheme = ThemeToggleSwitch.IsOn;
         ThemeService.ApplyTheme(useDarkTheme);
         AppSettingsService.Update(s => s.UseDarkTheme = useDarkTheme);
-        UpdateThemeModeLabel(useDarkTheme);
     }
 
     private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -75,7 +72,6 @@ public partial class SettingsPage : Page
             _isInitializing = false;
 
             UpdateLocalizedText();
-            UpdateThemeModeLabel(ThemeToggleSwitch.IsOn);
         });
     }
 
@@ -104,13 +100,6 @@ public partial class SettingsPage : Page
 
         LanguageTitleTextBlock.Text = AppLanguageService.GetString("Settings.Language.Title");
         LanguageDescriptionTextBlock.Text = AppLanguageService.GetString("Settings.Language.Description");
-    }
-
-    private void UpdateThemeModeLabel(bool useDarkTheme)
-    {
-        ThemeModeLabelTextBlock.Text = useDarkTheme
-            ? AppLanguageService.GetString("Settings.ThemeMode.Dark")
-            : AppLanguageService.GetString("Settings.ThemeMode.Light");
     }
 
     private readonly record struct LanguageOption(string Code, string DisplayName);

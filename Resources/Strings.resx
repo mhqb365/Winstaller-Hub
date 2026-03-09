@@ -249,6 +249,9 @@
   <data name="Settings.Appearance.Description" xml:space="preserve">
     <value>Chuyển đổi giữa chế độ tối và sáng</value>
   </data>
+  <data name="Settings.Appearance.DarkMode" xml:space="preserve">
+    <value>Chế độ tối</value>
+  </data>
   <data name="Settings.Appearance.Title" xml:space="preserve">
     <value>Giao diện</value>
   </data>
@@ -260,6 +263,9 @@
   </data>
   <data name="Settings.Language.Hint" xml:space="preserve">
     <value>Một số màn hình sẽ đổi ngôn ngữ khi bạn mở lại trang.</value>
+  </data>
+  <data name="Settings.Language.Display" xml:space="preserve">
+    <value>Ngôn ngữ hiển thị</value>
   </data>
   <data name="Settings.Language.Title" xml:space="preserve">
     <value>Ngôn ngữ</value>
@@ -319,13 +325,13 @@
     <value>Bo mạch chủ không rõ</value>
   </data>
   <data name="Software.Winget.Button.Installing" xml:space="preserve">
-    <value>Đang cài...</value>
+    <value>Đang cài</value>
   </data>
   <data name="Software.Common.ErrorFormat" xml:space="preserve">
     <value>Lỗi: {0}</value>
   </data>
   <data name="Software.Installed.Status.Loading" xml:space="preserve">
-    <value>Đang quét ứng dụng đã cài...</value>
+    <value>Đang quét ứng dụng đã cài</value>
   </data>
   <data name="Software.Trending.Status.Ready" xml:space="preserve">
     <value>Bạn có thể cài nhanh từ danh sách thịnh hành bên dưới</value>
@@ -337,7 +343,10 @@
     <value>Ứng dụng đã cài</value>
   </data>
   <data name="Software.Winget.Button.Repair" xml:space="preserve">
-    <value>Khắc phục Winget</value>
+    <value>Cập nhật Winget</value>
+  </data>
+  <data name="Software.Winget.Button.Remove" xml:space="preserve">
+    <value>Gỡ Winget</value>
   </data>
   <data name="Software.Trending.Description" xml:space="preserve">
     <value>Danh sách app phổ biến từ hệ sinh thái Winget</value>
@@ -346,16 +355,25 @@
     <value>Cài Winget</value>
   </data>
   <data name="Software.Winget.Status.RepairNeeded" xml:space="preserve">
-    <value>Đã có App Installer nhưng lệnh winget chưa sẵn sàng. Hãy bấm Khắc phục.</value>
+    <value>Đã có App Installer nhưng lệnh winget chưa sẵn sàng. Hãy bấm Cập nhật.</value>
   </data>
   <data name="Software.Winget.Status.VersionFormat" xml:space="preserve">
     <value>Phiên bản: {0}</value>
+  </data>
+  <data name="Software.Winget.Status.LatestVersionFormat" xml:space="preserve">
+    <value>Bản mới nhất: {0}</value>
   </data>
   <data name="Software.Winget.Title" xml:space="preserve">
     <value>Winget</value>
   </data>
   <data name="Software.Winget.Status.Ready" xml:space="preserve">
     <value>Winget đã sẵn sàng</value>
+  </data>
+  <data name="Software.Winget.Status.Outdated" xml:space="preserve">
+    <value>Cần cập nhật Winget</value>
+  </data>
+  <data name="Software.Winget.Button.Update" xml:space="preserve">
+    <value>Cập nhật</value>
   </data>
   <data name="Software.Installed.Status.CountFormat" xml:space="preserve">
     <value>Đã tìm thấy {0} ứng dụng</value>
@@ -382,7 +400,7 @@
     <value>Cài/khắc phục Winget thất bại: {0}</value>
   </data>
   <data name="Software.Trending.Button.Installing" xml:space="preserve">
-    <value>Đang cài...</value>
+    <value>Đang cài</value>
   </data>
   <data name="Software.Trending.Button.Installed" xml:space="preserve">
     <value>Đã cài</value>
@@ -412,13 +430,25 @@
     <value>Tìm kiếm</value>
   </data>
   <data name="Software.Winget.Status.Checking" xml:space="preserve">
-    <value>Đang kiểm tra Winget...</value>
+    <value>Đang kiểm tra Winget</value>
   </data>
   <data name="Software.Installed.Column.Name" xml:space="preserve">
     <value>Tên ứng dụng</value>
   </data>
   <data name="Software.Common.UnknownError" xml:space="preserve">
     <value>Lỗi không xác định</value>
+  </data>
+  <data name="Software.Installed.Column.Action" xml:space="preserve">
+    <value>Thao tác</value>
+  </data>
+  <data name="Software.Installed.Button.Uninstall" xml:space="preserve">
+    <value>Gỡ cài đặt</value>
+  </data>
+  <data name="Software.Installed.UninstallConfirmation" xml:space="preserve">
+    <value>Bạn có chắc chắn muốn gỡ cài đặt '{0}' không?</value>
+  </data>
+  <data name="Software.Installed.UninstallTitle" xml:space="preserve">
+    <value>Xác nhận gỡ cài đặt</value>
   </data>
   <data name="Software.InstallJobs.Button.Manage" xml:space="preserve">
     <value>Quản lý cài đặt</value>
@@ -468,6 +498,9 @@
   <data name="Software.InstallJobs.State.Running" xml:space="preserve">
     <value>Đang cài</value>
   </data>
+  <data name="Software.InstallJobs.State.Uninstalling" xml:space="preserve">
+    <value>Đang gỡ bỏ</value>
+  </data>
   <data name="Software.InstallJobs.State.Succeeded" xml:space="preserve">
     <value>Thành công</value>
   </data>
@@ -504,6 +537,21 @@
   <data name="Toast.Install.FailedFormat" xml:space="preserve">
     <value>Cài đặt thất bại: {0}. {1}</value>
   </data>
+  <data name="Toast.Uninstall.Title" xml:space="preserve">
+    <value>Trình gỡ cài đặt</value>
+  </data>
+  <data name="Toast.Uninstall.QueuedFormat" xml:space="preserve">
+    <value>Đã xếp hàng gỡ bỏ: {0}</value>
+  </data>
+  <data name="Toast.Uninstall.StartedFormat" xml:space="preserve">
+    <value>Đang gỡ cài đặt: {0}</value>
+  </data>
+  <data name="Toast.Uninstall.SuccessFormat" xml:space="preserve">
+    <value>Đã gỡ cài đặt xong: {0}</value>
+  </data>
+  <data name="Toast.Uninstall.FailedFormat" xml:space="preserve">
+    <value>Gỡ cài đặt thất bại: {0}. {1}</value>
+  </data>
   <data name="Toast.Install.SuccessDetail" xml:space="preserve">
     <value>Hoàn tất</value>
   </data>
@@ -526,7 +574,7 @@
     <value>Nhập tên app hoặc package ID rồi bấm Tìm.</value>
   </data>
   <data name="Software.Search.Status.Searching" xml:space="preserve">
-    <value>Đang tìm gói từ Winget...</value>
+    <value>Đang tìm gói từ Winget</value>
   </data>
   <data name="Software.Search.Status.CountFormat" xml:space="preserve">
     <value>Tìm thấy {0} gói.</value>

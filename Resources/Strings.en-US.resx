@@ -249,6 +249,9 @@
   <data name="Settings.Appearance.Description" xml:space="preserve">
     <value>Switch between dark and light mode</value>
   </data>
+  <data name="Settings.Appearance.DarkMode" xml:space="preserve">
+    <value>Dark mode</value>
+  </data>
   <data name="Settings.Appearance.Title" xml:space="preserve">
     <value>Appearance</value>
   </data>
@@ -260,6 +263,9 @@
   </data>
   <data name="Settings.Language.Hint" xml:space="preserve">
     <value>Some screens update after reopening that page.</value>
+  </data>
+  <data name="Settings.Language.Display" xml:space="preserve">
+    <value>Display language</value>
   </data>
   <data name="Settings.Language.Title" xml:space="preserve">
     <value>Language</value>
@@ -319,13 +325,13 @@
     <value>Unknown Motherboard</value>
   </data>
   <data name="Software.Winget.Button.Installing" xml:space="preserve">
-    <value>Installing...</value>
+    <value>Installing</value>
   </data>
   <data name="Software.Common.ErrorFormat" xml:space="preserve">
     <value>Error: {0}</value>
   </data>
   <data name="Software.Installed.Status.Loading" xml:space="preserve">
-    <value>Scanning installed applications...</value>
+    <value>Scanning installed applications</value>
   </data>
   <data name="Software.Trending.Status.Ready" xml:space="preserve">
     <value>You can quickly install from trending list below</value>
@@ -337,7 +343,10 @@
     <value>Installed applications</value>
   </data>
   <data name="Software.Winget.Button.Repair" xml:space="preserve">
-    <value>Repair Winget</value>
+    <value>Update Winget</value>
+  </data>
+  <data name="Software.Winget.Button.Remove" xml:space="preserve">
+    <value>Remove Winget</value>
   </data>
   <data name="Software.Trending.Description" xml:space="preserve">
     <value>Popular apps from the Winget ecosystem</value>
@@ -346,16 +355,25 @@
     <value>Install Winget</value>
   </data>
   <data name="Software.Winget.Status.RepairNeeded" xml:space="preserve">
-    <value>Desktop App Installer is present but winget command is unavailable. Click Repair.</value>
+    <value>App Installer is present but winget command is unavailable. Click Update.</value>
   </data>
   <data name="Software.Winget.Status.VersionFormat" xml:space="preserve">
     <value>Version: {0}</value>
+  </data>
+  <data name="Software.Winget.Status.LatestVersionFormat" xml:space="preserve">
+    <value>Latest version: {0}</value>
   </data>
   <data name="Software.Winget.Title" xml:space="preserve">
     <value>Winget</value>
   </data>
   <data name="Software.Winget.Status.Ready" xml:space="preserve">
     <value>Winget is ready</value>
+  </data>
+  <data name="Software.Winget.Status.Outdated" xml:space="preserve">
+    <value>Winget update required</value>
+  </data>
+  <data name="Software.Winget.Button.Update" xml:space="preserve">
+    <value>Update</value>
   </data>
   <data name="Software.Installed.Status.CountFormat" xml:space="preserve">
     <value>Found {0} applications</value>
@@ -382,7 +400,7 @@
     <value>Winget install/repair failed: {0}</value>
   </data>
   <data name="Software.Trending.Button.Installing" xml:space="preserve">
-    <value>Installing...</value>
+    <value>Installing</value>
   </data>
   <data name="Software.Trending.Button.Installed" xml:space="preserve">
     <value>Installed</value>
@@ -412,13 +430,25 @@
     <value>Search</value>
   </data>
   <data name="Software.Winget.Status.Checking" xml:space="preserve">
-    <value>Checking Winget...</value>
+    <value>Checking Winget</value>
   </data>
   <data name="Software.Installed.Column.Name" xml:space="preserve">
     <value>Application</value>
   </data>
   <data name="Software.Common.UnknownError" xml:space="preserve">
     <value>Unknown error</value>
+  </data>
+  <data name="Software.Installed.Column.Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Software.Installed.Button.Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Software.Installed.UninstallConfirmation" xml:space="preserve">
+    <value>Are you sure you want to uninstall '{0}'?</value>
+  </data>
+  <data name="Software.Installed.UninstallTitle" xml:space="preserve">
+    <value>Confirm Uninstall</value>
   </data>
   <data name="Software.InstallJobs.Button.Manage" xml:space="preserve">
     <value>Manage installs</value>
@@ -468,6 +498,9 @@
   <data name="Software.InstallJobs.State.Running" xml:space="preserve">
     <value>Installing</value>
   </data>
+  <data name="Software.InstallJobs.State.Uninstalling" xml:space="preserve">
+    <value>Uninstalling</value>
+  </data>
   <data name="Software.InstallJobs.State.Succeeded" xml:space="preserve">
     <value>Succeeded</value>
   </data>
@@ -504,6 +537,21 @@
   <data name="Toast.Install.FailedFormat" xml:space="preserve">
     <value>Install failed: {0}. {1}</value>
   </data>
+  <data name="Toast.Uninstall.Title" xml:space="preserve">
+    <value>Uninstaller</value>
+  </data>
+  <data name="Toast.Uninstall.QueuedFormat" xml:space="preserve">
+    <value>Queued for removal: {0}</value>
+  </data>
+  <data name="Toast.Uninstall.StartedFormat" xml:space="preserve">
+    <value>Uninstalling: {0}</value>
+  </data>
+  <data name="Toast.Uninstall.SuccessFormat" xml:space="preserve">
+    <value>Uninstall completed: {0}</value>
+  </data>
+  <data name="Toast.Uninstall.FailedFormat" xml:space="preserve">
+    <value>Uninstall failed: {0}. {1}</value>
+  </data>
   <data name="Toast.Install.SuccessDetail" xml:space="preserve">
     <value>Completed</value>
   </data>
@@ -526,7 +574,7 @@
     <value>Type app name or package ID, then press Find.</value>
   </data>
   <data name="Software.Search.Status.Searching" xml:space="preserve">
-    <value>Searching packages from Winget...</value>
+    <value>Searching packages from Winget</value>
   </data>
   <data name="Software.Search.Status.CountFormat" xml:space="preserve">
     <value>Found {0} packages.</value>

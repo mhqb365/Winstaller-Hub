@@ -117,12 +117,7 @@
                     </ListView.View>
                 </ListView>
 
-                <TextBlock x:Name="EmptyTextBlock"
-                           Grid.Row="2"
-                           Text=""
-                           FontSize="13"
-                           Foreground="{DynamicResource AppTextMutedBrush}"
-                           Visibility="Collapsed" />
+                <!-- Empty progress message removed by user request -->
             </Grid>
         </Border>
 

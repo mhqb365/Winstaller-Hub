@@ -33,72 +33,69 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel>
+                    <StackPanel VerticalAlignment="Center">
                         <TextBlock x:Name="AppearanceTitleTextBlock"
                                    Text=""
                                    FontSize="24"
                                    FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}"
                                    Margin="0,0,0,8" />
 
                         <TextBlock x:Name="AppearanceDescriptionTextBlock"
                                    Text=""
                                    FontSize="15"
-                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
-                                   Opacity="0.9" />
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <TextBlock x:Name="ThemeModeLabelTextBlock"
-                                   Text=""
-                                   VerticalAlignment="Center"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AppTextPrimaryBrush}"
-                                   Margin="0,0,12,0" />
+                                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                       Opacity="0.9" />
+                        </StackPanel>
 
                         <ui:ToggleSwitch x:Name="ThemeToggleSwitch"
+                                         Grid.Column="1"
+                                         VerticalAlignment="Center"
+                                         HorizontalAlignment="Right"
+                                         Padding="0"
                                          OnContent="{x:Null}"
                                          OffContent="{x:Null}"
-                                         Toggled="ThemeToggleSwitch_Toggled" />
-                    </StackPanel>
-                </Grid>
+                                         Toggled="ThemeToggleSwitch_Toggled">
+                            <ui:ToggleSwitch.LayoutTransform>
+                                <ScaleTransform ScaleX="1.3" ScaleY="1.3" />
+                            </ui:ToggleSwitch.LayoutTransform>
+                        </ui:ToggleSwitch>
+                    </Grid>
             </Border>
 
-            <Border Style="{StaticResource CardStyle}">
+            <Border Style="{StaticResource CardStyle}" Margin="0,16,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel>
+                    <StackPanel VerticalAlignment="Center">
                         <TextBlock x:Name="LanguageTitleTextBlock"
                                    Text=""
                                    FontSize="24"
                                    FontWeight="Bold"
+                                   Foreground="{DynamicResource AppTextPrimaryBrush}"
                                    Margin="0,0,0,8" />
 
                         <TextBlock x:Name="LanguageDescriptionTextBlock"
                                    Text=""
                                    FontSize="15"
-                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
-                                   Opacity="0.9" />
-                    </StackPanel>
+                                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                       Opacity="0.9" />
+                        </StackPanel>
 
-                    <ComboBox x:Name="LanguageComboBox"
-                              Grid.Column="1"
-                              Width="230"
-                              Height="38"
-                              HorizontalAlignment="Right"
-                              VerticalAlignment="Center"
-                              Margin="20,0,0,0"
-                              Foreground="{DynamicResource AppTextPrimaryBrush}"
-                              DisplayMemberPath="DisplayName"
-                              SelectedValuePath="Code"
-                              SelectionChanged="LanguageComboBox_SelectionChanged" />
-                </Grid>
+                        <ComboBox x:Name="LanguageComboBox"
+                                  Grid.Column="1"
+                                  Width="200"
+                                  Height="34"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="Code"
+                                  SelectionChanged="LanguageComboBox_SelectionChanged" />
+                    </Grid>
             </Border>
 
         </StackPanel>

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Net.Http;
 using Microsoft.Win32;
 
 namespace WinstallerHubApp.Services;
@@ -13,7 +14,9 @@ namespace WinstallerHubApp.Services;
 internal sealed record WingetStatus(
     bool IsReady,
     bool DesktopAppInstallerInstalled,
-    string Version);
+    string Version,
+    bool IsOutdated = false,
+    string? LatestVersion = null);
 
 internal sealed record WingetTrendingApp(
     string Id,
@@ -46,9 +49,38 @@ internal sealed class WingetService
         new("Spotify.Spotify", "Spotify", "Music streaming")
     ];
 
-    internal Task<WingetStatus> GetWingetStatusAsync()
+    internal async Task<WingetStatus> GetWingetStatusAsync()
     {
-        return Task.Run(GetWingetStatus);
+        var localStatus = await Task.Run(GetWingetStatus).ConfigureAwait(false);
+        var latestVersion = await GetLatestWingetVersionAsync().ConfigureAwait(false);
+        
+        return localStatus with { LatestVersion = latestVersion };
+    }
+
+    private static async Task<string?> GetLatestWingetVersionAsync()
+    {
+        try
+        {
+            using var client = new HttpClient();
+            // GitHub requires a User-Agent
+            client.DefaultRequestHeaders.Add("User-Agent", "WinstallerHubApp");
+            
+            // We use the redirect URL for the latest release which is faster and more reliable than the full API for simple version checking
+            var response = await client.GetAsync("https://github.com/microsoft/winget-cli/releases/latest", HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            
+            // The URL will be something like .../releases/tag/v1.9.2521
+            var absoluteUrl = response.RequestMessage?.RequestUri?.ToString();
+            if (string.IsNullOrWhiteSpace(absoluteUrl)) return null;
+
+            var tagIndex = absoluteUrl.LastIndexOf("/tag/", StringComparison.OrdinalIgnoreCase);
+            if (tagIndex > 0)
+            {
+                var version = absoluteUrl.Substring(tagIndex + 5);
+                return version.Trim();
+            }
+        }
+        catch { }
+        return null;
     }
 
     internal IReadOnlyList<WingetTrendingApp> GetTrendingApps()
@@ -61,6 +93,11 @@ internal sealed class WingetService
         return Task.Run(InstallOrRepairWinget);
     }
 
+    internal Task<(bool Success, string Detail)> RemoveWingetAsync()
+    {
+        return Task.Run(RemoveWinget);
+    }
+
     internal Task<(bool Success, string Detail)> InstallPackageAsync(string packageId, CancellationToken ct = default)
     {
         return Task.Run(() =>
@@ -70,22 +107,86 @@ internal sealed class WingetService
                 return (false, "Invalid package id.");
             }
 
+            var status = GetWingetStatus();
+            var args = new List<string> { "install", "--id", packageId, "--exact" };
+
+            // Flags supported in newer versions
+            if (status.Version != null && !status.IsOutdated)
+            {
+                args.Add("--accept-package-agreements");
+                args.Add("--accept-source-agreements");
+            }
+            else
+            {
+                // For older versions, try at least source agreement
+                args.Add("--accept-source-agreements");
+            }
+            
+            args.Add("--disable-interactivity");
+
             var result = RunProcess(
                 "winget",
-                [
-                    "install",
-                    "--id", packageId,
-                    "--exact",
-                    "--accept-package-agreements",
-                    "--accept-source-agreements",
-                    "--disable-interactivity"
-                ],
+                args.ToArray(),
                 timeoutMs: 900_000,
                 ct: ct);
 
-            return result.ExitCode == 0
-                ? (true, string.Empty)
-                : (false, FirstNonEmptyLine(result.StdErr, result.StdOut));
+            if (result.ExitCode == 0) return (true, string.Empty);
+
+            var errorMsg = FirstNonEmptyLine(result.StdErr, result.StdOut);
+            if (string.IsNullOrWhiteSpace(errorMsg))
+            {
+                errorMsg = $"Lỗi hệ thống (Mã: {result.ExitCode})";
+            }
+            else if (!errorMsg.Contains(result.ExitCode.ToString()))
+            {
+                errorMsg = $"{errorMsg} (Mã: {result.ExitCode:X})";
+            }
+
+            return (false, errorMsg);
+        }, ct);
+    }
+
+    internal Task<(bool Success, string Detail)> UninstallPackageAsync(string packageIdOrName, CancellationToken ct = default)
+    {
+        return Task.Run(() =>
+        {
+            if (string.IsNullOrWhiteSpace(packageIdOrName))
+            {
+                return (false, "Invalid package.");
+            }
+
+            var status = GetWingetStatus();
+            var args = new List<string> { "uninstall" };
+            args.Add(packageIdOrName.Contains('.') ? "--id" : "--name");
+            args.Add(packageIdOrName);
+            args.Add("--exact");
+            
+            if (status.Version != null && !status.IsOutdated)
+            {
+                args.Add("--accept-source-agreements");
+            }
+            
+            args.Add("--disable-interactivity");
+
+            var result = RunProcess(
+                "winget",
+                args.ToArray(),
+                timeoutMs: 900_000,
+                ct: ct);
+
+            if (result.ExitCode == 0) return (true, string.Empty);
+
+            var errorMsg = FirstNonEmptyLine(result.StdErr, result.StdOut);
+            if (string.IsNullOrWhiteSpace(errorMsg))
+            {
+                errorMsg = $"Lỗi gỡ cài đặt (Mã: {result.ExitCode})";
+            }
+            else
+            {
+                errorMsg = $"{errorMsg} (Mã: {result.ExitCode:X})";
+            }
+
+            return (false, errorMsg);
         }, ct);
     }
 
@@ -104,10 +205,14 @@ internal sealed class WingetService
         var versionResult = RunProcess("winget", ["--version"], timeoutMs: 15_000);
         if (versionResult.ExitCode == 0)
         {
+            var versionString = FirstNonEmptyLine(versionResult.StdOut, versionResult.StdErr);
+            var isOutdated = IsVersionOutdated(versionString);
+
             return new WingetStatus(
                 true,
                 true,
-                FirstNonEmptyLine(versionResult.StdOut, versionResult.StdErr));
+                versionString,
+                isOutdated);
         }
 
         var packageVersion = GetDesktopAppInstallerVersion();
@@ -115,7 +220,38 @@ internal sealed class WingetService
         return new WingetStatus(
             false,
             installed,
-            installed ? packageVersion : string.Empty);
+            installed ? packageVersion : string.Empty,
+            installed && IsVersionOutdated(packageVersion));
+    }
+
+    private static bool IsVersionOutdated(string version)
+    {
+        if (string.IsNullOrWhiteSpace(version)) return true;
+
+        var cleanVersion = version.Trim().TrimStart('v').Trim();
+        
+        try
+        {
+            // We now recommend v1.6+ for best compatibility
+            if (Version.TryParse(cleanVersion, out var v))
+            {
+                return v < new Version(1, 6);
+            }
+
+            // Fallback for weird formats (1.1, 1.2, 1.3, 1.4, 1.5)
+            if (cleanVersion.StartsWith("1.0.") || 
+                cleanVersion.StartsWith("1.1.") || 
+                cleanVersion.StartsWith("1.2.") || 
+                cleanVersion.StartsWith("1.3.") ||
+                cleanVersion.StartsWith("1.4.") ||
+                cleanVersion.StartsWith("1.5."))
+            {
+                return true;
+            }
+        }
+        catch { }
+
+        return false;
     }
 
     private static (bool Success, string Detail) InstallOrRepairWinget()
@@ -138,9 +274,19 @@ internal sealed class WingetService
                 ],
                 timeoutMs: 900_000);
 
-            return result.ExitCode == 0
-                ? (true, string.Empty)
-                : (false, FirstNonEmptyLine(result.StdErr, result.StdOut));
+            if (result.ExitCode == 0) return (true, string.Empty);
+
+            var errorDetail = FirstNonEmptyLine(result.StdErr, result.StdOut);
+            if (string.IsNullOrWhiteSpace(errorDetail))
+            {
+                errorDetail = $"Tiến trình cài đặt thoát với mã lỗi {result.ExitCode}.";
+            }
+            else
+            {
+                errorDetail = $"{errorDetail} (Mã lỗi: {result.ExitCode})";
+            }
+
+            return (false, errorDetail);
         }
         catch (Exception ex)
         {
@@ -161,91 +307,145 @@ internal sealed class WingetService
         }
     }
 
+    private static (bool Success, string Detail) RemoveWinget()
+    {
+        var scriptPath = string.Empty;
+        try
+        {
+            scriptPath = Path.Combine(
+                Path.GetTempPath(),
+                $"winstaller-winget-remove-{Guid.NewGuid():N}.ps1");
+
+            File.WriteAllText(scriptPath, BuildWingetRemoveScript(), Encoding.UTF8);
+
+            var result = RunProcess(
+                "powershell",
+                [
+                    "-NoProfile",
+                    "-ExecutionPolicy", "Bypass",
+                    "-File", scriptPath
+                ],
+                timeoutMs: 300_000);
+
+            if (result.ExitCode == 0) return (true, string.Empty);
+
+            var errorDetail = FirstNonEmptyLine(result.StdErr, result.StdOut);
+            if (string.IsNullOrWhiteSpace(errorDetail))
+            {
+                errorDetail = $"Tiến trình gỡ cài đặt thoát với mã lỗi {result.ExitCode}.";
+            }
+            else
+            {
+                errorDetail = $"{errorDetail} (Mã lỗi: {result.ExitCode})";
+            }
+
+            return (false, errorDetail);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+        finally
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(scriptPath) && File.Exists(scriptPath))
+                {
+                    File.Delete(scriptPath);
+                }
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    private static string BuildWingetRemoveScript()
+    {
+        return """
+            $ErrorActionPreference = "SilentlyContinue"
+            $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            
+            Write-Output "Removing Winget (DesktopAppInstaller)..."
+            if ($isAdmin) {
+                Get-AppxPackage Microsoft.DesktopAppInstaller -AllUsers | Remove-AppxPackage -AllUsers
+                Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq "Microsoft.DesktopAppInstaller" } | Remove-AppxProvisionedPackage -Online
+            } else {
+                Get-AppxPackage Microsoft.DesktopAppInstaller | Remove-AppxPackage
+            }
+            
+            Write-Output "Removing Microsoft Store..."
+            if ($isAdmin) {
+                Get-AppxPackage Microsoft.WindowsStore -AllUsers | Remove-AppxPackage -AllUsers
+                Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq "Microsoft.WindowsStore" } | Remove-AppxProvisionedPackage -Online
+            } else {
+                Get-AppxPackage Microsoft.WindowsStore | Remove-AppxPackage
+            }
+            
+            Write-Output "Cleaning caches..."
+            Remove-Item "$env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller*" -Recurse -Force
+            Remove-Item "$env:LOCALAPPDATA\Packages\Microsoft.WindowsStore*" -Recurse -Force
+            Remove-Item "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget*" -Force
+            
+            Write-Output "Verifying..."
+            $winget = Get-Command winget -ErrorAction SilentlyContinue
+            if ($winget) {
+                Write-Output "Winget still exists: $($winget.Source)"
+                exit 1
+            }
+            
+            Write-Output "Winget removed successfully."
+            exit 0
+            """;
+    }
+
     private static string BuildWingetInstallScript()
     {
         return """
             $ErrorActionPreference = "Stop"
 
-            function Resolve-Architecture {
-                try {
-                    $archCode = (Get-CimInstance Win32_Processor | Select-Object -First 1 -ExpandProperty Architecture)
-                    if ($archCode -eq 12) { return "arm64" }
-                } catch {}
-
-                if ([Environment]::Is64BitOperatingSystem) { return "x64" }
-                return "x86"
+            Write-Output "Installing Winget..."
+            try {
+                Add-AppxPackage -Path "https://aka.ms/getwinget" -ForceApplicationShutdown -ErrorAction Stop
             }
-
-            function Download-File {
-                param([string]$Url, [string]$Path)
-                Invoke-WebRequest -Uri $Url -OutFile $Path -UseBasicParsing
-            }
-
-            function Install-AppxSafe {
-                param([string]$Path)
-                try {
-                    Add-AppxPackage -Path $Path -ErrorAction Stop
-                }
-                catch {
-                    # Ignore already installed dependencies.
-                    $message = $_.Exception.Message
-                    if ($message -match "0x80073D06" -or
-                        $message -match "already" -or
-                        $message -match "đã được cài") {
-                        return
+            catch {
+                $message = $_.Exception.Message
+                if ($message -match "0x80073D06" -or $message -match "already" -or $message -match "đã được cài" -or $message -match "nới hơn") {
+                    Write-Output "Winget is already at a newer or same version."
+                    try {
+                        $pkg = Get-AppxPackage -Name Microsoft.DesktopAppInstaller
+                        if ($pkg) {
+                            $manifest = Join-Path $pkg.InstallLocation "AppxManifest.xml"
+                            Add-AppxPackage -Path $manifest -Register -DisableDevelopmentMode -ForceApplicationShutdown
+                        }
+                    } catch {
+                        Write-Warning "Failed to register existing DesktopAppInstaller: $($_.Exception.Message)"
                     }
+                } else {
+                    Write-Error "Failed to install Winget: $message"
                     throw
                 }
             }
 
-            $arch = Resolve-Architecture
-            $workingDir = Join-Path $env:TEMP ("WinstallerHub-Winget-" + [Guid]::NewGuid().ToString("N"))
-            New-Item -ItemType Directory -Path $workingDir | Out-Null
+            Start-Sleep -Seconds 3
 
-            try {
-                $vclibsUrl = switch ($arch) {
-                    "arm64" { "https://aka.ms/Microsoft.VCLibs.arm64.14.00.Desktop.appx" }
-                    "x86"   { "https://aka.ms/Microsoft.VCLibs.x86.14.00.Desktop.appx" }
-                    default { "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx" }
-                }
-
-                $uiXamlUrl = switch ($arch) {
-                    "arm64" { "https://aka.ms/Microsoft.UI.Xaml.2.8.arm64.appx" }
-                    "x86"   { "https://aka.ms/Microsoft.UI.Xaml.2.8.x86.appx" }
-                    default { "https://aka.ms/Microsoft.UI.Xaml.2.8.x64.appx" }
-                }
-
-                $wingetBundleUrl = "https://aka.ms/getwinget"
-
-                $vclibsPath = Join-Path $workingDir "Microsoft.VCLibs.Desktop.appx"
-                $uiXamlPath = Join-Path $workingDir "Microsoft.UI.Xaml.appx"
-                $wingetBundlePath = Join-Path $workingDir "Microsoft.DesktopAppInstaller.msixbundle"
-
-                Download-File -Url $vclibsUrl -Path $vclibsPath
-                Download-File -Url $uiXamlUrl -Path $uiXamlPath
-                Download-File -Url $wingetBundleUrl -Path $wingetBundlePath
-
-                Install-AppxSafe -Path $vclibsPath
-                Install-AppxSafe -Path $uiXamlPath
-                Install-AppxSafe -Path $wingetBundlePath
-
-                Start-Sleep -Seconds 2
-
-                $pkg = Get-AppxPackage -Name Microsoft.DesktopAppInstaller -ErrorAction SilentlyContinue
-                if (-not $pkg) {
-                    throw "Desktop App Installer installation did not complete."
-                }
-
-                Write-Output "Winget installed successfully."
-                exit 0
-            }
-            finally {
-                try {
-                    if (Test-Path $workingDir) {
-                        Remove-Item -Path $workingDir -Recurse -Force -ErrorAction SilentlyContinue
+            # Final verification
+            $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+            if (-not $wingetPath) {
+                $userPath = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
+                if (Test-Path $userPath) {
+                    Write-Output "Winget found in user path."
+                } else {
+                    $pkg = Get-AppxPackage -Name Microsoft.DesktopAppInstaller -ErrorAction SilentlyContinue
+                    if (-not $pkg) {
+                        throw "Cài đặt thất bại. Không tìm thấy gói Microsoft.DesktopAppInstaller."
                     }
-                } catch {}
+                    throw "Đã cài Desktop App Installer nhưng lệnh 'winget' vẫn chưa có trong PATH. Hãy thử khởi động lại máy."
+                }
             }
+
+            Write-Output "Winget installed successfully."
+            exit 0
             """;
     }
 
@@ -625,23 +825,28 @@ internal sealed class WingetService
 
     private static string FirstNonEmptyLine(params string[] values)
     {
+        var allLines = new List<string>();
         foreach (var value in values)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                continue;
-            }
-
-            var line = value
-                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                .FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(line))
-            {
-                return line.Trim();
-            }
+            if (string.IsNullOrWhiteSpace(value)) continue;
+            allLines.AddRange(value.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(l => l.Trim()));
         }
 
-        return string.Empty;
+        var filtered = allLines
+            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .Where(l => !l.StartsWith("Windows Package Manager", StringComparison.OrdinalIgnoreCase))
+            .Where(l => !l.StartsWith("Copyright", StringComparison.OrdinalIgnoreCase))
+            .Where(l => !l.StartsWith("--", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (filtered.Count > 0)
+        {
+            // Pick the first line that doesn't look like a progress bar or header
+            return filtered[0];
+        }
+
+        // Fallback to the very first non-empty line if everything was filtered out
+        return allLines.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l)) ?? string.Empty;
     }
 
     private readonly record struct ProcessResult(int ExitCode, string StdOut, string StdErr);

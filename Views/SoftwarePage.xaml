@@ -57,6 +57,7 @@
                                    FontSize="13"
                                    Foreground="{DynamicResource AppTextMutedBrush}"
                                    Margin="0,4,0,0" />
+
                     </StackPanel>
 
                     <StackPanel Grid.Column="1"
@@ -67,6 +68,14 @@
                                 Height="34"
                                 Padding="14,0"
                                 Click="RefreshWingetStatusButton_Click" />
+
+                        <Button x:Name="RemoveWingetButton"
+                                Content=""
+                                Height="34"
+                                Padding="14,0"
+                                Margin="10,0,0,0"
+                                Click="RemoveWingetButton_Click"
+                                Visibility="Collapsed" />
 
                         <Button x:Name="InstallWingetButton"
                                 Content=""
@@ -148,30 +157,38 @@
                                    Margin="0,2,0,8" />
 
                         <ItemsControl x:Name="WingetSearchItemsControl">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border BorderBrush="{DynamicResource AppCardBorderBrush}"
                                             BorderThickness="1"
-                                            CornerRadius="10"
-                                            Background="#12000000"
-                                            Margin="0,8,0,0"
-                                            Padding="12,10">
+                                            CornerRadius="12"
+                                            Background="#0A000000"
+                                            Margin="4,4"
+                                            Padding="14,12">
                                         <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
 
-                                            <StackPanel>
+                                            <StackPanel Margin="0,0,0,8">
                                                 <TextBlock Text="{Binding Name}"
-                                                           FontSize="16"
+                                                           FontSize="15"
                                                            FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                                           Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis" />
 
                                                 <TextBlock Text="{Binding Id}"
-                                                           FontSize="12"
+                                                           FontSize="11"
                                                            Foreground="{DynamicResource AppTextMutedBrush}"
-                                                           Margin="0,4,0,0" />
+                                                           Margin="0,4,0,0"
+                                                           Opacity="0.7"
+                                                           TextTrimming="CharacterEllipsis" />
 
                                                 <TextBlock Text="{Binding VersionText}"
                                                            FontSize="12"
@@ -179,14 +196,12 @@
                                                            Margin="0,4,0,0" />
                                             </StackPanel>
 
-                                            <Button Grid.Column="1"
+                                            <Button Grid.Row="1"
                                                     Tag="{Binding Id}"
                                                     Content="{Binding InstallButtonText}"
                                                     IsEnabled="{Binding IsInstallEnabled}"
                                                     Height="32"
-                                                    Padding="12,0"
-                                                    Margin="12,0,0,0"
-                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Stretch"
                                                     Click="SearchInstallButton_Click" />
                                         </Grid>
                                     </Border>
@@ -228,45 +243,53 @@
                                    Margin="0,10,0,4" />
 
                         <ItemsControl x:Name="TrendingAppsItemsControl">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border BorderBrush="{DynamicResource AppCardBorderBrush}"
                                             BorderThickness="1"
-                                            CornerRadius="10"
-                                            Background="#12000000"
-                                            Margin="0,8,0,0"
-                                            Padding="12,10">
+                                            CornerRadius="12"
+                                            Background="#0A000000"
+                                            Margin="4,4"
+                                            Padding="14,12">
                                         <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
 
-                                            <StackPanel>
+                                            <StackPanel Margin="0,0,0,8">
                                                 <TextBlock Text="{Binding Name}"
-                                                           FontSize="16"
+                                                           FontSize="15"
                                                            FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource AppTextPrimaryBrush}" />
+                                                           Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis" />
 
                                                 <TextBlock Text="{Binding Description}"
-                                                           FontSize="13"
-                                                           Foreground="{DynamicResource AppTextSecondaryBrush}"
-                                                           Margin="0,4,0,0" />
-
-                                                <TextBlock Text="{Binding Id}"
                                                            FontSize="12"
+                                                           Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                                           Margin="0,4,0,0"
+                                                           TextWrapping="Wrap"
+                                                           MaxHeight="36"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                
+                                                <TextBlock Text="{Binding Id}"
+                                                           FontSize="11"
                                                            Foreground="{DynamicResource AppTextMutedBrush}"
-                                                           Margin="0,6,0,0" />
+                                                           Margin="0,6,0,0"
+                                                           Opacity="0.7" />
                                             </StackPanel>
 
-                                            <Button Grid.Column="1"
+                                            <Button Grid.Row="1"
                                                     Tag="{Binding Id}"
                                                     Content="{Binding InstallButtonText}"
                                                     IsEnabled="{Binding IsInstallEnabled}"
                                                     Height="32"
-                                                    Padding="12,0"
-                                                    Margin="12,0,0,0"
-                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Stretch"
                                                     Click="TrendingInstallButton_Click" />
                                         </Grid>
                                     </Border>
@@ -331,6 +354,22 @@
                               BorderThickness="1">
                         <ListView.View>
                             <GridView>
+                                <GridViewColumn x:Name="InstalledActionColumn"
+                                                Width="100">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="{Binding UninstallButtonText}"
+                                                    Tag="{Binding Name}"
+                                                    Height="28"
+                                                    Padding="10,0"
+                                                    FontSize="11"
+                                                    Background="#22FF0000"
+                                                    BorderBrush="#55FF0000"
+                                                    Foreground="#FFFF6666"
+                                                    Click="UninstallButton_Click" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
                                 <GridViewColumn x:Name="InstalledNameColumn"
                                                 Width="260"
                                                 DisplayMemberBinding="{Binding Name}" />

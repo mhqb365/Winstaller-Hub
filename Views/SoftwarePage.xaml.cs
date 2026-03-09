@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,7 +14,7 @@ namespace WinstallerHubApp.Views;
 public partial class SoftwarePage : Page
 {
     private readonly WingetService _wingetService = new();
-    private List<InstalledApplication> _installedApps = [];
+    private List<InstalledAppViewModel> _installedApps = [];
     private IReadOnlyList<WingetTrendingApp> _trendingApps = Array.Empty<WingetTrendingApp>();
     private List<WingetSearchPackage> _wingetSearchResults = [];
     private bool _isSearchMode;
@@ -66,6 +67,7 @@ public partial class SoftwarePage : Page
     {
         Dispatcher.Invoke(() =>
         {
+            UpdateWingetStatusUi();
             RenderTrendingApps();
             RenderWingetSearchResults();
         });
@@ -75,6 +77,11 @@ public partial class SoftwarePage : Page
     {
         _ = Dispatcher.InvokeAsync(async () =>
         {
+            if (job.JobType == AppInstallJobType.WingetInstall || job.JobType == AppInstallJobType.WingetUninstall)
+            {
+                await RefreshWingetStatusAsync();
+            }
+
             if (job.State == AppInstallJobState.Succeeded)
             {
                 TrendingStatusTextBlock.Text = AppLanguageService.Format(
@@ -123,15 +130,27 @@ public partial class SoftwarePage : Page
         RefreshWingetStatusButton.Content = AppLanguageService.GetString("Software.Common.Refresh");
         RefreshInstalledAppsButton.Content = AppLanguageService.GetString("Software.Common.Refresh");
 
+        InstalledActionColumn.Header = AppLanguageService.GetString("Software.Installed.Column.Action");
         InstalledNameColumn.Header = AppLanguageService.GetString("Software.Installed.Column.Name");
         InstalledPublisherColumn.Header = AppLanguageService.GetString("Software.Installed.Column.Publisher");
         InstalledVersionColumn.Header = AppLanguageService.GetString("Software.Installed.Column.Version");
+
+        RemoveWingetButton.Content = AppLanguageService.GetString("Software.Winget.Button.Remove");
+        if (string.IsNullOrWhiteSpace(RemoveWingetButton.Content?.ToString()))
+        {
+            RemoveWingetButton.Content = "Remove"; // Fallback if missing
+        }
     }
 
     private async Task RefreshWingetStatusAsync()
     {
         RefreshWingetStatusButton.IsEnabled = false;
         InstallWingetButton.IsEnabled = false;
+        RemoveWingetButton.IsEnabled = false;
+        
+        var originalButtonContent = InstallWingetButton.Content;
+        InstallWingetButton.Content = "...";
+
         WingetStatusTextBlock.Text = AppLanguageService.GetString("Software.Winget.Status.Checking");
         WingetStatusTextBlock.Foreground = GetBrush("#F3F8FF");
         WingetVersionTextBlock.Text = string.Empty;
@@ -154,35 +173,78 @@ public partial class SoftwarePage : Page
             RenderWingetSearchResults(preserveStatusText: false);
         }
     }
-
     private void UpdateWingetStatusUi()
     {
-        if (_wingetStatus.IsReady)
-        {
-            WingetStatusTextBlock.Text = AppLanguageService.GetString("Software.Winget.Status.Ready");
-            WingetStatusTextBlock.Foreground = GetBrush("#2FC16D");
-            WingetVersionTextBlock.Text = string.IsNullOrWhiteSpace(_wingetStatus.Version)
-                ? string.Empty
-                : AppLanguageService.Format("Software.Winget.Status.VersionFormat", _wingetStatus.Version);
-
-            InstallWingetButton.Visibility = Visibility.Collapsed;
-            InstallWingetButton.IsEnabled = false;
-            return;
-        }
-
-        WingetStatusTextBlock.Text = _wingetStatus.DesktopAppInstallerInstalled
-            ? AppLanguageService.GetString("Software.Winget.Status.RepairNeeded")
-            : AppLanguageService.GetString("Software.Winget.Status.NotInstalled");
-        WingetStatusTextBlock.Foreground = GetBrush("#FFB300");
-        WingetVersionTextBlock.Text = string.IsNullOrWhiteSpace(_wingetStatus.Version)
+        var versionText = string.IsNullOrWhiteSpace(_wingetStatus.Version)
             ? string.Empty
             : AppLanguageService.Format("Software.Winget.Status.VersionFormat", _wingetStatus.Version);
 
+        if (!string.IsNullOrWhiteSpace(_wingetStatus.LatestVersion))
+        {
+            var latestInfo = AppLanguageService.Format("Software.Winget.Status.LatestVersionFormat", _wingetStatus.LatestVersion);
+            versionText = string.IsNullOrWhiteSpace(versionText) 
+                ? latestInfo 
+                : $"{versionText} | {latestInfo}";
+        }
+
+        bool isWingetInstalling = AppInstallJobService.IsPackageBusy("__WINGET_INSTALL__");
+        bool isWingetRemoving = AppInstallJobService.IsPackageBusy("__WINGET_UNINSTALL__");
+        bool isBusy = isWingetInstalling || isWingetRemoving;
+
+        if (_wingetStatus.IsReady)
+        {
+            if (_wingetStatus.IsOutdated)
+            {
+                WingetStatusTextBlock.Text = isWingetInstalling 
+                    ? AppLanguageService.GetString("Software.Winget.Button.Installing")
+                    : AppLanguageService.GetString("Software.Winget.Status.Outdated");
+                
+                WingetStatusTextBlock.Foreground = GetBrush("#FFB300"); // Yellow warning
+                WingetVersionTextBlock.Text = versionText;
+
+                InstallWingetButton.Visibility = Visibility.Visible;
+                InstallWingetButton.IsEnabled = !isBusy;
+                InstallWingetButton.Content = AppLanguageService.GetString("Software.Winget.Button.Update");
+
+                RemoveWingetButton.Visibility = Visibility.Visible;
+                RemoveWingetButton.IsEnabled = !isBusy;
+                return;
+            }
+
+            WingetStatusTextBlock.Text = isWingetRemoving 
+                ? AppLanguageService.GetString("Software.InstallJobs.State.Uninstalling")
+                : AppLanguageService.GetString("Software.Winget.Status.Ready");
+                
+            WingetStatusTextBlock.Foreground = GetBrush("#2FC16D"); // Green
+            WingetVersionTextBlock.Text = versionText;
+
+            InstallWingetButton.Visibility = Visibility.Collapsed;
+            InstallWingetButton.IsEnabled = false;
+
+            RemoveWingetButton.Visibility = Visibility.Visible;
+            RemoveWingetButton.IsEnabled = !isBusy;
+            return;
+        }
+
+        WingetStatusTextBlock.Text = isWingetInstalling 
+            ? AppLanguageService.GetString("Software.Winget.Button.Installing")
+            : (_wingetStatus.DesktopAppInstallerInstalled
+                ? AppLanguageService.GetString("Software.Winget.Status.RepairNeeded")
+                : AppLanguageService.GetString("Software.Winget.Status.NotInstalled"));
+        
+        WingetStatusTextBlock.Foreground = GetBrush("#FFB300");
+        WingetVersionTextBlock.Text = versionText;
+
         InstallWingetButton.Visibility = Visibility.Visible;
-        InstallWingetButton.IsEnabled = true;
+        InstallWingetButton.IsEnabled = !isBusy;
         InstallWingetButton.Content = _wingetStatus.DesktopAppInstallerInstalled
             ? AppLanguageService.GetString("Software.Winget.Button.Repair")
             : AppLanguageService.GetString("Software.Winget.Button.Install");
+
+        RemoveWingetButton.Visibility = _wingetStatus.DesktopAppInstallerInstalled 
+            ? Visibility.Visible 
+            : Visibility.Collapsed;
+        RemoveWingetButton.IsEnabled = !isBusy;
     }
 
     private async Task RefreshInstalledAppsAsync()
@@ -192,7 +254,15 @@ public partial class SoftwarePage : Page
 
         try
         {
-            _installedApps = await _wingetService.GetInstalledApplicationsAsync();
+            var apps = await _wingetService.GetInstalledApplicationsAsync();
+            var uninstallText = AppLanguageService.GetString("Software.Installed.Button.Uninstall");
+            
+            _installedApps = apps.Select(a => new InstalledAppViewModel(
+                a.Name,
+                a.Publisher,
+                a.Version,
+                uninstallText)).ToList();
+
             InstalledStatusTextBlock.Text = AppLanguageService.Format("Software.Installed.Status.CountFormat", _installedApps.Count);
         }
         catch (Exception ex)
@@ -405,30 +475,25 @@ public partial class SoftwarePage : Page
         await RefreshWingetStatusAsync();
     }
 
-    private async void InstallWingetButton_Click(object sender, RoutedEventArgs e)
+    private void InstallWingetButton_Click(object sender, RoutedEventArgs e)
     {
-        InstallWingetButton.IsEnabled = false;
-        InstallWingetButton.Content = AppLanguageService.GetString("Software.Winget.Button.Installing");
-
-        var result = await _wingetService.InstallOrRepairWingetAsync();
-
-        if (result.Success)
-        {
-            WingetStatusTextBlock.Text = AppLanguageService.GetString("Software.Winget.Status.InstallSuccess");
-            WingetStatusTextBlock.Foreground = GetBrush("#2FC16D");
-        }
-        else
-        {
-            WingetStatusTextBlock.Text = AppLanguageService.Format(
-                "Software.Winget.Status.InstallFailedFormat",
-                string.IsNullOrWhiteSpace(result.Detail)
-                    ? AppLanguageService.GetString("Software.Common.UnknownError")
-                    : result.Detail);
-            WingetStatusTextBlock.Foreground = GetBrush("#FF8A80");
-        }
-
-        await RefreshWingetStatusAsync();
+        AppInstallJobService.QueueWingetInstall();
     }
+
+    private void RemoveWingetButton_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "Bạn có chắc chắn muốn gỡ bỏ Winget khỏi hệ thống?\nĐiều này cũng sẽ gỡ bỏ Desktop App Installer và Microsoft Store.",
+            "Remove Winget",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            AppInstallJobService.QueueWingetUninstall();
+        }
+    }
+
 
     private void TrendingInstallButton_Click(object sender, RoutedEventArgs e)
     {
@@ -525,6 +590,48 @@ public partial class SoftwarePage : Page
     private async void RefreshInstalledAppsButton_Click(object sender, RoutedEventArgs e)
     {
         await RefreshInstalledAppsAsync();
+    }
+
+    private void UninstallButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not string appName)
+        {
+            return;
+        }
+
+        if (!_wingetStatus.IsReady)
+        {
+            InstalledStatusTextBlock.Text = AppLanguageService.GetString("Software.Search.Status.WingetRequired");
+            return;
+        }
+
+        var result = MessageBox.Show(
+            AppLanguageService.Format("Software.Installed.UninstallConfirmation", appName),
+            AppLanguageService.GetString("Software.Installed.UninstallTitle"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        // We use the application name as the identifier for winget uninstall --name
+        var queueResult = AppInstallJobService.QueueUninstall(appName, appName);
+        if (queueResult.Result == AppInstallEnqueueResult.Queued)
+        {
+            InstalledStatusTextBlock.Text = AppLanguageService.Format(
+                "Software.Trending.Status.QueuedFormat",
+                queueResult.Job?.DisplayName ?? appName);
+        }
+        else if (queueResult.Result == AppInstallEnqueueResult.AlreadyQueued)
+        {
+            InstalledStatusTextBlock.Text = AppLanguageService.Format(
+                "Software.Trending.Status.AlreadyQueuedFormat",
+                queueResult.Job?.DisplayName ?? appName);
+        }
+
+        ApplyInstalledAppsFilter();
     }
 
     private void InstalledSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -653,4 +760,10 @@ public partial class SoftwarePage : Page
         string VersionText,
         string InstallButtonText,
         bool IsInstallEnabled);
+
+    private readonly record struct InstalledAppViewModel(
+        string Name,
+        string Publisher,
+        string Version,
+        string UninstallButtonText);
 }

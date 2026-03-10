@@ -1,0 +1,18 @@
+<Page x:Class="WinstallerHubApp.Views.OfficeActivePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:ui="http://schemas.modernwpf.com/2019"
+      mc:Ignorable="d"
+      d:DesignHeight="700"
+      d:DesignWidth="850"
+      Title="Office Active">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <ui:SymbolIcon Symbol="Permissions" Width="64" Height="64" Foreground="{DynamicResource SidebarIconActiveBrush}" Margin="0,0,0,20" />
+            <TextBlock x:Name="PageTitleTextBlock" Text="" Style="{StaticResource HeaderStyle}" HorizontalAlignment="Center" />
+            <TextBlock x:Name="PageDescriptionTextBlock" Text="" FontSize="16" Foreground="{DynamicResource AppTextSecondaryBrush}" HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</Page>

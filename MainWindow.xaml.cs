@@ -19,6 +19,8 @@ public partial class MainWindow : Window
     };
 
     private bool _isToastVisible;
+    private bool _isOfficeExpanded = false;
+    private ListBoxItem? _lastSelectedNavItem;
 
     public MainWindow()
     {
@@ -26,6 +28,10 @@ public partial class MainWindow : Window
         Loaded += MainWindow_Loaded;
         Unloaded += MainWindow_Unloaded;
         _toastTimer.Tick += ToastTimer_Tick;
+
+        // Initialize last selected to Dashboard
+        Loaded += (s, e) => _lastSelectedNavItem = SidebarListBox.Items[0] as ListBoxItem;
+
         MainFrame.Navigate(new DashboardPage());
     }
 
@@ -59,6 +65,10 @@ public partial class MainWindow : Window
         SoftwareNavTextBlock.Text = AppLanguageService.GetString("Nav.Applications");
         OptimizeNavTextBlock.Text = AppLanguageService.GetString("Nav.SystemOptimize");
         SettingsNavTextBlock.Text = AppLanguageService.GetString("Nav.Settings");
+        OfficeNavTextBlock.Text = AppLanguageService.GetString("Nav.Office");
+        OfficeOnlineNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Online");
+        OfficeImageNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Image");
+        OfficeActiveNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Active");
         BylineTextBlock.Text = AppLanguageService.GetString("App.Byline");
     }
 
@@ -151,11 +161,34 @@ public partial class MainWindow : Window
         if (listBox.SelectedItem is not ListBoxItem selectedItem) return;
         if (selectedItem.Tag is not string tag || string.IsNullOrWhiteSpace(tag)) return;
 
+        if (tag == "OfficeHeader")
+        {
+            ToggleOfficeMenu();
+            // Re-select the last actual page item so the header doesn't stay highlighted
+            listBox.SelectedItem = _lastSelectedNavItem;
+            return;
+        }
+
+        _lastSelectedNavItem = selectedItem;
+
         var nextPage = CreatePage(tag);
         if (nextPage != null)
         {
             MainFrame.Navigate(nextPage);
         }
+    }
+
+    private void ToggleOfficeMenu()
+    {
+        _isOfficeExpanded = !_isOfficeExpanded;
+        var visibility = _isOfficeExpanded ? Visibility.Visible : Visibility.Collapsed;
+
+        OfficeOnlineItem.Visibility = visibility;
+        OfficeImageItem.Visibility = visibility;
+        OfficeActiveItem.Visibility = visibility;
+
+        // E76C = ChevronRight (Closed), E70D = ChevronDown (Open)
+        OfficeChevron.Text = _isOfficeExpanded ? "\uE70D" : "\uE76C";
     }
 
     private static Page? CreatePage(string tag)
@@ -166,6 +199,10 @@ public partial class MainWindow : Window
             "Software" => new SoftwarePage(),
             "Optimize" => new OptimizePage(),
             "Settings" => new SettingsPage(),
+            "OfficeOnline" => new OfficeOnlinePage(),
+            "OfficeImage" => new OfficeImagePage(),
+            "OfficeActive" => new OfficeActivePage(),
+            "OfficeHeader" => new OfficeOnlinePage(), // Default to online when clicking header
             _ => null
         };
     }

@@ -609,4 +609,34 @@
   <data name="Software.InstallJobs.Status.Canceled" xml:space="preserve">
     <value>Canceled by user</value>
   </data>
+  <data name="Nav.Office" xml:space="preserve">
+    <value>Office</value>
+  </data>
+  <data name="Nav.Office.Online" xml:space="preserve">
+    <value>Online Setup</value>
+  </data>
+  <data name="Nav.Office.Image" xml:space="preserve">
+    <value>Image Setup</value>
+  </data>
+  <data name="Nav.Office.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Office.Online.Title" xml:space="preserve">
+    <value>Office Online Setup</value>
+  </data>
+  <data name="Office.Online.Description" xml:space="preserve">
+    <value>Integrated Office Deployment Tool (ODT) for custom setup</value>
+  </data>
+  <data name="Office.Image.Title" xml:space="preserve">
+    <value>Office Image Setup</value>
+  </data>
+  <data name="Office.Image.Description" xml:space="preserve">
+    <value>Scans and installs from .iso, .img files in local folder</value>
+  </data>
+  <data name="Office.Active.Title" xml:space="preserve">
+    <value>Office Active</value>
+  </data>
+  <data name="Office.Active.Description" xml:space="preserve">
+    <value>Activation tools for Office on Windows</value>
+  </data>
 </root>

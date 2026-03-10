@@ -609,4 +609,34 @@
   <data name="Software.InstallJobs.Status.Canceled" xml:space="preserve">
     <value>Đã hủy bởi người dùng</value>
   </data>
+  <data name="Nav.Office" xml:space="preserve">
+    <value>Office</value>
+  </data>
+  <data name="Nav.Office.Online" xml:space="preserve">
+    <value>Cài đặt Online</value>
+  </data>
+  <data name="Nav.Office.Image" xml:space="preserve">
+    <value>Cài từ File Image</value>
+  </data>
+  <data name="Nav.Office.Active" xml:space="preserve">
+    <value>Kích hoạt Office</value>
+  </data>
+  <data name="Office.Online.Title" xml:space="preserve">
+    <value>Cài đặt Office Online</value>
+  </data>
+  <data name="Office.Online.Description" xml:space="preserve">
+    <value>Tích hợp công cụ Office Deployment Tool (ODT) để cài đặt tùy chỉnh</value>
+  </data>
+  <data name="Office.Image.Title" xml:space="preserve">
+    <value>Cài đặt Office từ Image</value>
+  </data>
+  <data name="Office.Image.Description" xml:space="preserve">
+    <value>Tự động quét và cài đặt từ các file .iso, .img trong thư mục</value>
+  </data>
+  <data name="Office.Active.Title" xml:space="preserve">
+    <value>Kích hoạt Office</value>
+  </data>
+  <data name="Office.Active.Description" xml:space="preserve">
+    <value>Công cụ kích hoạt bản quyền Office cho Windows</value>
+  </data>
 </root>

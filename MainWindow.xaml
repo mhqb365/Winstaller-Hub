@@ -41,7 +41,7 @@
 
                     <ContentControl Template="{StaticResource SidebarHeader}" Grid.Row="0" />
 
-                    <ListBox Grid.Row="1" Background="Transparent" BorderThickness="0" SelectionChanged="Sidebar_SelectionChanged" HorizontalContentAlignment="Stretch">
+                    <ListBox x:Name="SidebarListBox" Grid.Row="1" Background="Transparent" BorderThickness="0" SelectionChanged="Sidebar_SelectionChanged" HorizontalContentAlignment="Stretch">
                         <ListBox.ItemContainerStyle>
                             <StaticResource ResourceKey="SidebarItemStyle" />
                         </ListBox.ItemContainerStyle>
@@ -65,6 +65,39 @@
                                 <ui:SymbolIcon Symbol="Repair" Foreground="{DynamicResource SidebarIconInactiveBrush}" Margin="0,0,15,0" />
                                 <TextBlock x:Name="OptimizeNavTextBlock" Text="" VerticalAlignment="Center" FontSize="15" />
                             </StackPanel>
+                        </ListBoxItem>
+
+                        <!-- Office Menu Section -->
+                        <ListBoxItem x:Name="OfficeHeader" Tag="OfficeHeader" Margin="12,4,12,4">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE821;" Foreground="{DynamicResource SidebarIconInactiveBrush}" FontSize="16" VerticalAlignment="Center" Margin="0,0,15,0" />
+                                    <TextBlock x:Name="OfficeNavTextBlock" Text="Office" VerticalAlignment="Center" FontSize="15" FontWeight="Normal" Opacity="0.9" />
+                                </StackPanel>
+                                <TextBlock x:Name="OfficeChevron" FontFamily="Segoe MDL2 Assets" Text="&#xE76C;" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" Opacity="0.4" />
+                            </Grid>
+                        </ListBoxItem>
+
+                        <!-- Sub-menu Items with Vertical Line -->
+                        <ListBoxItem x:Name="OfficeOnlineItem" Tag="OfficeOnline" Margin="42,2,12,2" Padding="20,10,15,10" Visibility="Collapsed">
+                            <Grid>
+                                <Border BorderBrush="{DynamicResource SidebarDividerBrush}" BorderThickness="1,0,0,0" HorizontalAlignment="Left" Margin="-20,-10,0,-10" Opacity="0.6" />
+                                <TextBlock x:Name="OfficeOnlineNavTextBlock" Text="" VerticalAlignment="Center" FontSize="14" Opacity="0.8" />
+                            </Grid>
+                        </ListBoxItem>
+
+                        <ListBoxItem x:Name="OfficeImageItem" Tag="OfficeImage" Margin="42,2,12,2" Padding="20,10,15,10" Visibility="Collapsed">
+                            <Grid>
+                                <Border BorderBrush="{DynamicResource SidebarDividerBrush}" BorderThickness="1,0,0,0" HorizontalAlignment="Left" Margin="-20,-10,0,-10" Opacity="0.6" />
+                                <TextBlock x:Name="OfficeImageNavTextBlock" Text="" VerticalAlignment="Center" FontSize="14" Opacity="0.8" />
+                            </Grid>
+                        </ListBoxItem>
+
+                        <ListBoxItem x:Name="OfficeActiveItem" Tag="OfficeActive" Margin="42,2,12,4" Padding="20,10,15,10" Visibility="Collapsed">
+                            <Grid>
+                                <Border BorderBrush="{DynamicResource SidebarDividerBrush}" BorderThickness="1,0,0,0" HorizontalAlignment="Left" Margin="-20,-10,0,10" Opacity="0.6" />
+                                <TextBlock x:Name="OfficeActiveNavTextBlock" Text="" VerticalAlignment="Center" FontSize="14" Opacity="0.8" />
+                            </Grid>
                         </ListBoxItem>
 
                         <ListBoxItem Tag="Settings">

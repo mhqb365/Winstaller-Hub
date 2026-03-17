@@ -50,11 +50,28 @@ $regPaths = @(
 $found = $false
 foreach ($path in $regPaths) {
     if (Test-Path $path) {
-        Get-ChildItem -Path $path | ForEach-Object {
-            $dn = $_.GetValue('DisplayName')
-            if ($dn -like '*Microsoft Office*') {
-                Write-Host "" -> Tim thay trong Registry: $dn"" -ForegroundColor Yellow
+        $keys = Get-ChildItem -Path $path
+        foreach ($key in $keys) {
+            $dn = $key.GetValue('DisplayName')
+            if ($dn -match 'Microsoft Office' -and $dn -notmatch 'Language Pack|Proofing|MUI') {
                 $found = $true
+                Write-Host "" -> Dang xoa MSI/UninstallString: $dn"" -ForegroundColor Yellow
+                $uninstallString = $key.GetValue('QuietUninstallString')
+                if (-not $uninstallString) { $uninstallString = $key.GetValue('UninstallString') }
+                if ($uninstallString) {
+                    Write-Host ""    Lenh: $uninstallString"" -ForegroundColor Gray
+                    try {
+                        if ($uninstallString -match '^(?<cmd>""[^""]+""|\S+)\s*(?<args>.*)$') {
+                            $cmdPath = $Matches.cmd.Trim('""')
+                            $cmdArgs = $Matches.args
+                            Start-Process -FilePath $cmdPath -ArgumentList $cmdArgs -Wait
+                        } else {
+                            cmd.exe /c ""$uninstallString""
+                        }
+                    } catch {
+                        Write-Host "" -> Khong the chay lenh xoa."" -ForegroundColor Red
+                    }
+                }
             }
         }
     }

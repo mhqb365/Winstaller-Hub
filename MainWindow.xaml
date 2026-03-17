@@ -14,7 +14,7 @@
         <ControlTemplate x:Key="SidebarHeader">
             <StackPanel Margin="20,30,20,30">
                 <TextBlock Text="Winstaller Hub" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource SidebarLogoBrush}" VerticalAlignment="Center" />
-                <!-- <TextBlock Text="Winstaller Hub" FontSize="12" Foreground="Gray" Opacity="0.8" /> -->
+                <TextBlock Text="v2.0.0" Foreground="{DynamicResource SidebarFooterPrimaryBrush}" FontSize="12" Margin="0,5,0,0" Opacity="0.9" />
             </StackPanel>
         </ControlTemplate>
     </Window.Resources>
@@ -89,14 +89,12 @@
 
                         <ListBoxItem x:Name="OfficeImageItem" Tag="OfficeImage" Margin="42,2,12,2" Padding="20,10,15,10" Visibility="Collapsed">
                             <Grid>
-                                <Border BorderBrush="{DynamicResource SidebarDividerBrush}" BorderThickness="1,0,0,0" HorizontalAlignment="Left" Margin="-20,-10,0,-10" Opacity="0.6" />
                                 <TextBlock x:Name="OfficeImageNavTextBlock" Text="" VerticalAlignment="Center" FontSize="14" Opacity="0.8" />
                             </Grid>
                         </ListBoxItem>
 
                         <ListBoxItem x:Name="OfficeOnlineItem" Tag="OfficeOnline" Margin="42,2,12,4" Padding="20,10,15,10" Visibility="Collapsed">
                             <Grid>
-                                <Border BorderBrush="{DynamicResource SidebarDividerBrush}" BorderThickness="1,0,0,0" HorizontalAlignment="Left" Margin="-20,-10,0,10" Opacity="0.6" />
                                 <TextBlock x:Name="OfficeOnlineNavTextBlock" Text="" VerticalAlignment="Center" FontSize="14" Opacity="0.8" />
                             </Grid>
                         </ListBoxItem>
@@ -111,13 +109,15 @@
                     
                     <StackPanel Grid.Row="2" Margin="25,0,25,25">
                         <Border Height="1" Background="{DynamicResource SidebarDividerBrush}" Margin="0,0,0,20" />
-                        <TextBlock Text="v2.0.0" HorizontalAlignment="Left" Foreground="{DynamicResource SidebarFooterPrimaryBrush}" FontSize="11" />
-                        <TextBlock x:Name="BylineTextBlock"
-                                   Text=""
-                                   HorizontalAlignment="Left"
+                        <TextBlock HorizontalAlignment="Left"
                                    Foreground="{DynamicResource SidebarFooterSecondaryBrush}"
                                    FontSize="11"
-                                   Margin="0,6,0,0" />
+                                   Margin="0,6,0,0">
+                            <Run x:Name="BylinePrefixRun" Text="" />
+                            <Hyperlink NavigateUri="https://mhqb365.com" RequestNavigate="Hyperlink_RequestNavigate" Foreground="{DynamicResource SidebarFooterSecondaryBrush}" TextDecorations="None">
+                                <Run Text="mhqb365.com" FontWeight="SemiBold" />
+                            </Hyperlink>
+                        </TextBlock>
                     </StackPanel>
                 </Grid>
             </Border>

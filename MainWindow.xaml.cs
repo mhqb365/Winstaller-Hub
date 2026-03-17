@@ -70,7 +70,13 @@ public partial class MainWindow : Window
         OfficeOnlineNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Online");
         OfficeImageNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Image");
 
-        BylineTextBlock.Text = AppLanguageService.GetString("App.Byline");
+        BylinePrefixRun.Text = AppLanguageService.GetString("App.Byline");
+    }
+
+    private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+        e.Handled = true;
     }
 
     private void EnqueueToast(AppToastMessage message)

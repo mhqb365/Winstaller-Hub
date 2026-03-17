@@ -705,4 +705,37 @@
   <data name="Office.Uninstall.RestartNeeded" xml:space="preserve">
     <value>Please restart your computer to complete the cleaning process</value>
   </data>
+  <data name="Nav.Activation" xml:space="preserve">
+    <value>Activation</value>
+  </data>
+  <data name="Activation.Title" xml:space="preserve">
+    <value>Windows &amp; Office Activation</value>
+  </data>
+  <data name="Activation.Description" xml:space="preserve">
+    <value>Manage licenses, activate Windows and Office easily</value>
+  </data>
+  <data name="Activation.Method.Official" xml:space="preserve">
+    <value>Official License</value>
+  </data>
+  <data name="Activation.Method.OfficialDesc" xml:space="preserve">
+    <value>Activate using an official Microsoft Product Key</value>
+  </data>
+  <data name="Activation.Input.Placeholder" xml:space="preserve">
+    <value>Enter Product Key here</value>
+  </data>
+  <data name="Activation.Button.Activate" xml:space="preserve">
+    <value>Activate Now</value>
+  </data>
+  <data name="Activation.Method.MAS" xml:space="preserve">
+    <value>Auto-Activation via MAS</value>
+  </data>
+  <data name="Activation.Method.MASDesc" xml:space="preserve">
+    <value>Launch Microsoft Activation Scripts for automated activation via Terminal</value>
+  </data>
+  <data name="Activation.Button.MASWindows" xml:space="preserve">
+    <value>Activate Windows</value>
+  </data>
+  <data name="Activation.Button.MASOffice" xml:space="preserve">
+    <value>Activate Office</value>
+  </data>
 </root>

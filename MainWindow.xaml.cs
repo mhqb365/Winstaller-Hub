@@ -64,6 +64,7 @@ public partial class MainWindow : Window
         DashboardNavTextBlock.Text = AppLanguageService.GetString("Nav.Overview");
         SoftwareNavTextBlock.Text = AppLanguageService.GetString("Nav.Applications");
         OptimizeNavTextBlock.Text = AppLanguageService.GetString("Nav.SystemOptimize");
+        ActivationNavTextBlock.Text = AppLanguageService.GetString("Nav.Activation");
         SettingsNavTextBlock.Text = AppLanguageService.GetString("Nav.Settings");
         OfficeNavTextBlock.Text = AppLanguageService.GetString("Nav.Office");
         OfficeOnlineNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Online");
@@ -198,6 +199,7 @@ public partial class MainWindow : Window
             "Dashboard" => new DashboardPage(),
             "Software" => new SoftwarePage(),
             "Optimize" => new OptimizePage(),
+            "Activation" => new ActivationPage(),
             "Settings" => new SettingsPage(),
             "OfficeOnline" => new OfficeOnlinePage(),
             "OfficeImage" => new OfficeImagePage(),

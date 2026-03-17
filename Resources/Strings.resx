@@ -705,4 +705,37 @@
   <data name="Office.Uninstall.RestartNeeded" xml:space="preserve">
     <value>Vui lòng khởi động lại máy tính để hoàn tất quá trình dọn dẹp</value>
   </data>
+  <data name="Nav.Activation" xml:space="preserve">
+    <value>Kích hoạt</value>
+  </data>
+  <data name="Activation.Title" xml:space="preserve">
+    <value>Kích hoạt Windows &amp; Office</value>
+  </data>
+  <data name="Activation.Description" xml:space="preserve">
+    <value>Quản lý bản quyền, kích hoạt hệ điều hành và Office dễ dàng</value>
+  </data>
+  <data name="Activation.Method.Official" xml:space="preserve">
+    <value>Bản quyền chính thức</value>
+  </data>
+  <data name="Activation.Method.OfficialDesc" xml:space="preserve">
+    <value>Kích hoạt bằng Product Key chuẩn của Microsoft</value>
+  </data>
+  <data name="Activation.Input.Placeholder" xml:space="preserve">
+    <value>Nhập Product Key vào đây</value>
+  </data>
+  <data name="Activation.Button.Activate" xml:space="preserve">
+    <value>Kích hoạt ngay</value>
+  </data>
+  <data name="Activation.Method.MAS" xml:space="preserve">
+    <value>Kích hoạt tự động qua MAS</value>
+  </data>
+  <data name="Activation.Method.MASDesc" xml:space="preserve">
+    <value>Khởi chạy Microsoft Activation Scripts để kích hoạt tự động với giao diện Terminal</value>
+  </data>
+  <data name="Activation.Button.MASWindows" xml:space="preserve">
+    <value>Kích hoạt Windows</value>
+  </data>
+  <data name="Activation.Button.MASOffice" xml:space="preserve">
+    <value>Kích hoạt Office</value>
+  </data>
 </root>

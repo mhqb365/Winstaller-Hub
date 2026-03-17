@@ -618,8 +618,8 @@
   <data name="Nav.Office.Image" xml:space="preserve">
     <value>Cài từ File Image</value>
   </data>
-  <data name="Nav.Office.Active" xml:space="preserve">
-    <value>Kích hoạt Office</value>
+  <data name="Nav.Office.Uninstall" xml:space="preserve">
+    <value>Gỡ sạch Office</value>
   </data>
   <data name="Office.Online.Title" xml:space="preserve">
     <value>Cài đặt Office Online</value>
@@ -631,12 +631,78 @@
     <value>Cài đặt Office từ Image</value>
   </data>
   <data name="Office.Image.Description" xml:space="preserve">
-    <value>Tự động quét và cài đặt từ các file .iso, .img trong thư mục</value>
+    <value>Tự động quét và cài đặt từ các file .iso và .img trong thư mục</value>
   </data>
-  <data name="Office.Active.Title" xml:space="preserve">
-    <value>Kích hoạt Office</value>
+  <data name="Office.Uninstall.Title" xml:space="preserve">
+    <value>Gỡ sạch Office</value>
   </data>
-  <data name="Office.Active.Description" xml:space="preserve">
-    <value>Công cụ kích hoạt bản quyền Office cho Windows</value>
+  <data name="Office.Uninstall.Description" xml:space="preserve">
+    <value>Công cụ gỡ bỏ Office toàn diện</value>
+  </data>
+  <data name="Office.Image.FolderLabel" xml:space="preserve">
+    <value>Thư mục chứa File Image</value>
+  </data>
+  <data name="Office.Image.Button.Browse" xml:space="preserve">
+    <value>Thay đổi</value>
+  </data>
+  <data name="Office.Image.Status.Scanning" xml:space="preserve">
+    <value>Đang quét các file image</value>
+  </data>
+  <data name="Office.Image.Status.NoImages" xml:space="preserve">
+    <value>Không tìm thấy file .iso hoặc .img nào phù hợp</value>
+  </data>
+  <data name="Office.Image.Status.CountFormat" xml:space="preserve">
+    <value>Đã tìm thấy {0} file</value>
+  </data>
+  <data name="Office.Image.Button.Install" xml:space="preserve">
+    <value>Cài đặt ngay</value>
+  </data>
+  <data name="Office.Image.Status.Mounting" xml:space="preserve">
+    <value>Đang mount file {0}</value>
+  </data>
+  <data name="Office.Image.Status.Installing" xml:space="preserve">
+    <value>Đang chạy trình cài đặt</value>
+  </data>
+  <data name="Office.Image.Dialog.MountError" xml:space="preserve">
+    <value>Không thể mount file image {0}</value>
+  </data>
+  <data name="Office.Image.Dialog.SetupNotFound" xml:space="preserve">
+    <value>Không tìm thấy tệp setup.exe trong file image</value>
+  </data>
+  <data name="Office.Image.Header.File" xml:space="preserve">
+    <value>Tên tệp</value>
+  </data>
+  <data name="Office.Image.Header.Size" xml:space="preserve">
+    <value>Dung lượng</value>
+  </data>
+  <data name="Office.Image.Header.Action" xml:space="preserve">
+    <value>Thao tác</value>
+  </data>
+  <data name="Office.Image.Status.Ready" xml:space="preserve">
+    <value>Sẵn sàng</value>
+  </data>
+  <data name="Office.Image.Dialog.Starting" xml:space="preserve">
+    <value>Đang khởi động trình cài đặt</value>
+  </data>
+  <data name="Office.Uninstall.UninstallTitle" xml:space="preserve">
+    <value>Công cụ Gỡ cài đặt</value>
+  </data>
+  <data name="Office.Uninstall.UninstallDescription" xml:space="preserve">
+    <value>Gỡ bỏ hoàn toàn mọi phiên bản Office khỏi máy tính</value>
+  </data>
+  <data name="Office.Uninstall.Button.Uninstall" xml:space="preserve">
+    <value>Gỡ Office</value>
+  </data>
+  <data name="Office.Uninstall.UninstallWarning" xml:space="preserve">
+    <value>Bạn có chắc chắn muốn gỡ bỏ hoàn toàn Office? Hành động này sẽ xóa sạch mọi thông tin và file liên quan đến Office trên máy này</value>
+  </data>
+  <data name="Office.Uninstall.UninstallStatus.Running" xml:space="preserve">
+    <value>Đang tiến hành gỡ bỏ Office Vui lòng không đóng ứng dụng</value>
+  </data>
+  <data name="Office.Uninstall.UninstallDone" xml:space="preserve">
+    <value>Đã hoàn tất quá trình gỡ bỏ Office</value>
+  </data>
+  <data name="Office.Uninstall.RestartNeeded" xml:space="preserve">
+    <value>Vui lòng khởi động lại máy tính để hoàn tất quá trình dọn dẹp</value>
   </data>
 </root>

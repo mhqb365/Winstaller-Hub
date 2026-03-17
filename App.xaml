@@ -10,94 +10,95 @@
                 <ui:XamlControlsResources />
             </ResourceDictionary.MergedDictionaries>
 
-            <SolidColorBrush x:Key="AccentBrush" Color="#00AADE" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#60A5FA" />
 
-            <SolidColorBrush x:Key="ShellWindowBackgroundBrush" Color="#101522" />
-            <LinearGradientBrush x:Key="ShellBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#0F172A" Offset="0" />
-                <GradientStop Color="#1E1E2E" Offset="0.5" />
-                <GradientStop Color="#111111" Offset="1" />
+            <SolidColorBrush x:Key="ShellWindowBackgroundBrush" Color="#0B0F19" />
+            <LinearGradientBrush x:Key="ShellBackgroundBrush" StartPoint="0.1,0" EndPoint="0.9,1">
+                <GradientStop Color="#0B0F19" Offset="0" />
+                <GradientStop Color="#111827" Offset="0.5" />
+                <GradientStop Color="#1E1B4B" Offset="1" />
             </LinearGradientBrush>
-            <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#1A000000" />
-            <SolidColorBrush x:Key="SidebarDividerBrush" Color="#1FFFFFFF" />
-            <SolidColorBrush x:Key="SidebarFooterPrimaryBrush" Color="#44FFFFFF" />
-            <SolidColorBrush x:Key="SidebarFooterSecondaryBrush" Color="#88A4C9" />
-            <SolidColorBrush x:Key="SidebarLogoBrush" Color="#007ACC" />
-            <SolidColorBrush x:Key="SidebarIconInactiveBrush" Color="#ABB2BF" />
-            <SolidColorBrush x:Key="SidebarIconActiveBrush" Color="#00AADE" />
-            <SolidColorBrush x:Key="SidebarItemForegroundBrush" Color="#BBFFFFFF" />
+            <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#22000000" />
+            <SolidColorBrush x:Key="SidebarDividerBrush" Color="#15FFFFFF" />
+            <SolidColorBrush x:Key="SidebarFooterPrimaryBrush" Color="#55FFFFFF" />
+            <SolidColorBrush x:Key="SidebarFooterSecondaryBrush" Color="#94A3B8" />
+            <SolidColorBrush x:Key="SidebarLogoBrush" Color="#818CF8" />
+            <SolidColorBrush x:Key="SidebarIconInactiveBrush" Color="#94A3B8" />
+            <SolidColorBrush x:Key="SidebarIconActiveBrush" Color="#818CF8" />
+            <SolidColorBrush x:Key="SidebarItemForegroundBrush" Color="#D1D5DB" />
             <SolidColorBrush x:Key="SidebarItemSelectedForegroundBrush" Color="#FFFFFF" />
-            <SolidColorBrush x:Key="SidebarItemSelectedBackgroundBrush" Color="#25FFFFFF" />
-            <SolidColorBrush x:Key="SidebarItemHoverBackgroundBrush" Color="#10FFFFFF" />
+            <SolidColorBrush x:Key="SidebarItemSelectedBackgroundBrush" Color="#2AFFFFFF" />
+            <SolidColorBrush x:Key="SidebarItemHoverBackgroundBrush" Color="#15FFFFFF" />
+            <SolidColorBrush x:Key="SidebarItemHoverSelectedBrush" Color="#33FFFFFF" />
 
-            <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="#F3F8FF" />
-            <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="#B2C0D6" />
-            <SolidColorBrush x:Key="AppTextMutedBrush" Color="#8FA2BF" />
+            <SolidColorBrush x:Key="AppTextPrimaryBrush" Color="#F8FAFC" />
+            <SolidColorBrush x:Key="AppTextSecondaryBrush" Color="#CBD5E1" />
+            <SolidColorBrush x:Key="AppTextMutedBrush" Color="#94A3B8" />
 
-            <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#12FFFFFF" />
-            <SolidColorBrush x:Key="AppCardBorderBrush" Color="#25FFFFFF" />
+            <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#0AFFFFFF" />
+            <SolidColorBrush x:Key="AppCardBorderBrush" Color="#1AFFFFFF" />
 
-            <SolidColorBrush x:Key="DashboardCardBackgroundBrush" Color="#14FFFFFF" />
-            <SolidColorBrush x:Key="DashboardCardBorderBrush" Color="#33FFFFFF" />
-            <SolidColorBrush x:Key="DashboardGaugeTrackBrush" Color="#33FFFFFF" />
-            <SolidColorBrush x:Key="DashboardIconBrush" Color="#93A8C3" />
-            <SolidColorBrush x:Key="DashboardTextPrimaryBrush" Color="#F3F8FF" />
-            <SolidColorBrush x:Key="DashboardTextSecondaryBrush" Color="#B2C0D6" />
-            <SolidColorBrush x:Key="DashboardTextMutedBrush" Color="#9DB0CB" />
-            <SolidColorBrush x:Key="DashboardTextTertiaryBrush" Color="#8FA2BF" />
-            <SolidColorBrush x:Key="DashboardSectionTitleBrush" Color="#D9E5F7" />
-            <SolidColorBrush x:Key="DashboardDividerBrush" Color="#22FFFFFF" />
-            <SolidColorBrush x:Key="DashboardOverlayBackgroundBrush" Color="#35060A1B" />
+            <SolidColorBrush x:Key="DashboardCardBackgroundBrush" Color="#0CFFFFFF" />
+            <SolidColorBrush x:Key="DashboardCardBorderBrush" Color="#1CFFFFFF" />
+            <SolidColorBrush x:Key="DashboardGaugeTrackBrush" Color="#22FFFFFF" />
+            <SolidColorBrush x:Key="DashboardIconBrush" Color="#A78BFA" />
+            <SolidColorBrush x:Key="DashboardTextPrimaryBrush" Color="#F8FAFC" />
+            <SolidColorBrush x:Key="DashboardTextSecondaryBrush" Color="#CBD5E1" />
+            <SolidColorBrush x:Key="DashboardTextMutedBrush" Color="#94A3B8" />
+            <SolidColorBrush x:Key="DashboardTextTertiaryBrush" Color="#64748B" />
+            <SolidColorBrush x:Key="DashboardSectionTitleBrush" Color="#E2E8F0" />
+            <SolidColorBrush x:Key="DashboardDividerBrush" Color="#15FFFFFF" />
+            <SolidColorBrush x:Key="DashboardOverlayBackgroundBrush" Color="#55020617" />
             <SolidColorBrush x:Key="DashboardOverlayCardBackgroundBrush" Color="#1EFFFFFF" />
-            <SolidColorBrush x:Key="DashboardOverlayCardBorderBrush" Color="#3AFFFFFF" />
-            <SolidColorBrush x:Key="DashboardOverlayTextBrush" Color="#DCE7FA" />
-            <SolidColorBrush x:Key="DashboardOverlayProgressBrush" Color="#27A4FF" />
+            <SolidColorBrush x:Key="DashboardOverlayCardBorderBrush" Color="#2AFFFFFF" />
+            <SolidColorBrush x:Key="DashboardOverlayTextBrush" Color="#F8FAFC" />
+            <SolidColorBrush x:Key="DashboardOverlayProgressBrush" Color="#818CF8" />
 
             <Style TargetType="TextBlock" x:Key="HeaderStyle">
-                <Setter Property="FontSize" Value="28" />
-                <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="FontSize" Value="32" />
+                <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-                <Setter Property="Margin" Value="0,0,0,25" />
+                <Setter Property="Margin" Value="0,0,0,30" />
             </Style>
 
             <Style TargetType="Border" x:Key="CardStyle">
                 <Setter Property="Background" Value="{DynamicResource AppCardBackgroundBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource AppCardBorderBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="16" />
-                <Setter Property="Padding" Value="20" />
-                <Setter Property="Margin" Value="0,0,15,15" />
+                <Setter Property="CornerRadius" Value="24" />
+                <Setter Property="Padding" Value="24" />
+                <Setter Property="Margin" Value="0,0,15,20" />
                 <Setter Property="Effect">
                     <Setter.Value>
-                        <DropShadowEffect BlurRadius="25" ShadowDepth="0" Opacity="0.2" Color="Black"/>
+                        <DropShadowEffect BlurRadius="40" ShadowDepth="12" Opacity="0.15" Color="Black" Direction="270"/>
                     </Setter.Value>
                 </Setter>
             </Style>
 
             <Style TargetType="TextBlock" x:Key="InfoLabel">
                 <Setter Property="Foreground" Value="{DynamicResource AppTextSecondaryBrush}" />
-                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="FontWeight" Value="SemiBold" />
-                <Setter Property="Margin" Value="0,0,0,4" />
+                <Setter Property="Margin" Value="0,0,0,6" />
                 <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
             </Style>
 
             <Style TargetType="TextBlock" x:Key="InfoValue">
                 <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
-                <Setter Property="FontSize" Value="15" />
+                <Setter Property="FontSize" Value="16" />
                 <Setter Property="FontWeight" Value="Medium" />
             </Style>
 
             <Style TargetType="ListBoxItem" x:Key="SidebarItemStyle">
-                <Setter Property="Padding" Value="15,12" />
+                <Setter Property="Padding" Value="16,14" />
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Margin" Value="12,4" />
+                <Setter Property="Margin" Value="14,6" />
                 <Setter Property="Foreground" Value="{DynamicResource SidebarItemForegroundBrush}" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ListBoxItem">
-                            <Border Name="Border" CornerRadius="12" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                            <Border Name="Border" CornerRadius="16" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
                                 <ContentPresenter />
                             </Border>
                             <ControlTemplate.Triggers>
@@ -111,6 +112,69 @@
                                     <Setter Property="Foreground" Value="{DynamicResource SidebarItemSelectedForegroundBrush}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style TargetType="ListView">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                <Setter Property="ItemContainerStyle">
+                    <Setter.Value>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Padding" Value="12,14" />
+                            <Setter Property="Margin" Value="0,2" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderBrush" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimaryBrush}" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListViewItem">
+                                        <Border Name="Border" CornerRadius="12" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                                            <GridViewRowPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource SidebarItemHoverBackgroundBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource SidebarItemSelectedBackgroundBrush}" />
+                                            </Trigger>
+                                            <MultiTrigger>
+                                                <MultiTrigger.Conditions>
+                                                    <Condition Property="IsSelected" Value="True" />
+                                                    <Condition Property="IsMouseOver" Value="True" />
+                                                </MultiTrigger.Conditions>
+                                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource SidebarItemHoverSelectedBrush}" />
+                                            </MultiTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="GridViewColumnHeader">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="{DynamicResource AppTextMutedBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Padding" Value="12,12,12,16" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="GridViewColumnHeader">
+                            <Grid>
+                                <Border Background="{TemplateBinding Background}" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource SidebarDividerBrush}">
+                                    <TextBlock Text="{TemplateBinding Content}" Padding="{TemplateBinding Padding}" Margin="0,0,0,0" />
+                                </Border>
+                            </Grid>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>

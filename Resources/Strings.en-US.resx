@@ -618,8 +618,8 @@
   <data name="Nav.Office.Image" xml:space="preserve">
     <value>Image Setup</value>
   </data>
-  <data name="Nav.Office.Active" xml:space="preserve">
-    <value>Active</value>
+  <data name="Nav.Office.Uninstall" xml:space="preserve">
+    <value>Uninstall Office</value>
   </data>
   <data name="Office.Online.Title" xml:space="preserve">
     <value>Office Online Setup</value>
@@ -631,12 +631,78 @@
     <value>Office Image Setup</value>
   </data>
   <data name="Office.Image.Description" xml:space="preserve">
-    <value>Scans and installs from .iso, .img files in local folder</value>
+    <value>Scans and installs from .iso and .img files in local folder</value>
   </data>
-  <data name="Office.Active.Title" xml:space="preserve">
-    <value>Office Active</value>
+  <data name="Office.Uninstall.Title" xml:space="preserve">
+    <value>Uninstall Office</value>
   </data>
-  <data name="Office.Active.Description" xml:space="preserve">
-    <value>Activation tools for Office on Windows</value>
+  <data name="Office.Uninstall.Description" xml:space="preserve">
+    <value>Comprehensive Office removal and maintenance tools</value>
+  </data>
+  <data name="Office.Image.FolderLabel" xml:space="preserve">
+    <value>Image Folder Path</value>
+  </data>
+  <data name="Office.Image.Button.Browse" xml:space="preserve">
+    <value>Change</value>
+  </data>
+  <data name="Office.Image.Status.Scanning" xml:space="preserve">
+    <value>Scanning image files</value>
+  </data>
+  <data name="Office.Image.Status.NoImages" xml:space="preserve">
+    <value>No matching .iso or .img files found</value>
+  </data>
+  <data name="Office.Image.Status.CountFormat" xml:space="preserve">
+    <value>Found {0} files</value>
+  </data>
+  <data name="Office.Image.Button.Install" xml:space="preserve">
+    <value>Install Now</value>
+  </data>
+  <data name="Office.Image.Status.Mounting" xml:space="preserve">
+    <value>Mounting {0}</value>
+  </data>
+  <data name="Office.Image.Status.Installing" xml:space="preserve">
+    <value>Running setup</value>
+  </data>
+  <data name="Office.Image.Dialog.MountError" xml:space="preserve">
+    <value>Unable to mount image. {0}</value>
+  </data>
+  <data name="Office.Image.Dialog.SetupNotFound" xml:space="preserve">
+    <value>Setup.exe not found in image</value>
+  </data>
+  <data name="Office.Image.Header.File" xml:space="preserve">
+    <value>Filename</value>
+  </data>
+  <data name="Office.Image.Header.Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="Office.Image.Header.Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Office.Image.Status.Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Office.Image.Dialog.Starting" xml:space="preserve">
+    <value>Starting installer</value>
+  </data>
+  <data name="Office.Uninstall.UninstallTitle" xml:space="preserve">
+    <value>Uninstall Tool</value>
+  </data>
+  <data name="Office.Uninstall.UninstallDescription" xml:space="preserve">
+    <value>Completely remove all versions of Office from your computer</value>
+  </data>
+  <data name="Office.Uninstall.Button.Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Office.Uninstall.UninstallWarning" xml:space="preserve">
+    <value>Are you sure you want to completely remove Office? This action will wipe all Office-related information and files from this machine</value>
+  </data>
+  <data name="Office.Uninstall.UninstallStatus.Running" xml:space="preserve">
+    <value>Uninstalling Office Please do not close the application</value>
+  </data>
+  <data name="Office.Uninstall.UninstallDone" xml:space="preserve">
+    <value>Office uninstallation completed</value>
+  </data>
+  <data name="Office.Uninstall.RestartNeeded" xml:space="preserve">
+    <value>Please restart your computer to complete the cleaning process</value>
   </data>
 </root>

@@ -68,7 +68,7 @@ public partial class MainWindow : Window
         OfficeNavTextBlock.Text = AppLanguageService.GetString("Nav.Office");
         OfficeOnlineNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Online");
         OfficeImageNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Image");
-        OfficeActiveNavTextBlock.Text = AppLanguageService.GetString("Nav.Office.Active");
+
         BylineTextBlock.Text = AppLanguageService.GetString("App.Byline");
     }
 
@@ -185,7 +185,7 @@ public partial class MainWindow : Window
 
         OfficeOnlineItem.Visibility = visibility;
         OfficeImageItem.Visibility = visibility;
-        OfficeActiveItem.Visibility = visibility;
+
 
         // E76C = ChevronRight (Closed), E70D = ChevronDown (Open)
         OfficeChevron.Text = _isOfficeExpanded ? "\uE70D" : "\uE76C";
@@ -201,7 +201,7 @@ public partial class MainWindow : Window
             "Settings" => new SettingsPage(),
             "OfficeOnline" => new OfficeOnlinePage(),
             "OfficeImage" => new OfficeImagePage(),
-            "OfficeActive" => new OfficeActivePage(),
+
             "OfficeHeader" => new OfficeOnlinePage(), // Default to online when clicking header
             _ => null
         };

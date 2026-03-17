@@ -73,3 +73,5 @@ Desktop.ini
 *.orig
 *.swp
 *.swo
+
+.agent

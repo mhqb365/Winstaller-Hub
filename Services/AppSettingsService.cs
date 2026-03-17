@@ -8,6 +8,7 @@ internal sealed class AppSettings
 {
     public bool UseDarkTheme { get; set; } = true;
     public string LanguageCode { get; set; } = AppLanguageService.VietnameseCode;
+    public string OfficeImagesPath { get; set; } = string.Empty;
 }
 
 internal static class AppSettingsService
@@ -117,7 +118,8 @@ internal static class AppSettingsService
         return new AppSettings
         {
             UseDarkTheme = settings.UseDarkTheme,
-            LanguageCode = AppLanguageService.NormalizeLanguageCode(settings.LanguageCode)
+            LanguageCode = AppLanguageService.NormalizeLanguageCode(settings.LanguageCode),
+            OfficeImagesPath = settings.OfficeImagesPath ?? string.Empty
         };
     }
 
@@ -126,7 +128,8 @@ internal static class AppSettingsService
         return new AppSettings
         {
             UseDarkTheme = settings.UseDarkTheme,
-            LanguageCode = settings.LanguageCode
+            LanguageCode = settings.LanguageCode,
+            OfficeImagesPath = settings.OfficeImagesPath
         };
     }
 }

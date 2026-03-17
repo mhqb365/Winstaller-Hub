@@ -8,11 +8,131 @@
       d:DesignHeight="700"
       d:DesignWidth="850"
       Title="Office Image Setup">
-    <Grid>
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <ui:SymbolIcon Symbol="Library" Width="64" Height="64" Foreground="{DynamicResource SidebarIconActiveBrush}" Margin="0,0,0,20" />
-            <TextBlock x:Name="PageTitleTextBlock" Text="" Style="{StaticResource HeaderStyle}" HorizontalAlignment="Center" />
-            <TextBlock x:Name="PageDescriptionTextBlock" Text="" FontSize="16" Foreground="{DynamicResource AppTextSecondaryBrush}" HorizontalAlignment="Center" />
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="16,8,16,16">
+            <!-- Header -->
+            <TextBlock x:Name="PageTitleTextBlock" 
+                       Text="Cài đặt Office từ Image" 
+                       FontSize="36" 
+                       FontWeight="Bold" 
+                       Foreground="{DynamicResource AppTextPrimaryBrush}" 
+                       Margin="0,0,0,8" />
+            
+            <TextBlock x:Name="PageDescriptionTextBlock" 
+                       Text="Tự động quét và cài đặt từ các file ISO, IMG" 
+                       FontSize="16" 
+                       Foreground="{DynamicResource AppTextSecondaryBrush}" 
+                       Opacity="0.9" 
+                       Margin="0,0,0,22" />
+
+            <!-- Image Setup & Table Card -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <!-- Header with Title and Uninstall Button -->
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock x:Name="FolderLabelTextBlock"
+                                       Text="Cài đặt từ File Image"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource AppTextPrimaryBrush}" />
+
+                            <TextBlock 
+                                       Text="Tự động quét và cài đặt từ các file .iso và .img trong thư mục"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+
+                        <Button Grid.Column="1" 
+                                x:Name="UninstallOfficeButton"
+                                Content="Gỡ cài đặt Office"
+                                Height="34"
+                                Padding="16,0"
+                                VerticalAlignment="Top"
+                                Background="#15FF4D4D"
+                                BorderBrush="#33FF4D4D"
+                                Foreground="#FFFF6666"
+                                FontWeight="SemiBold"
+                                ui:ControlHelper.CornerRadius="6"
+                                Click="UninstallOfficeButton_Click" />
+                    </Grid>
+
+                    <!-- Folder Selection Row -->
+                    <Grid Margin="0,15,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Đường dẫn:"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource AppTextSecondaryBrush}"
+                                   Margin="0,0,12,0" />
+
+                        <Border Grid.Column="1" Background="{DynamicResource DashboardCardBackgroundBrush}" CornerRadius="12" Padding="14,0">
+                            <TextBlock x:Name="FolderPathTextBlock"
+                                       Text="Chưa chọn thư mục"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource AppTextPrimaryBrush}"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
+                        </Border>
+
+                        <Button Grid.Column="2" 
+                                x:Name="BrowseFolderButton"
+                                Content="Thay đổi"
+                                Height="34"
+                                Padding="16,0"
+                                Margin="12,0,0,0"
+                                Click="BrowseFolderButton_Click" />
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <ui:ProgressRing x:Name="LoadingRing" Width="14" Height="14" IsActive="False" Margin="0,0,8,0" Foreground="{DynamicResource SidebarIconActiveBrush}"/>
+                        <TextBlock x:Name="StatusTextBlock" Text="" FontSize="13" Foreground="{DynamicResource AppTextMutedBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <ListView x:Name="ImagesListView" 
+                              Height="350"
+                              BorderThickness="0">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn x:Name="ActionColumn" Width="110">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="{Binding InstallButtonText}"
+                                                    Tag="{Binding FullPath}"
+                                                    Click="InstallImageButton_Click"
+                                                    Height="28"
+                                                    Padding="10,0"
+                                                    FontSize="11"
+                                                    Style="{StaticResource AccentButtonStyle}"
+                                                    ui:ControlHelper.CornerRadius="4" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+
+                                <GridViewColumn x:Name="FileColumn" Width="400" DisplayMemberBinding="{Binding Name}" />
+                                <GridViewColumn x:Name="SizeColumn" Width="120" DisplayMemberBinding="{Binding SizeText}" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <!-- Empty State inside card -->
+                    <StackPanel x:Name="NoImagesPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,50" Visibility="Collapsed">
+                         <ui:SymbolIcon Symbol="Library" Width="40" Height="40" Foreground="{DynamicResource AppTextMutedBrush}" Margin="0,0,0,12"/>
+                         <TextBlock x:Name="NoImagesTextBlock" Text="Không tìm thấy file image" Foreground="{DynamicResource AppTextSecondaryBrush}" HorizontalAlignment="Center" FontSize="14"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </StackPanel>
-    </Grid>
+    </ScrollViewer>
 </Page>

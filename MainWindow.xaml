@@ -79,12 +79,6 @@
                         </ListBoxItem>
 
                         <!-- Sub-menu Items with Vertical Line -->
-                        <ListBoxItem x:Name="OfficeOnlineItem" Tag="OfficeOnline" Margin="42,2,12,2" Padding="20,10,15,10" Visibility="Collapsed">
-                            <Grid>
-                                <Border BorderBrush="{DynamicResource SidebarDividerBrush}" BorderThickness="1,0,0,0" HorizontalAlignment="Left" Margin="-20,-10,0,-10" Opacity="0.6" />
-                                <TextBlock x:Name="OfficeOnlineNavTextBlock" Text="" VerticalAlignment="Center" FontSize="14" Opacity="0.8" />
-                            </Grid>
-                        </ListBoxItem>
 
                         <ListBoxItem x:Name="OfficeImageItem" Tag="OfficeImage" Margin="42,2,12,2" Padding="20,10,15,10" Visibility="Collapsed">
                             <Grid>
@@ -93,10 +87,10 @@
                             </Grid>
                         </ListBoxItem>
 
-                        <ListBoxItem x:Name="OfficeActiveItem" Tag="OfficeActive" Margin="42,2,12,4" Padding="20,10,15,10" Visibility="Collapsed">
+                        <ListBoxItem x:Name="OfficeOnlineItem" Tag="OfficeOnline" Margin="42,2,12,4" Padding="20,10,15,10" Visibility="Collapsed">
                             <Grid>
                                 <Border BorderBrush="{DynamicResource SidebarDividerBrush}" BorderThickness="1,0,0,0" HorizontalAlignment="Left" Margin="-20,-10,0,10" Opacity="0.6" />
-                                <TextBlock x:Name="OfficeActiveNavTextBlock" Text="" VerticalAlignment="Center" FontSize="14" Opacity="0.8" />
+                                <TextBlock x:Name="OfficeOnlineNavTextBlock" Text="" VerticalAlignment="Center" FontSize="14" Opacity="0.8" />
                             </Grid>
                         </ListBoxItem>
 

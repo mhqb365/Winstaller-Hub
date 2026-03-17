@@ -37,8 +37,9 @@ internal static class AppPaletteService
         SetBrush(resources, "SidebarIconActiveBrush", "#00AADE");
         SetBrush(resources, "SidebarItemForegroundBrush", "#BBFFFFFF");
         SetBrush(resources, "SidebarItemSelectedForegroundBrush", "#FFFFFF");
-        SetBrush(resources, "SidebarItemSelectedBackgroundBrush", "#25FFFFFF");
-        SetBrush(resources, "SidebarItemHoverBackgroundBrush", "#10FFFFFF");
+        SetBrush(resources, "SidebarItemSelectedBackgroundBrush", "#2AFFFFFF");
+        SetBrush(resources, "SidebarItemHoverBackgroundBrush", "#15FFFFFF");
+        SetBrush(resources, "SidebarItemHoverSelectedBrush", "#33FFFFFF");
 
         SetBrush(resources, "AppTextPrimaryBrush", "#F3F8FF");
         SetBrush(resources, "AppTextSecondaryBrush", "#B2C0D6");
@@ -78,8 +79,9 @@ internal static class AppPaletteService
         SetBrush(resources, "SidebarIconActiveBrush", "#0078D4");
         SetBrush(resources, "SidebarItemForegroundBrush", "#25364F");
         SetBrush(resources, "SidebarItemSelectedForegroundBrush", "#0F172A");
-        SetBrush(resources, "SidebarItemSelectedBackgroundBrush", "#2AFFFFFF");
-        SetBrush(resources, "SidebarItemHoverBackgroundBrush", "#18FFFFFF");
+        SetBrush(resources, "SidebarItemSelectedBackgroundBrush", "#12000000");
+        SetBrush(resources, "SidebarItemHoverBackgroundBrush", "#08000000");
+        SetBrush(resources, "SidebarItemHoverSelectedBrush", "#1A000000");
 
         SetBrush(resources, "AppTextPrimaryBrush", "#0F172A");
         SetBrush(resources, "AppTextSecondaryBrush", "#334155");
